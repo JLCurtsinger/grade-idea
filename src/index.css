@@ -137,7 +137,8 @@
   }
 
   .card-glow {
-    @apply bg-surface border border-border rounded-lg shadow-glow;
+    @apply bg-surface border border-border rounded-lg;
+    box-shadow: var(--shadow-glow);
   }
 
   /* Score Indicators */
