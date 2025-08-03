@@ -15,7 +15,9 @@ import {
   TrendingUp,
   Zap,
   HelpCircle,
-  Crown
+  Crown,
+  Lightbulb,
+  Sparkles
 } from "lucide-react";
 
 interface Idea {
@@ -60,6 +62,7 @@ export default function DashboardPage() {
       token_balance: 5
     };
 
+    // For testing empty state, you can set this to empty array: []
     const mockIdeas: Idea[] = [
       {
         id: '1',
@@ -188,138 +191,174 @@ export default function DashboardPage() {
         <div className="mb-8">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-2xl font-bold text-foreground">Idea History</h2>
-            <Button 
-              className="btn-primary"
-              onClick={() => router.push('/')}
-            >
-              <Plus className="w-4 h-4 mr-2" />
-              New Idea
-            </Button>
+            {ideas.length > 0 && (
+              <Button 
+                className="btn-primary"
+                onClick={() => router.push('/')}
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                New Idea
+              </Button>
+            )}
           </div>
 
-          {/* Desktop Table View */}
-          <div className="hidden md:block">
-            <Card className="overflow-hidden">
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead className="bg-surface-elevated border-b border-border">
-                    <tr>
-                      <th className="text-left p-4 font-medium text-foreground">Idea</th>
-                      <th className="text-left p-4 font-medium text-foreground">Date Submitted</th>
-                      <th className="text-left p-4 font-medium text-foreground">Market Score</th>
-                      <th className="text-left p-4 font-medium text-foreground">Execution Score</th>
-                      <th className="text-left p-4 font-medium text-foreground">Overall</th>
-                      <th className="text-left p-4 font-medium text-foreground">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {ideas.map((idea) => {
-                      const overallScore = getOverallScore(idea.scores);
-                      return (
-                        <tr key={idea.id} className="border-b border-border hover:bg-surface-elevated/50 transition-colors">
-                          <td className="p-4">
-                            <div className="max-w-xs">
-                              <p 
-                                className="font-medium text-foreground truncate cursor-help"
-                                title={idea.idea}
-                              >
-                                {idea.idea}
-                              </p>
-                            </div>
-                          </td>
-                          <td className="p-4 text-foreground-muted">
+          {ideas.length === 0 ? (
+            /* Empty State */
+            <Card className="p-12 text-center">
+              <div className="max-w-md mx-auto space-y-6">
+                <div className="relative">
+                  <div className="w-20 h-20 bg-brand/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <Lightbulb className="w-10 h-10 text-brand" />
+                  </div>
+                  <div className="absolute -top-2 -right-2 w-6 h-6 bg-brand/20 rounded-full flex items-center justify-center">
+                    <Sparkles className="w-3 h-3 text-brand" />
+                  </div>
+                </div>
+                
+                <div className="space-y-3">
+                  <h3 className="text-xl font-semibold text-foreground">No ideas submitted yet</h3>
+                  <p className="text-foreground-muted">
+                    Ready to validate your next big idea? Get started with your first submission and see how it scores.
+                  </p>
+                </div>
+
+                <Button 
+                  className="btn-primary"
+                  onClick={() => router.push('/')}
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  + New Idea
+                </Button>
+              </div>
+            </Card>
+          ) : (
+            /* Idea History Content */
+            <>
+              {/* Desktop Table View */}
+              <div className="hidden md:block">
+                <Card className="overflow-hidden">
+                  <div className="overflow-x-auto">
+                    <table className="w-full">
+                      <thead className="bg-surface-elevated border-b border-border">
+                        <tr>
+                          <th className="text-left p-4 font-medium text-foreground">Idea</th>
+                          <th className="text-left p-4 font-medium text-foreground">Date Submitted</th>
+                          <th className="text-left p-4 font-medium text-foreground">Market Score</th>
+                          <th className="text-left p-4 font-medium text-foreground">Execution Score</th>
+                          <th className="text-left p-4 font-medium text-foreground">Overall</th>
+                          <th className="text-left p-4 font-medium text-foreground">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {ideas.map((idea) => {
+                          const overallScore = getOverallScore(idea.scores);
+                          return (
+                            <tr key={idea.id} className="border-b border-border hover:bg-surface-elevated/50 transition-colors">
+                              <td className="p-4">
+                                <div className="max-w-xs">
+                                  <p 
+                                    className="font-medium text-foreground truncate cursor-help"
+                                    title={idea.idea}
+                                  >
+                                    {idea.idea}
+                                  </p>
+                                </div>
+                              </td>
+                              <td className="p-4 text-foreground-muted">
+                                {formatDate(idea.submitted_at)}
+                              </td>
+                              <td className="p-4">
+                                <span className={`font-semibold ${getScoreColor(idea.scores.market)}`}>
+                                  {idea.scores.market}%
+                                </span>
+                              </td>
+                              <td className="p-4">
+                                <span className={`font-semibold ${getScoreColor(idea.scores.execution)}`}>
+                                  {idea.scores.execution}%
+                                </span>
+                              </td>
+                              <td className="p-4">
+                                <Badge 
+                                  variant="secondary" 
+                                  className={`font-semibold ${getScoreColor(overallScore)}`}
+                                >
+                                  {overallScore}%
+                                </Badge>
+                              </td>
+                              <td className="p-4">
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => router.push(`/dashboard/idea/${idea.id}`)}
+                                  className="text-brand hover:text-brand/80"
+                                >
+                                  <Eye className="w-4 h-4 mr-2" />
+                                  View Report
+                                </Button>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                </Card>
+              </div>
+
+              {/* Mobile Card View */}
+              <div className="md:hidden space-y-4">
+                {ideas.map((idea) => {
+                  const overallScore = getOverallScore(idea.scores);
+                  return (
+                    <Card key={idea.id} className="p-4">
+                      <div className="space-y-3">
+                        <div>
+                          <h3 className="font-medium text-foreground mb-1">{idea.idea}</h3>
+                          <p className="text-sm text-foreground-muted flex items-center gap-2">
+                            <Calendar className="w-4 h-4" />
                             {formatDate(idea.submitted_at)}
-                          </td>
-                          <td className="p-4">
-                            <span className={`font-semibold ${getScoreColor(idea.scores.market)}`}>
+                          </p>
+                        </div>
+                        
+                        <div className="flex items-center gap-4">
+                          <div>
+                            <p className="text-xs text-foreground-muted">Market</p>
+                            <p className={`font-semibold ${getScoreColor(idea.scores.market)}`}>
                               {idea.scores.market}%
-                            </span>
-                          </td>
-                          <td className="p-4">
-                            <span className={`font-semibold ${getScoreColor(idea.scores.execution)}`}>
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-xs text-foreground-muted">Execution</p>
+                            <p className={`font-semibold ${getScoreColor(idea.scores.execution)}`}>
                               {idea.scores.execution}%
-                            </span>
-                          </td>
-                          <td className="p-4">
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-xs text-foreground-muted">Overall</p>
                             <Badge 
                               variant="secondary" 
                               className={`font-semibold ${getScoreColor(overallScore)}`}
                             >
                               {overallScore}%
                             </Badge>
-                          </td>
-                          <td className="p-4">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => router.push(`/dashboard/idea/${idea.id}`)}
-                              className="text-brand hover:text-brand/80"
-                            >
-                              <Eye className="w-4 h-4 mr-2" />
-                              View Report
-                            </Button>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            </Card>
-          </div>
+                          </div>
+                        </div>
 
-          {/* Mobile Card View */}
-          <div className="md:hidden space-y-4">
-            {ideas.map((idea) => {
-              const overallScore = getOverallScore(idea.scores);
-              return (
-                <Card key={idea.id} className="p-4">
-                  <div className="space-y-3">
-                    <div>
-                      <h3 className="font-medium text-foreground mb-1">{idea.idea}</h3>
-                      <p className="text-sm text-foreground-muted flex items-center gap-2">
-                        <Calendar className="w-4 h-4" />
-                        {formatDate(idea.submitted_at)}
-                      </p>
-                    </div>
-                    
-                    <div className="flex items-center gap-4">
-                      <div>
-                        <p className="text-xs text-foreground-muted">Market</p>
-                        <p className={`font-semibold ${getScoreColor(idea.scores.market)}`}>
-                          {idea.scores.market}%
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-xs text-foreground-muted">Execution</p>
-                        <p className={`font-semibold ${getScoreColor(idea.scores.execution)}`}>
-                          {idea.scores.execution}%
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-xs text-foreground-muted">Overall</p>
-                        <Badge 
-                          variant="secondary" 
-                          className={`font-semibold ${getScoreColor(overallScore)}`}
+                        <Button
+                          variant="ghost"
+                          className="w-full text-brand hover:text-brand/80"
+                          onClick={() => router.push(`/dashboard/idea/${idea.id}`)}
                         >
-                          {overallScore}%
-                        </Badge>
+                          <Eye className="w-4 h-4 mr-2" />
+                          View Report
+                        </Button>
                       </div>
-                    </div>
-
-                    <Button
-                      variant="ghost"
-                      className="w-full text-brand hover:text-brand/80"
-                      onClick={() => router.push(`/dashboard/idea/${idea.id}`)}
-                    >
-                      <Eye className="w-4 h-4 mr-2" />
-                      View Report
-                    </Button>
-                  </div>
-                </Card>
-              );
-            })}
-          </div>
+                    </Card>
+                  );
+                })}
+              </div>
+            </>
+          )}
         </div>
 
         {/* Support & Upgrade Section */}
