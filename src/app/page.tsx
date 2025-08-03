@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Header } from "@/components/header";
 import { HeroSection } from "@/components/hero-section";
 import { ResultsSection } from "@/components/results-section";
@@ -9,6 +9,16 @@ import { ConversionFooter } from "@/components/conversion-footer";
 export default function HomePage() {
   const [currentIdea, setCurrentIdea] = useState<string | null>(null);
   const [scansRemaining, setScansRemaining] = useState(2);
+
+  // Scroll to top when navigating to homepage from another route
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      // Only scroll if we're not already at the top
+      if (window.scrollY > 0) {
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      }
+    }
+  }, []); // Only run on mount
 
   const handleIdeaSubmit = (idea: string) => {
     setCurrentIdea(idea);
