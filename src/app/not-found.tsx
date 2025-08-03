@@ -1,15 +1,6 @@
-"use client";
-
-import { useEffect } from "react";
 import Link from "next/link";
 
 export default function NotFound() {
-  useEffect(() => {
-    console.error(
-      "404 Error: User attempted to access non-existent route"
-    );
-  }, []);
-
   return (
     <div className="min-h-screen flex items-center justify-center bg-background">
       <div className="text-center">
