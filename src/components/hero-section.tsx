@@ -54,7 +54,7 @@ export const HeroSection = ({ onSubmit }: HeroSectionProps) => {
                 <span className="text-gradient">60 seconds</span>
               </h1>
               <p className="text-subhero max-w-lg">
-                Founder-grade insights to help you decide what's worth building.
+                Founder-grade insights to help you decide what&apos;s worth building.
               </p>
             </div>
 

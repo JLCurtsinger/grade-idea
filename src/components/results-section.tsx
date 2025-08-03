@@ -18,7 +18,7 @@ interface ResultsSectionProps {
   idea: string;
 }
 
-export const ResultsSection = ({ idea }: ResultsSectionProps) => {
+export const ResultsSection = ({ idea: _idea }: ResultsSectionProps) => {
   const [animateScores, setAnimateScores] = useState(false);
 
   useEffect(() => {
