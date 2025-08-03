@@ -122,6 +122,12 @@
     @apply bg-surface-elevated hover:bg-border-elevated text-foreground font-medium px-6 py-3 rounded-lg transition-all duration-200 border border-border hover:border-border-elevated;
   }
 
+  /* Breathing glow animation for the "Grade My Idea" button */
+  .btn-primary-breathing {
+    @apply bg-brand hover:bg-brand/90 text-brand-foreground font-semibold px-6 py-3 rounded-lg transition-all duration-200 shadow-md hover:shadow-lg hover:scale-[1.02] border border-transparent;
+    animation: pulseGlow 2s ease-in-out infinite;
+  }
+
   /* Input Styling */
   .input-primary {
     @apply bg-input border border-border rounded-lg px-4 py-3 text-foreground placeholder:text-foreground-subtle focus:border-brand focus:ring-1 focus:ring-brand transition-all duration-200 outline-none;
@@ -215,5 +221,14 @@
   }
   to {
     box-shadow: 0 0 0 1px hsl(var(--brand) / 0.4), 0 0 30px hsl(var(--brand) / 0.2);
+  }
+}
+
+@keyframes pulseGlow {
+  0%, 100% {
+    box-shadow: 0 0 0px rgba(165, 89, 255, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 16px rgba(165, 89, 255, 0.8);
   }
 } 

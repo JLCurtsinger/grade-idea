@@ -73,7 +73,7 @@ export const HeroSection = ({ onSubmit }: HeroSectionProps) => {
                 <Button
                   type="submit"
                   disabled={!idea.trim() || isLoading}
-                  className="btn-primary absolute right-2 top-2 bottom-2 h-auto"
+                  className="btn-primary-breathing absolute right-2 top-2 bottom-2 h-auto"
                 >
                   {isLoading ? (
                     <div className="w-5 h-5 border-2 border-brand-foreground/30 border-t-brand-foreground rounded-full animate-spin" />
