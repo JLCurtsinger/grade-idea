@@ -6,10 +6,12 @@ import { Menu } from "lucide-react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useCurrentIdea } from "@/context/CurrentIdeaContext";
+import { useAuth } from "@/context/AuthContext";
 
 export const Header = () => {
   const router = useRouter();
   const { setCurrentIdea } = useCurrentIdea();
+  const { user, openModal, logout } = useAuth();
 
   const handleLogoClick = () => {
     // Reset the current idea state
@@ -27,6 +29,23 @@ export const Header = () => {
     const featuresSection = document.getElementById('features');
     if (featuresSection) {
       featuresSection.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
+
+  const handleAuthClick = () => {
+    if (user) {
+      logout();
+    } else {
+      openModal('signin');
+    }
+  };
+
+  const handleGetStartedClick = () => {
+    if (user) {
+      // User is signed in, could redirect to dashboard or idea submission
+      router.push('/');
+    } else {
+      openModal('signup');
     }
   };
 
@@ -79,11 +98,18 @@ export const Header = () => {
 
           {/* Actions */}
           <div className="flex items-center gap-4">
-            <Button variant="ghost" className="hidden sm:inline-flex text-foreground-muted hover:text-foreground">
-              Sign In
+            <Button 
+              variant="ghost" 
+              className="hidden sm:inline-flex text-foreground-muted hover:text-foreground"
+              onClick={handleAuthClick}
+            >
+              {user ? 'Sign Out' : 'Sign In'}
             </Button>
-            <Button className="btn-primary">
-              Get Started
+            <Button 
+              className="btn-primary"
+              onClick={handleGetStartedClick}
+            >
+              {user ? 'My Dashboard' : 'Get Started'}
             </Button>
             <Button variant="ghost" size="icon" className="md:hidden">
               <Menu className="w-5 h-5" />
