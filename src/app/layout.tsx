@@ -8,6 +8,9 @@ const inter = Inter({ subsets: ["latin"] });
 export const metadata: Metadata = {
   title: "GradeIdea - AI-Powered Business Idea Validation",
   description: "Validate your business ideas with our AI-powered scoring system. Get instant feedback on market potential, feasibility, and growth opportunities.",
+  icons: {
+    icon: "/favicon.ico",
+  },
 };
 
 export default function RootLayout({
