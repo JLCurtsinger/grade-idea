@@ -5,6 +5,7 @@ import { HeroSection } from "@/components/hero-section";
 import { ResultsSection } from "@/components/results-section";
 import { ConversionFooter } from "@/components/conversion-footer";
 import { FeaturesSection } from "@/components/features-section";
+import { PricingSection } from "@/components/pricing-section";
 import { useCurrentIdea } from "@/context/CurrentIdeaContext";
 
 export default function HomePage() {
@@ -26,6 +27,7 @@ export default function HomePage() {
         <>
           <HeroSection onSubmit={handleIdeaSubmit} />
           <FeaturesSection />
+          <PricingSection />
         </>
       ) : (
         <>

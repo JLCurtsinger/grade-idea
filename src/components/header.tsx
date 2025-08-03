@@ -52,6 +52,15 @@ export const Header = () => {
     setIsMobileMenuOpen(false);
   };
 
+  const handlePricingClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
+    e.preventDefault();
+    const pricingSection = document.getElementById('pricing');
+    if (pricingSection) {
+      pricingSection.scrollIntoView({ behavior: 'smooth' });
+    }
+    setIsMobileMenuOpen(false);
+  };
+
   const handleAuthClick = () => {
     if (user) {
       logout();
@@ -123,7 +132,11 @@ export const Header = () => {
               >
                 Features
               </a>
-              <a href="#pricing" className="text-sm font-medium text-foreground-muted hover:text-foreground transition-colors">
+              <a 
+                href="#pricing" 
+                onClick={handlePricingClick}
+                className="text-sm font-medium text-foreground-muted hover:text-foreground transition-colors"
+              >
                 Pricing
               </a>
               <a href="#examples" className="text-sm font-medium text-foreground-muted hover:text-foreground transition-colors">
@@ -222,6 +235,7 @@ export const Header = () => {
               </a>
               <a 
                 href="#pricing" 
+                onClick={handlePricingClick}
                 className="block text-lg font-medium text-foreground-muted hover:text-foreground transition-colors py-3 border-b border-border/50"
               >
                 Pricing
