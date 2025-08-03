@@ -5,13 +5,21 @@ import { Button } from "@/components/ui/button";
 import { Menu } from "lucide-react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
+import { useCurrentIdea } from "@/context/CurrentIdeaContext";
 
 export const Header = () => {
   const router = useRouter();
+  const { setCurrentIdea } = useCurrentIdea();
 
   const handleLogoClick = () => {
-    // Force navigation to homepage, even if already on /
+    // Reset the current idea state
+    setCurrentIdea(null);
+    
+    // Navigate to homepage
     router.push('/');
+    
+    // Scroll to top smoothly
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   return (
