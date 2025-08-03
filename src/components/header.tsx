@@ -2,6 +2,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Menu } from "lucide-react";
 import Image from "next/image";
+import Link from "next/link";
 
 export const Header = () => {
   return (
@@ -10,22 +11,24 @@ export const Header = () => {
         <div className="flex items-center justify-between">
           {/* Logo */}
           <div className="flex items-center gap-3">
-            <div className="flex items-center gap-2">
-              <div className="p-2 bg-brand/20 rounded-lg">
-                <Image
-                  src="/logo.svg"
-                  alt="GradeIdea logo"
-                  width={24}
-                  height={24}
-                  className="w-6 h-6"
-                  aria-hidden="true"
-                />
+            <Link href="/" scroll={true}>
+              <div className="flex items-center gap-2 cursor-pointer">
+                <div className="p-2 bg-brand/20 rounded-lg">
+                  <Image
+                    src="/logo.svg"
+                    alt="GradeIdea logo"
+                    width={24}
+                    height={24}
+                    className="w-6 h-6"
+                    aria-hidden="true"
+                  />
+                </div>
+                <div>
+                  <h1 className="text-xl font-bold">GradeIdea</h1>
+                  <div className="text-xs text-foreground-subtle">.cc</div>
+                </div>
               </div>
-              <div>
-                <h1 className="text-xl font-bold">GradeIdea</h1>
-                <div className="text-xs text-foreground-subtle">.cc</div>
-              </div>
-            </div>
+            </Link>
             <Badge variant="secondary" className="bg-brand/10 text-brand border-brand/20 text-xs">
               Beta
             </Badge>
