@@ -1,3 +1,5 @@
+"use client";
+
 import { useEffect, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
@@ -18,7 +20,7 @@ interface ResultsSectionProps {
   idea: string;
 }
 
-export const ResultsSection = ({ idea }: ResultsSectionProps) => {
+export const ResultsSection = ({ idea: _idea }: ResultsSectionProps) => {
   const [animateScores, setAnimateScores] = useState(false);
 
   useEffect(() => {
