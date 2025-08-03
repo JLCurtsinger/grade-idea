@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Header } from "@/components/header";
 import { HeroSection } from "@/components/hero-section";
 import { ResultsSection } from "@/components/results-section";
 import { ConversionFooter } from "@/components/conversion-footer";
@@ -31,8 +30,6 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <Header />
-      
       {!currentIdea ? (
         <HeroSection onSubmit={handleIdeaSubmit} />
       ) : (

@@ -11,7 +11,7 @@ export const Header = () => {
         <div className="flex items-center justify-between">
           {/* Logo */}
           <div className="flex items-center gap-3">
-            <Link href="/" scroll={true}>
+            <Link href="/">
               <div className="flex items-center gap-2 cursor-pointer">
                 <div className="p-2 bg-brand/20 rounded-lg">
                   <Image
