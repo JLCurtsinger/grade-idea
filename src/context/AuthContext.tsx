@@ -6,6 +6,8 @@ import {
   signInWithEmailAndPassword, 
   createUserWithEmailAndPassword, 
   signInWithPopup, 
+  signInWithRedirect,
+  getRedirectResult,
   GoogleAuthProvider, 
   sendPasswordResetEmail,
   signOut,
@@ -58,6 +60,22 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       }
     });
 
+    // Check for redirect result on mount
+    const checkRedirectResult = async () => {
+      try {
+        const result = await getRedirectResult(auth);
+        if (result) {
+          // User signed in via redirect
+          setUser(result.user);
+          setIsModalOpen(false);
+        }
+      } catch (error: any) {
+        console.error('Redirect result error:', error);
+      }
+    };
+
+    checkRedirectResult();
+
     return () => unsubscribe();
   }, []);
 
@@ -96,9 +114,32 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const signInWithGoogle = async () => {
     try {
       const provider = new GoogleAuthProvider();
-      await signInWithPopup(auth, provider);
-      closeModal();
+      
+      // Add custom parameters to prevent popup issues
+      provider.setCustomParameters({
+        prompt: 'select_account'
+      });
+      
+      // Try popup first, fallback to redirect if popup is blocked
+      try {
+        await signInWithPopup(auth, provider);
+        closeModal();
+      } catch (popupError: any) {
+        if (popupError.code === 'auth/popup-blocked' || popupError.code === 'auth/popup-closed-by-user') {
+          // Fallback to redirect method
+          await signInWithRedirect(auth, provider);
+          // Don't close modal here as the page will redirect
+        } else {
+          throw popupError;
+        }
+      }
     } catch (error: any) {
+      // Handle specific popup-related errors
+      if (error.code === 'auth/popup-closed-by-user') {
+        throw new Error('Sign-in was cancelled');
+      } else if (error.code === 'auth/popup-blocked') {
+        throw new Error('Pop-up was blocked. Please allow pop-ups for this site.');
+      }
       throw new Error(getErrorMessage(error.code));
     }
   };
@@ -134,6 +175,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         return 'Too many failed attempts. Please try again later';
       case 'auth/network-request-failed':
         return 'Network error. Please check your connection';
+      case 'auth/popup-closed-by-user':
+        return 'Sign-in was cancelled';
+      case 'auth/popup-blocked':
+        return 'Pop-up was blocked. Please allow pop-ups for this site.';
       default:
         return 'An error occurred. Please try again';
     }
