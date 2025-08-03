@@ -1,73 +1,93 @@
-# Welcome to your Lovable project
+# GradeIdea - AI-Powered Business Idea Validation
 
-## Project info
+A Next.js application that helps founders validate their business ideas using AI-powered analysis and scoring.
 
-**URL**: https://lovable.dev/projects/555f5347-ddf0-4993-907f-40779dfce317
+## 🚀 Features
 
-## How can I edit this code?
+- **AI-Powered Analysis**: Get instant feedback on market potential, competition, monetization, and execution difficulty
+- **Interactive Scorecards**: Animated progress bars and detailed justifications for each metric
+- **Modern UI**: Built with shadcn/ui components and Tailwind CSS
+- **Dark Mode**: Professional dark theme optimized for readability
+- **Responsive Design**: Works seamlessly on desktop and mobile devices
 
-There are several ways of editing your application.
+## 🛠️ Tech Stack
 
-**Use Lovable**
+- **Framework**: Next.js 15 (App Router)
+- **Language**: TypeScript
+- **Styling**: Tailwind CSS
+- **Components**: shadcn/ui + Radix UI
+- **State Management**: React Query
+- **Forms**: React Hook Form + Zod validation
+- **Icons**: Lucide React
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/555f5347-ddf0-4993-907f-40779dfce317) and start prompting.
+## 🏃‍♂️ Getting Started
 
-Changes made via Lovable will be committed automatically to this repo.
+### Prerequisites
 
-**Use your preferred IDE**
+- Node.js 18+ 
+- npm or yarn
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+### Installation
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+```bash
+# Clone the repository
+git clone <YOUR_REPO_URL>
+cd gradeidea-next
 
-Follow these steps:
+# Install dependencies
+npm install
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
+# Start the development server
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+Open [http://localhost:3000](http://localhost:3000) to view the application.
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+## 📁 Project Structure
 
-**Use GitHub Codespaces**
+```
+src/
+├── app/                    # Next.js App Router
+│   ├── globals.css        # Global styles and design system
+│   ├── layout.tsx         # Root layout with providers
+│   ├── page.tsx           # Homepage
+│   └── not-found.tsx      # 404 page
+├── components/            # React components
+│   ├── ui/               # shadcn/ui components
+│   ├── header.tsx        # Site header
+│   ├── hero-section.tsx  # Landing page hero
+│   ├── results-section.tsx # Analysis results
+│   └── conversion-footer.tsx # Bottom CTA
+├── hooks/                # Custom React hooks
+└── lib/                  # Utility functions
+```
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+## 🎨 Design System
 
-## What technologies are used for this project?
+The application uses a custom "Founder-Grade" design system with:
 
-This project is built with:
+- **Dark Mode First**: Professional dark theme with purple brand colors
+- **Semantic Colors**: Success, warning, danger, and brand color variants
+- **Typography**: Inter font with custom text classes
+- **Animations**: Smooth transitions and micro-interactions
+- **Components**: Consistent card, button, and input styling
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+## 🚀 Deployment
 
-## How can I deploy this project?
+This project is optimized for deployment on Vercel:
 
-Simply open [Lovable](https://lovable.dev/projects/555f5347-ddf0-4993-907f-40779dfce317) and click on Share -> Publish.
+```bash
+# Build for production
+npm run build
 
-## Can I connect a custom domain to my Lovable project?
+# Start production server
+npm start
+```
 
-Yes, you can!
+## 📝 License
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+This project is private and proprietary.
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+## 🤝 Contributing
+
+This is a private project. For questions or support, please contact the development team.

@@ -141,8 +141,8 @@ export const HeroSection = ({ onSubmit }: HeroSectionProps) => {
                           <div className="h-2 bg-surface-elevated rounded-full overflow-hidden">
                             <div 
                               className={`h-full rounded-full transition-all duration-1000 ${
-                                metric.color === 'success' ? 'bg-success' :
-                                metric.color === 'brand' ? 'bg-brand' : 'bg-warning'
+                                metric.color === "success" ? "bg-success" :
+                                metric.color === "brand" ? "bg-brand" : "bg-warning"
                               }`}
                               style={{ width: `${metric.score}%` }}
                             />
