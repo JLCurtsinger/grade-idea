@@ -1,6 +1,7 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { BarChart3, Menu } from "lucide-react";
+import { Menu } from "lucide-react";
+import Image from "next/image";
 
 export const Header = () => {
   return (
@@ -11,7 +12,14 @@ export const Header = () => {
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-2">
               <div className="p-2 bg-brand/20 rounded-lg">
-                <BarChart3 className="w-6 h-6 text-brand" />
+                <Image
+                  src="/logo.svg"
+                  alt="GradeIdea logo"
+                  width={24}
+                  height={24}
+                  className="w-6 h-6"
+                  aria-hidden="true"
+                />
               </div>
               <div>
                 <h1 className="text-xl font-bold">GradeIdea</h1>
