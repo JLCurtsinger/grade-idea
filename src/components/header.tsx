@@ -63,10 +63,15 @@ export const Header = () => {
 
   const handleGetStartedClick = () => {
     if (user) {
-      router.push('/');
+      router.push('/dashboard');
     } else {
       openModal('signup');
     }
+    setIsMobileMenuOpen(false);
+  };
+
+  const handleDashboardClick = () => {
+    router.push('/dashboard');
     setIsMobileMenuOpen(false);
   };
 
@@ -124,6 +129,15 @@ export const Header = () => {
               <a href="#examples" className="text-sm font-medium text-foreground-muted hover:text-foreground transition-colors">
                 Examples
               </a>
+              {user && (
+                <Button 
+                  variant="ghost" 
+                  className="text-sm font-medium text-foreground-muted hover:text-foreground transition-colors"
+                  onClick={handleDashboardClick}
+                >
+                  Dashboard
+                </Button>
+              )}
             </nav>
 
             {/* Desktop Actions */}
@@ -218,10 +232,18 @@ export const Header = () => {
               >
                 Examples
               </a>
+              {user && (
+                <button 
+                  onClick={handleDashboardClick}
+                  className="block text-lg font-medium text-foreground-muted hover:text-foreground transition-colors py-3 border-b border-border/50 w-full text-left"
+                >
+                  Dashboard
+                </button>
+              )}
             </nav>
 
             {/* Auth Actions */}
-            <div className="space-y-4 pt-4">
+            <div className="space-y-4">
               <Button 
                 className="w-full btn-primary text-lg py-4"
                 onClick={handleGetStartedClick}
