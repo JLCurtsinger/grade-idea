@@ -22,6 +22,14 @@ export const Header = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
+  const handleFeaturesClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
+    e.preventDefault();
+    const featuresSection = document.getElementById('features');
+    if (featuresSection) {
+      featuresSection.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
+
   return (
     <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-lg border-b border-border">
       <div className="container mx-auto px-6 py-4">
@@ -54,7 +62,11 @@ export const Header = () => {
 
           {/* Navigation */}
           <nav className="hidden md:flex items-center gap-8">
-            <a href="#features" className="text-sm font-medium text-foreground-muted hover:text-foreground transition-colors">
+            <a 
+              href="#features" 
+              onClick={handleFeaturesClick}
+              className="text-sm font-medium text-foreground-muted hover:text-foreground transition-colors"
+            >
               Features
             </a>
             <a href="#pricing" className="text-sm font-medium text-foreground-muted hover:text-foreground transition-colors">

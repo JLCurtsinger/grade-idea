@@ -4,6 +4,7 @@ import { useState } from "react";
 import { HeroSection } from "@/components/hero-section";
 import { ResultsSection } from "@/components/results-section";
 import { ConversionFooter } from "@/components/conversion-footer";
+import { FeaturesSection } from "@/components/features-section";
 import { useCurrentIdea } from "@/context/CurrentIdeaContext";
 
 export default function HomePage() {
@@ -22,7 +23,10 @@ export default function HomePage() {
   return (
     <div className="min-h-screen bg-background">
       {!currentIdea ? (
-        <HeroSection onSubmit={handleIdeaSubmit} />
+        <>
+          <HeroSection onSubmit={handleIdeaSubmit} />
+          <FeaturesSection />
+        </>
       ) : (
         <>
           <ResultsSection idea={currentIdea} />
