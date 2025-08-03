@@ -64,7 +64,7 @@ export default function DashboardPage() {
       {
         id: '1',
         user_id: user.uid,
-        idea: 'AI-powered meal planning app for busy professionals',
+        idea: 'AI-powered meal planning app for busy professionals with dietary restrictions and grocery delivery integration',
         submitted_at: '2024-01-15T10:30:00Z',
         scores: {
           market: 85,
@@ -79,7 +79,7 @@ export default function DashboardPage() {
       {
         id: '2',
         user_id: user.uid,
-        idea: 'SaaS platform for small restaurant inventory management',
+        idea: 'SaaS platform for small restaurant inventory management with real-time analytics and automated reordering',
         submitted_at: '2024-01-10T14:20:00Z',
         scores: {
           market: 78,
@@ -219,7 +219,12 @@ export default function DashboardPage() {
                         <tr key={idea.id} className="border-b border-border hover:bg-surface-elevated/50 transition-colors">
                           <td className="p-4">
                             <div className="max-w-xs">
-                              <p className="font-medium text-foreground truncate">{idea.idea}</p>
+                              <p 
+                                className="font-medium text-foreground truncate cursor-help"
+                                title={idea.idea}
+                              >
+                                {idea.idea}
+                              </p>
                             </div>
                           </td>
                           <td className="p-4 text-foreground-muted">
