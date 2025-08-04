@@ -50,17 +50,34 @@ if (!apps.length) {
   try {
     const serviceAccount = validateFirebaseConfig();
     
+    // Enhanced logging after successful validation
+    console.log('[FirebaseAdmin] Environment variables at runtime:', {
+      nodeEnv: process.env.NODE_ENV,
+      firebaseProjectId: process.env.FIREBASE_PROJECT_ID,
+      nextPublicFirebaseProjectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+      firebaseClientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+      firebasePrivateKeyPresent: !!process.env.FIREBASE_PRIVATE_KEY,
+      firebasePrivateKeyLength: process.env.FIREBASE_PRIVATE_KEY ? process.env.FIREBASE_PRIVATE_KEY.length : 0
+    });
+    
     initializeApp({
       credential: cert(serviceAccount),
       databaseURL: `https://${serviceAccount.projectId}.firebaseio.com`,
     });
     
     console.log('✅ Firebase Admin SDK initialized with full credentials');
-    console.log('Firebase Admin SDK config:', {
+    console.log('[FirebaseAdmin] SDK initialized with config:', {
+      nodeEnv: process.env.NODE_ENV,
       projectId: serviceAccount.projectId,
       clientEmail: serviceAccount.clientEmail,
       hasPrivateKey: !!serviceAccount.privateKey,
-      databaseURL: `https://${serviceAccount.projectId}.firebaseio.com`
+      databaseURL: `https://${serviceAccount.projectId}.firebaseio.com`,
+      rawEnvVars: {
+        FIREBASE_PROJECT_ID: process.env.FIREBASE_PROJECT_ID,
+        NEXT_PUBLIC_FIREBASE_PROJECT_ID: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+        FIREBASE_CLIENT_EMAIL: process.env.FIREBASE_CLIENT_EMAIL,
+        FIREBASE_PRIVATE_KEY_PRESENT: !!process.env.FIREBASE_PRIVATE_KEY,
+      }
     });
   } catch (error) {
     console.error('Failed to initialize Firebase Admin SDK:', error);
