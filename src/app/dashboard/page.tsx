@@ -96,6 +96,11 @@ export default function DashboardPage() {
           token_balance: tokenBalance
         };
         setProfile(profile);
+        
+        console.log('Dashboard token balance updated:', { 
+          uid: user.uid, 
+          tokenBalance 
+        });
       } catch (error) {
         console.error('Error fetching profile:', error);
         // Fallback to 0 tokens if there's an error
@@ -117,12 +122,19 @@ export default function DashboardPage() {
   useEffect(() => {
     const handleFocus = () => {
       // Refresh profile when user returns to the tab
+      console.log('Window focused, refreshing token balance...');
       setProfileRefreshKey(prev => prev + 1);
     };
 
     window.addEventListener('focus', handleFocus);
     return () => window.removeEventListener('focus', handleFocus);
   }, []);
+
+  // Function to manually refresh token balance
+  const refreshTokenBalance = () => {
+    console.log('Manually refreshing token balance...');
+    setProfileRefreshKey(prev => prev + 1);
+  };
 
   const getOverallScore = (analysis: Idea['analysis']) => {
     return analysis.overall_score;

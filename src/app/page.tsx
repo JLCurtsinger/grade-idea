@@ -8,40 +8,14 @@ import { FeaturesSection } from "@/components/features-section";
 import { PricingSection } from "@/components/pricing-section";
 import { useCurrentIdea } from "@/context/CurrentIdeaContext";
 import { useAuth } from "@/context/AuthContext";
-import { doc, getDoc } from "firebase/firestore";
-import { db } from "@/lib/firebase";
+import { useTokenBalance } from "@/hooks/use-token-balance";
 
 export default function HomePage() {
   const { currentIdea, setCurrentIdea } = useCurrentIdea();
   const { user } = useAuth();
-  const [tokenBalance, setTokenBalance] = useState<number | null>(null);
+  const { tokenBalance, updateBalanceOptimistically, revertBalance } = useTokenBalance();
   const [scansRemaining, setScansRemaining] = useState(2);
   const [analysisResult, setAnalysisResult] = useState<any>(null);
-
-  // Fetch token balance for logged-in users
-  useEffect(() => {
-    const fetchTokens = async () => {
-      if (!user) {
-        setTokenBalance(null);
-        return;
-      }
-      
-      try {
-        const docRef = doc(db, "users", user.uid);
-        const docSnap = await getDoc(docRef);
-        if (docSnap.exists()) {
-          setTokenBalance(docSnap.data().token_balance ?? 0);
-        } else {
-          setTokenBalance(0);
-        }
-      } catch (error) {
-        console.error('Error fetching token balance:', error);
-        setTokenBalance(0);
-      }
-    };
-
-    fetchTokens();
-  }, [user]);
 
   const handleIdeaSubmit = async (idea: string) => {
     // Guest scan tracking
@@ -61,6 +35,12 @@ export default function HomePage() {
         return;
       }
 
+      // Optimistically update UI to show deduction
+      const previousBalance = tokenBalance;
+      if (tokenBalance !== null) {
+        updateBalanceOptimistically(tokenBalance - 1);
+      }
+
       // Call the grade-idea API for signed-in users
       try {
         const idToken = await user.getIdToken();
@@ -78,27 +58,38 @@ export default function HomePage() {
 
         if (!response.ok) {
           const errorData = await response.json();
+          
+          // Revert optimistic update on error
+          if (previousBalance !== null) {
+            revertBalance(previousBalance);
+          }
+          
+          if (errorData.error === 'Not enough tokens') {
+            alert('You need at least 1 token to analyze an idea. Please purchase more tokens.');
+            return;
+          }
+          
           throw new Error(errorData.error || 'Failed to analyze idea');
         }
 
         const result = await response.json();
         setAnalysisResult(result.analysis);
 
-        // Refresh token balance after successful analysis
-        const fetchTokens = async () => {
-          try {
-            const docRef = doc(db, "users", user.uid);
-            const docSnap = await getDoc(docRef);
-            if (docSnap.exists()) {
-              setTokenBalance(docSnap.data().token_balance ?? 0);
-            }
-          } catch (error) {
-            console.error('Error refreshing token balance:', error);
-          }
-        };
-        fetchTokens();
+        // Update token balance with the actual remaining tokens from the API
+        updateBalanceOptimistically(result.tokens_remaining);
+        
+        console.log('Idea analysis completed successfully:', {
+          tokensRemaining: result.tokens_remaining,
+          analysisScore: result.analysis.overall_score
+        });
       } catch (error) {
         console.error('Error analyzing idea:', error);
+        
+        // Revert optimistic update on error
+        if (previousBalance !== null) {
+          revertBalance(previousBalance);
+        }
+        
         alert('Failed to analyze idea. Please try again.');
         return;
       }

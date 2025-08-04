@@ -17,7 +17,11 @@ export async function POST(request: NextRequest) {
   try {
     const { idea, idToken } = await request.json();
 
+    console.log('=== IDEA GRADING REQUEST ===');
+    console.log('Idea length:', idea?.length || 0);
+
     if (!idea || !idToken) {
+      console.error('Missing required fields:', { hasIdea: !!idea, hasIdToken: !!idToken });
       return NextResponse.json(
         { error: 'Missing required fields: idea and idToken' },
         { status: 400 }
@@ -27,23 +31,42 @@ export async function POST(request: NextRequest) {
     // Verify the Firebase ID token
     const decoded = await verifyFirebaseIdToken(idToken);
     const uid = decoded.uid;
+    console.log('Authenticated user:', uid);
 
-    // Get user's token balance
-    const tokenBalance = await getUserTokenBalance(uid);
-
-    // Check if user has enough tokens
-    if (tokenBalance < 1) {
-      return NextResponse.json(
-        { error: 'Not enough tokens' },
-        { status: 403 }
-      );
-    }
-
-    // Deduct 1 token
-    const userRef = adminDb.collection('users').doc(uid);
-    await userRef.update({
-      token_balance: tokenBalance - 1,
-      updated_at: new Date(),
+    // Use Firestore transaction to safely check and deduct tokens
+    let tokenBalance: number;
+    let tokensRemaining: number;
+    
+    await adminDb.runTransaction(async (transaction) => {
+      const userRef = adminDb.collection('users').doc(uid);
+      const userDoc = await transaction.get(userRef);
+      
+      if (!userDoc.exists) {
+        console.error('User document does not exist:', uid);
+        throw new Error('User not found');
+      }
+      
+      tokenBalance = userDoc.data()?.token_balance || 0;
+      console.log('Current token balance:', tokenBalance);
+      
+      // Check if user has enough tokens
+      if (tokenBalance < 1) {
+        console.error('Insufficient tokens:', { uid, tokenBalance });
+        throw new Error('Not enough tokens');
+      }
+      
+      // Deduct 1 token atomically
+      tokensRemaining = tokenBalance - 1;
+      transaction.update(userRef, {
+        token_balance: tokensRemaining,
+        updated_at: new Date(),
+      });
+      
+      console.log('Token deduction successful:', { 
+        uid, 
+        previousBalance: tokenBalance, 
+        newBalance: tokensRemaining 
+      });
     });
 
     // TODO: Implement actual idea analysis logic here
@@ -77,19 +100,41 @@ export async function POST(request: NextRequest) {
       tokensUsed: 1,
     });
 
+    console.log('Idea analysis stored successfully:', { 
+      ideaId: ideaRef.id, 
+      uid, 
+      tokensRemaining 
+    });
+
     return NextResponse.json({
       analysis: mockAnalysis,
-      tokens_remaining: tokenBalance - 1
+      tokens_remaining: tokensRemaining
     });
 
   } catch (error) {
     console.error('Error in grade-idea API:', error);
     
-    if (error instanceof Error && error.message === 'Invalid ID token') {
-      return NextResponse.json(
-        { error: 'Authentication failed' },
-        { status: 401 }
-      );
+    if (error instanceof Error) {
+      if (error.message === 'Invalid ID token') {
+        return NextResponse.json(
+          { error: 'Authentication failed' },
+          { status: 401 }
+        );
+      }
+      
+      if (error.message === 'Not enough tokens') {
+        return NextResponse.json(
+          { error: 'Not enough tokens' },
+          { status: 403 }
+        );
+      }
+      
+      if (error.message === 'User not found') {
+        return NextResponse.json(
+          { error: 'User not found' },
+          { status: 404 }
+        );
+      }
     }
 
     return NextResponse.json(
