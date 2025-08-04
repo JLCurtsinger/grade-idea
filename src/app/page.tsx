@@ -117,9 +117,12 @@ export default function HomePage() {
           throw new Error('Invalid response from backend');
         }
         
-        setCurrentIdea(idea);
+        console.log('Idea analysis completed successfully:', {
+          finalTokenBalance: result.tokenBalance,
+          analysisScore: result.analysis.overall_score
+        });
       } catch (error) {
-        console.error('Error during idea submission:', error);
+        console.error('Error analyzing idea:', error);
         logTokenError(user.uid, error instanceof Error ? error.message : 'Unknown error', 'idea_submission');
         
         // Revert optimistic update and force refresh from Firestore on error
@@ -129,35 +132,35 @@ export default function HomePage() {
         }
         
         alert('Failed to analyze idea. Please try again.');
+        return;
       }
     }
+
+    setCurrentIdea(idea);
+    setScansRemaining(prev => Math.max(0, prev - 1));
   };
 
   const handleTryAnother = () => {
-    setAnalysisResult(null);
-    setCurrentIdea("");
+    setCurrentIdea(null);
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
-      <HeroSection 
-        onSubmit={handleIdeaSubmit} 
-        tokenBalance={tokenBalance}
-      />
-      
-      {analysisResult && (
-        <ResultsSection 
-          idea={currentIdea || ""}
-          analysis={analysisResult}
-        />
+    <div className="min-h-screen bg-background">
+      {!currentIdea ? (
+        <>
+          <HeroSection onSubmit={handleIdeaSubmit} tokenBalance={tokenBalance} />
+          <FeaturesSection />
+          <PricingSection />
+        </>
+      ) : (
+        <>
+          <ResultsSection idea={currentIdea} analysis={analysisResult} />
+          <ConversionFooter 
+            scansRemaining={scansRemaining}
+            onTryAnother={handleTryAnother}
+          />
+        </>
       )}
-      
-      <FeaturesSection />
-      <PricingSection />
-      <ConversionFooter 
-        scansRemaining={scansRemaining}
-        onTryAnother={handleTryAnother}
-      />
     </div>
   );
 } 
