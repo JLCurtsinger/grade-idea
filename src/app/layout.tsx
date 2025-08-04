@@ -6,6 +6,7 @@ import { Header } from "@/components/header";
 import { CurrentIdeaProvider } from "@/context/CurrentIdeaContext";
 import { AuthProvider } from "@/context/AuthContext";
 import { SignInModal } from "@/components/auth/SignInModal";
+import GoogleAnalytics from "@/components/GoogleAnalytics";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -34,6 +35,7 @@ export default function RootLayout({
             </CurrentIdeaProvider>
           </AuthProvider>
         </Providers>
+        <GoogleAnalytics />
       </body>
     </html>
   );

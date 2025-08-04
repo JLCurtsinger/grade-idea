@@ -3,6 +3,7 @@
 import { Button } from "@/components/ui/button";
 import { useStripeCheckout } from "@/hooks/use-stripe-checkout";
 import { useAuth } from "@/context/AuthContext";
+import { event } from "@/lib/gtag";
 
 interface PricingButtonProps {
   planName: string;
@@ -27,6 +28,13 @@ export const PricingButton = ({
       alert('Please sign in to purchase tokens. You can sign in using the button in the header.');
       return;
     }
+
+    // Track pricing button click event
+    event({
+      action: 'pricing_button_click',
+      category: 'engagement',
+      label: planName,
+    });
 
     await createCheckoutSession(planName);
   };
