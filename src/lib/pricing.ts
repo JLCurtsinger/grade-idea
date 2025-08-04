@@ -1,12 +1,12 @@
 // Client-side price mapping utilities
 export const getPriceIdForPlan = (planName: string): string => {
   const planMap: Record<string, string> = {
-    'Basic': process.env.NEXT_PUBLIC_STRIPE_PRICE_ID_BASIC || '',
-    'Standard': process.env.NEXT_PUBLIC_STRIPE_PRICE_ID_STANDARD || '',
-    'Pro': process.env.NEXT_PUBLIC_STRIPE_PRICE_ID_PRO || '',
-    'Starter Pack': process.env.NEXT_PUBLIC_STRIPE_PRICE_ID_STARTER || '',
-    'Popular Pack': process.env.NEXT_PUBLIC_STRIPE_PRICE_ID_POPULAR || '',
-    'Value Pack': process.env.NEXT_PUBLIC_STRIPE_PRICE_ID_VALUE || '',
+    'Basic': process.env.STRIPE_PRICE_ID_BASIC || '',
+    'Standard': process.env.STRIPE_PRICE_ID_STANDARD || '',
+    'Pro': process.env.STRIPE_PRICE_ID_PRO || '',
+    'Starter Pack': process.env.STRIPE_PRICE_ID_STARTER || '',
+    'Popular Pack': process.env.STRIPE_PRICE_ID_POPULAR || '',
+    'Value Pack': process.env.STRIPE_PRICE_ID_VALUE || '',
   };
   
   return planMap[planName] || '';
