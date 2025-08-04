@@ -20,8 +20,10 @@ import {
   HelpCircle,
   Crown,
   Lightbulb,
-  Sparkles
+  Sparkles,
+  RefreshCw
 } from "lucide-react";
+import { logTokenDisplay, logTokenError } from "@/lib/utils";
 
 interface Idea {
   id: string;
@@ -102,53 +104,48 @@ export default function DashboardPage() {
           tokenBalance,
           timestamp: new Date().toISOString()
         });
+        
+        // Log token display
+        logTokenDisplay(user.uid, tokenBalance, 'dashboard');
+        
       } catch (error) {
         console.error('Error fetching profile:', error);
-        // Fallback to 0 tokens if there's an error
-        const profile: UserProfile = {
-          id: user.uid,
-          email: user.email || '',
-          token_balance: 0
-        };
-        setProfile(profile);
+        logTokenError(user.uid, error instanceof Error ? error.message : 'Unknown error', 'fetch_profile');
       }
     };
 
-    fetchIdeas();
-    fetchProfile();
-    setLoading(false);
-  }, [user, router, profileRefreshKey]);
+    const loadData = async () => {
+      setLoading(true);
+      await Promise.all([fetchIdeas(), fetchProfile()]);
+      setLoading(false);
+    };
 
-  // Refresh profile when user returns from Stripe checkout
+    loadData();
+  }, [user, profileRefreshKey]);
+
+  // Force refresh token balance on page mount to ensure fresh data
+  useEffect(() => {
+    if (user) {
+      console.log('Dashboard mounted - forcing token balance refresh');
+      setProfileRefreshKey(prev => prev + 1);
+    }
+  }, []); // Empty dependency array to run only on mount
+
+  // Refresh profile when window gains focus (after Stripe redirect)
   useEffect(() => {
     const handleFocus = () => {
-      // Refresh profile when user returns to the tab
-      console.log('Window focused, refreshing token balance...', {
-        timestamp: new Date().toISOString()
-      });
-      setProfileRefreshKey(prev => prev + 1);
+      if (user) {
+        console.log('Window focused - refreshing profile');
+        setProfileRefreshKey(prev => prev + 1);
+      }
     };
 
     window.addEventListener('focus', handleFocus);
     return () => window.removeEventListener('focus', handleFocus);
-  }, []);
-
-  // Refresh profile when component mounts or user changes
-  useEffect(() => {
-    if (user) {
-      console.log('Dashboard mounted or user changed, refreshing token balance...', {
-        uid: user.uid,
-        timestamp: new Date().toISOString()
-      });
-      setProfileRefreshKey(prev => prev + 1);
-    }
   }, [user]);
 
-  // Function to manually refresh token balance
   const refreshTokenBalance = () => {
-    console.log('Manually refreshing token balance...', {
-      timestamp: new Date().toISOString()
-    });
+    console.log('Manually refreshing token balance...');
     setProfileRefreshKey(prev => prev + 1);
   };
 
@@ -157,324 +154,181 @@ export default function DashboardPage() {
   };
 
   const getScoreColor = (score: number) => {
-    if (score >= 80) return 'text-success';
-    if (score >= 60) return 'text-brand';
-    return 'text-warning';
+    if (score >= 80) return "text-green-600";
+    if (score >= 60) return "text-yellow-600";
+    return "text-red-600";
   };
 
   const formatDate = (timestamp: { seconds: number; nanoseconds: number }) => {
-    return new Date(timestamp.seconds * 1000).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
-    });
+    const date = new Date(timestamp.seconds * 1000);
+    return date.toLocaleDateString();
   };
 
   const handleBuyTokens = () => {
-    if (!user) {
-      alert('Please sign in to purchase tokens. You can sign in using the button in the header.');
-      return;
-    }
-    
     setIsBuyTokensModalOpen(true);
   };
 
   const handleBuyTokensModalClose = () => {
     setIsBuyTokensModalOpen(false);
-    // Refresh profile to get updated token balance
+    // Refresh profile after modal closes to get updated token balance
+    console.log('Buy tokens modal closed - refreshing profile');
     setProfileRefreshKey(prev => prev + 1);
   };
 
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center space-y-4">
-          <div className="w-8 h-8 border-2 border-brand/30 border-t-brand rounded-full animate-spin mx-auto"></div>
+        <div className="text-center">
+          <div className="w-8 h-8 border-4 border-brand border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
           <p className="text-foreground-muted">Loading dashboard...</p>
         </div>
       </div>
     );
   }
 
-  if (!user) {
-    return null;
-  }
-
   return (
     <div className="min-h-screen bg-background">
       <div className="container mx-auto px-6 py-8">
         {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-foreground mb-2">Dashboard</h1>
-          <p className="text-foreground-muted">Manage your ideas and track your progress</p>
-        </div>
-
-
-
-        {/* User Info & Token Balance */}
-        <div className="grid md:grid-cols-3 gap-6 mb-8">
-          <Card className="p-6">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="p-2 bg-brand/20 rounded-lg">
-                <User className="w-5 h-5 text-brand" />
-              </div>
-              <div>
-                <h3 className="font-semibold text-foreground">Account</h3>
-                <p className="text-sm text-foreground-muted">{profile?.email}</p>
-              </div>
-            </div>
-          </Card>
-
-          <Card className="p-6">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="p-2 bg-success/20 rounded-lg">
-                <Coins className="w-5 h-5 text-success" />
-              </div>
-              <div>
-                <h3 className="font-semibold text-foreground">Token Balance</h3>
-                <p className="text-2xl font-bold text-success">{profile?.token_balance}</p>
-              </div>
-            </div>
+        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 mb-8">
+          <div>
+            <h1 className="text-3xl font-bold text-foreground mb-2">Dashboard</h1>
+            <p className="text-foreground-muted">Track your idea analysis history and token balance</p>
+          </div>
+          
+          <div className="flex items-center gap-4">
             <Button 
-              className="w-full btn-primary"
               onClick={handleBuyTokens}
+              className="btn-primary"
             >
               <Plus className="w-4 h-4 mr-2" />
               Buy Tokens
             </Button>
-          </Card>
-
-          <Card className="p-6">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="p-2 bg-brand/20 rounded-lg">
-                <TrendingUp className="w-5 h-5 text-brand" />
-              </div>
-              <div>
-                <h3 className="font-semibold text-foreground">Ideas Analyzed</h3>
-                <p className="text-2xl font-bold text-brand">{ideas.length}</p>
-              </div>
-            </div>
-          </Card>
+          </div>
         </div>
 
-        {/* Idea History */}
-        <div className="mb-8">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-2xl font-bold text-foreground">Idea History</h2>
-            {ideas.length > 0 && (
-              <Button 
-                className="btn-primary"
-                onClick={() => router.push('/')}
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                New Idea
-              </Button>
-            )}
+        {/* Token Balance Card */}
+        <Card className="card-glow p-6 mb-8">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <div className="p-3 bg-brand/10 rounded-lg">
+                <Coins className="w-6 h-6 text-brand" />
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-foreground">Token Balance</h3>
+                <p className="text-2xl font-bold text-brand">
+                  {profile?.token_balance || 0} tokens
+                </p>
+              </div>
+            </div>
+            <Button 
+              onClick={refreshTokenBalance}
+              variant="outline"
+              size="sm"
+            >
+              <RefreshCw className="w-4 h-4 mr-2" />
+              Refresh
+            </Button>
+          </div>
+        </Card>
+
+        {/* Ideas History */}
+        <div className="space-y-6">
+          <div className="flex items-center justify-between">
+            <h2 className="text-2xl font-bold text-foreground">Recent Ideas</h2>
+            <Badge variant="secondary">{ideas.length} analyzed</Badge>
           </div>
 
           {ideas.length === 0 ? (
-            /* Empty State */
-            <Card className="p-12 text-center">
-              <div className="max-w-md mx-auto space-y-6">
-                <div className="relative">
-                  <div className="w-20 h-20 bg-brand/10 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <Lightbulb className="w-10 h-10 text-brand" />
-                  </div>
-                  <div className="absolute -top-2 -right-2 w-6 h-6 bg-brand/20 rounded-full flex items-center justify-center">
-                    <Sparkles className="w-3 h-3 text-brand" />
-                  </div>
-                </div>
-                
-                <div className="space-y-3">
-                  <h3 className="text-xl font-semibold text-foreground">No ideas submitted yet</h3>
-                  <p className="text-foreground-muted">
-                    Ready to validate your next big idea? Get started with your first submission and see how it scores.
-                  </p>
-                </div>
-
-                <Button 
-                  className="btn-primary"
-                  onClick={() => router.push('/')}
-                >
-                  <Plus className="w-4 h-4 mr-2" />
-                  + New Idea
-                </Button>
-              </div>
+            <Card className="p-8 text-center">
+              <Lightbulb className="w-12 h-12 text-foreground-muted mx-auto mb-4" />
+              <h3 className="text-lg font-semibold text-foreground mb-2">No ideas analyzed yet</h3>
+              <p className="text-foreground-muted mb-4">
+                Start by analyzing your first idea on the homepage
+              </p>
+              <Button onClick={() => router.push('/')} className="btn-primary">
+                Analyze Idea
+              </Button>
             </Card>
           ) : (
-            /* Idea History Content */
-            <>
-              {/* Desktop Table View */}
-              <div className="hidden md:block">
-                <Card className="overflow-hidden">
-                  <div className="overflow-x-auto">
-                    <table className="w-full">
-                      <thead className="bg-surface-elevated border-b border-border">
-                        <tr>
-                          <th className="text-left p-4 font-medium text-foreground">Idea</th>
-                          <th className="text-left p-4 font-medium text-foreground">Date Submitted</th>
-                          <th className="text-left p-4 font-medium text-foreground">Market Score</th>
-                          <th className="text-left p-4 font-medium text-foreground">Execution Score</th>
-                          <th className="text-left p-4 font-medium text-foreground">Overall</th>
-                          <th className="text-left p-4 font-medium text-foreground">Actions</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {ideas.map((idea) => {
-                          const overallScore = getOverallScore(idea.analysis);
-                          return (
-                            <tr key={idea.id} className="border-b border-border hover:bg-surface-elevated/50 transition-colors">
-                              <td className="p-4">
-                                <div className="max-w-xs">
-                                  <p 
-                                    className="font-medium text-foreground truncate cursor-help"
-                                    title={idea.ideaText}
-                                  >
-                                    {idea.ideaText}
-                                  </p>
-                                </div>
-                              </td>
-                              <td className="p-4 text-foreground-muted">
-                                {formatDate(idea.createdAt)}
-                              </td>
-                              <td className="p-4">
-                                <span className={`font-semibold ${getScoreColor(idea.analysis.market_potential)}`}>
-                                  {idea.analysis.market_potential}%
-                                </span>
-                              </td>
-                              <td className="p-4">
-                                <span className={`font-semibold ${getScoreColor(idea.analysis.execution)}`}>
-                                  {idea.analysis.execution}%
-                                </span>
-                              </td>
-                              <td className="p-4">
-                                <Badge 
-                                  variant="secondary" 
-                                  className={`font-semibold ${getScoreColor(overallScore)}`}
-                                >
-                                  {overallScore}%
-                                </Badge>
-                              </td>
-                              <td className="p-4">
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => router.push(`/dashboard/idea/${idea.id}`)}
-                                  className="text-brand hover:text-brand/80"
-                                >
-                                  <Eye className="w-4 h-4 mr-2" />
-                                  View Report
-                                </Button>
-                              </td>
-                            </tr>
-                          );
-                        })}
-                      </tbody>
-                    </table>
+            <div className="grid gap-6">
+              {ideas.map((idea) => (
+                <Card key={idea.id} className="p-6">
+                  <div className="flex items-start justify-between mb-4">
+                    <div className="flex-1">
+                      <h3 className="text-lg font-semibold text-foreground mb-2">
+                        {idea.ideaText}
+                      </h3>
+                      <div className="flex items-center gap-4 text-sm text-foreground-muted">
+                        <div className="flex items-center gap-1">
+                          <Calendar className="w-4 h-4" />
+                          {formatDate(idea.createdAt)}
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <Coins className="w-4 h-4" />
+                          {idea.tokensUsed} token{idea.tokensUsed !== 1 ? 's' : ''}
+                        </div>
+                      </div>
+                    </div>
+                    <Badge 
+                      variant={idea.analysis.recommendation === "Worth Building" ? "default" : "secondary"}
+                      className="ml-4"
+                    >
+                      {idea.analysis.recommendation}
+                    </Badge>
+                  </div>
+
+                  {/* Score Grid */}
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+                    <div className="text-center p-3 bg-surface rounded-lg">
+                      <div className="text-sm text-foreground-muted mb-1">Overall</div>
+                      <div className={`text-lg font-bold ${getScoreColor(getOverallScore(idea.analysis))}`}>
+                        {getOverallScore(idea.analysis)}%
+                      </div>
+                    </div>
+                    <div className="text-center p-3 bg-surface rounded-lg">
+                      <div className="text-sm text-foreground-muted mb-1">Market</div>
+                      <div className={`text-lg font-bold ${getScoreColor(idea.analysis.market_potential)}`}>
+                        {idea.analysis.market_potential}%
+                      </div>
+                    </div>
+                    <div className="text-center p-3 bg-surface rounded-lg">
+                      <div className="text-sm text-foreground-muted mb-1">Competition</div>
+                      <div className={`text-lg font-bold ${getScoreColor(idea.analysis.competition)}`}>
+                        {idea.analysis.competition}%
+                      </div>
+                    </div>
+                    <div className="text-center p-3 bg-surface rounded-lg">
+                      <div className="text-sm text-foreground-muted mb-1">Execution</div>
+                      <div className={`text-lg font-bold ${getScoreColor(idea.analysis.execution)}`}>
+                        {idea.analysis.execution}%
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Insights */}
+                  <div className="space-y-2">
+                    <h4 className="font-medium text-foreground">Key Insights</h4>
+                    <ul className="space-y-1">
+                      {idea.analysis.insights.slice(0, 3).map((insight, index) => (
+                        <li key={index} className="text-sm text-foreground-muted flex items-start gap-2">
+                          <div className="w-1 h-1 bg-brand rounded-full mt-2 flex-shrink-0"></div>
+                          {insight}
+                        </li>
+                      ))}
+                    </ul>
                   </div>
                 </Card>
-              </div>
-
-              {/* Mobile Card View */}
-              <div className="md:hidden space-y-4">
-                {ideas.map((idea) => {
-                  const overallScore = getOverallScore(idea.analysis);
-                  return (
-                    <Card key={idea.id} className="p-4">
-                      <div className="space-y-3">
-                        <div>
-                          <h3 className="font-medium text-foreground mb-1">{idea.ideaText}</h3>
-                          <p className="text-sm text-foreground-muted flex items-center gap-2">
-                            <Calendar className="w-4 h-4" />
-                            {formatDate(idea.createdAt)}
-                          </p>
-                        </div>
-                        
-                        <div className="flex items-center gap-4">
-                          <div>
-                            <p className="text-xs text-foreground-muted">Market</p>
-                            <p className={`font-semibold ${getScoreColor(idea.analysis.market_potential)}`}>
-                              {idea.analysis.market_potential}%
-                            </p>
-                          </div>
-                          <div>
-                            <p className="text-xs text-foreground-muted">Execution</p>
-                            <p className={`font-semibold ${getScoreColor(idea.analysis.execution)}`}>
-                              {idea.analysis.execution}%
-                            </p>
-                          </div>
-                          <div>
-                            <p className="text-xs text-foreground-muted">Overall</p>
-                            <Badge 
-                              variant="secondary" 
-                              className={`font-semibold ${getScoreColor(overallScore)}`}
-                            >
-                              {overallScore}%
-                            </Badge>
-                          </div>
-                        </div>
-
-                        <Button
-                          variant="ghost"
-                          className="w-full text-brand hover:text-brand/80"
-                          onClick={() => router.push(`/dashboard/idea/${idea.id}`)}
-                        >
-                          <Eye className="w-4 h-4 mr-2" />
-                          View Report
-                        </Button>
-                      </div>
-                    </Card>
-                  );
-                })}
-              </div>
-            </>
+              ))}
+            </div>
           )}
-        </div>
-
-        {/* Support & Upgrade Section */}
-        <div className="grid md:grid-cols-2 gap-6">
-          <Card className="p-6">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="p-2 bg-warning/20 rounded-lg">
-                <HelpCircle className="w-5 h-5 text-warning" />
-              </div>
-              <div>
-                <h3 className="font-semibold text-foreground">Need Help?</h3>
-                <p className="text-sm text-foreground-muted">Get support and report issues</p>
-              </div>
-            </div>
-            <div className="space-y-2">
-              <Button variant="ghost" className="w-full justify-start">
-                Contact Support
-              </Button>
-              <Button variant="ghost" className="w-full justify-start">
-                Report a Bug
-              </Button>
-            </div>
-          </Card>
-
-          <Card className="p-6">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="p-2 bg-brand/20 rounded-lg">
-                <Crown className="w-5 h-5 text-brand" />
-              </div>
-              <div>
-                <h3 className="font-semibold text-foreground">Upgrade to Pro</h3>
-                <p className="text-sm text-foreground-muted">Unlock custom MVP plans, deeper scoring, and more</p>
-              </div>
-            </div>
-            <Button className="w-full btn-primary">
-              <Zap className="w-4 h-4 mr-2" />
-              Join Waitlist
-            </Button>
-          </Card>
         </div>
       </div>
 
       {/* Buy Tokens Modal */}
       <BuyTokensModal 
-        isOpen={isBuyTokensModalOpen}
-        onClose={handleBuyTokensModalClose}
+        isOpen={isBuyTokensModalOpen} 
+        onClose={handleBuyTokensModalClose} 
       />
     </div>
   );

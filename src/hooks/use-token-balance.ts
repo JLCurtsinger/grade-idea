@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
+import { logTokenFetch, logTokenUpdate, logTokenError, logTokenDisplay } from '@/lib/utils';
 
 export const useTokenBalance = () => {
   const { user } = useAuth();
@@ -24,20 +25,16 @@ export const useTokenBalance = () => {
       if (docSnap.exists()) {
         const balance = docSnap.data().token_balance ?? 0;
         setTokenBalance(balance);
-        console.log('Token balance fetched from Firestore:', { 
-          uid: user.uid, 
-          balance,
-          timestamp: new Date().toISOString()
-        });
+        logTokenFetch(user.uid, balance, 'firestore');
+        logTokenDisplay(user.uid, balance, window.location.pathname);
       } else {
         setTokenBalance(0);
-        console.log('User document not found, setting balance to 0:', { 
-          uid: user.uid,
-          timestamp: new Date().toISOString()
-        });
+        logTokenFetch(user.uid, 0, 'firestore_not_found');
+        logTokenDisplay(user.uid, 0, window.location.pathname);
       }
     } catch (error) {
       console.error('Error fetching token balance:', error);
+      logTokenError(user?.uid || 'unknown', error instanceof Error ? error.message : 'Unknown error', 'fetch_token_balance');
       setTokenBalance(0);
     } finally {
       setLoading(false);
@@ -65,21 +62,18 @@ export const useTokenBalance = () => {
 
   // Optimistically update balance (for immediate UI feedback)
   const updateBalanceOptimistically = (newBalance: number) => {
-    console.log('Optimistically updating token balance:', { 
-      previousBalance: tokenBalance, 
-      newBalance,
-      timestamp: new Date().toISOString()
-    });
+    const previousBalance = tokenBalance;
+    logTokenUpdate(user?.uid || 'unknown', previousBalance || 0, newBalance, 'optimistic');
     setTokenBalance(newBalance);
+    
+    // Always force refresh from Firestore after optimistic update
+    forceRefreshFromFirestore();
   };
 
   // Revert optimistic update and force refresh from Firestore
   const revertBalance = async (originalBalance: number) => {
-    console.log('Reverting optimistic token balance update:', { 
-      currentBalance: tokenBalance, 
-      originalBalance,
-      timestamp: new Date().toISOString()
-    });
+    const currentBalance = tokenBalance;
+    logTokenUpdate(user?.uid || 'unknown', currentBalance || 0, originalBalance, 'revert');
     
     // First revert to original balance
     setTokenBalance(originalBalance);
@@ -100,20 +94,16 @@ export const useTokenBalance = () => {
       if (docSnap.exists()) {
         const balance = docSnap.data().token_balance ?? 0;
         setTokenBalance(balance);
-        console.log('Force refresh completed - new balance:', { 
-          uid: user.uid, 
-          balance,
-          timestamp: new Date().toISOString()
-        });
+        logTokenFetch(user.uid, balance, 'force_refresh');
+        logTokenDisplay(user.uid, balance, window.location.pathname);
       } else {
         setTokenBalance(0);
-        console.log('Force refresh - user document not found, setting to 0:', { 
-          uid: user.uid,
-          timestamp: new Date().toISOString()
-        });
+        logTokenFetch(user.uid, 0, 'force_refresh_not_found');
+        logTokenDisplay(user.uid, 0, window.location.pathname);
       }
     } catch (error) {
       console.error('Error during force refresh:', error);
+      logTokenError(user.uid, error instanceof Error ? error.message : 'Unknown error', 'force_refresh');
     }
   };
 
