@@ -31,6 +31,21 @@ const validateFirebaseConfig = () => {
 const apps = getApps();
 
 if (!apps.length) {
+  // Log environment variable status before initialization
+  console.log('[FirebaseAdmin] Checking environment variables:');
+  console.log('[FirebaseAdmin] FIREBASE_PROJECT_ID:', {
+    present: !!process.env.FIREBASE_PROJECT_ID,
+    preview: process.env.FIREBASE_PROJECT_ID ? `${process.env.FIREBASE_PROJECT_ID.substring(0, 10)}...` : 'undefined'
+  });
+  console.log('[FirebaseAdmin] FIREBASE_CLIENT_EMAIL:', {
+    present: !!process.env.FIREBASE_CLIENT_EMAIL,
+    preview: process.env.FIREBASE_CLIENT_EMAIL ? `${process.env.FIREBASE_CLIENT_EMAIL.substring(0, 20)}...` : 'undefined'
+  });
+  console.log('[FirebaseAdmin] FIREBASE_PRIVATE_KEY:', {
+    present: !!process.env.FIREBASE_PRIVATE_KEY,
+    length: process.env.FIREBASE_PRIVATE_KEY ? process.env.FIREBASE_PRIVATE_KEY.length : 0
+  });
+  
   try {
     const serviceAccount = validateFirebaseConfig();
     
@@ -39,7 +54,7 @@ if (!apps.length) {
       databaseURL: `https://${serviceAccount.projectId}.firebaseio.com`,
     });
     
-    console.log('Firebase Admin SDK initialized successfully');
+    console.log('✅ Firebase Admin SDK initialized with full credentials');
     console.log('Firebase Admin SDK config:', {
       projectId: serviceAccount.projectId,
       clientEmail: serviceAccount.clientEmail,
@@ -52,7 +67,11 @@ if (!apps.length) {
     // During build time or when env vars are missing, we'll initialize without credentials
     // This allows the build to complete, but Firebase operations will fail at runtime
     if (process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'production') {
-      console.warn('Initializing Firebase Admin SDK without credentials - operations will fail at runtime');
+      console.warn('⚠️ Firebase Admin SDK initialized WITHOUT credentials (fallback path)');
+      console.warn('[FirebaseAdmin] Fallback triggered because:', {
+        nodeEnv: process.env.NODE_ENV,
+        error: error instanceof Error ? error.message : 'Unknown error'
+      });
       try {
         initializeApp({
           projectId: process.env.FIREBASE_PROJECT_ID || 'placeholder',
@@ -80,6 +99,11 @@ const isFirebaseInitialized = () => {
 
 export const adminAuth = getAuth();
 export const adminDb = getFirestore();
+
+// One-time startup log (guarded for test environment)
+if (process.env.NODE_ENV !== 'test') {
+  console.log('[FirebaseAdmin] Initialization completed — Firestore + Auth clients are ready');
+}
 
 // Increment user's token balance using Firestore transaction
 export const incrementUserTokens = async (userId: string, tokenCount: number): Promise<void> => {
