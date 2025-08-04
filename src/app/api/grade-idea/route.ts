@@ -81,16 +81,67 @@ export async function POST(request: NextRequest) {
     };
     console.log('Idea analysis completed successfully');
 
+    // Ensure we reach the token deduction logic
+    console.log('=== REACHING TOKEN DEDUCTION LOGIC ===');
+    console.log('About to deduct token:', { uid, currentBalance: tokenBalance });
+
     // Deduct 1 token and update Firestore
     const newTokenBalance = tokenBalance - 1;
     console.log('Deducting 1 token:', { uid, previousBalance: tokenBalance, newBalance: newTokenBalance });
     logTokenUpdate(uid, tokenBalance, newTokenBalance, 'deduction');
     
-    await userRef.update({
-      token_balance: newTokenBalance,
-      updated_at: new Date(),
-    });
-    console.log('Token balance updated in Firestore successfully');
+    // Validate UID match and log Firestore path
+    console.log('Token deduction - UID being used:', uid);
+    console.log('Firestore path:', userRef.path);
+    console.log('Admin DB initialized:', !!adminDb);
+    
+    try {
+      console.log('Attempting Firestore token deduction:', {
+        uid,
+        oldBalance: tokenBalance,
+        newTokenBalance,
+        userRefPath: userRef.path
+      });
+
+      await userRef.update({
+        token_balance: newTokenBalance,
+        updated_at: new Date(),
+      });
+
+      console.log('Token balance updated in Firestore successfully');
+
+      // Verify the update by reading back the value
+      const verifyDoc = await userRef.get();
+      const verifiedBalance = verifyDoc.data()?.token_balance || 0;
+      const verifiedUpdatedAt = verifyDoc.data()?.updated_at;
+      
+      console.log('Post-update Firestore check:', {
+        uid,
+        expectedBalance: newTokenBalance,
+        actualBalance: verifiedBalance,
+        updateSuccessful: verifiedBalance === newTokenBalance,
+        verifiedUpdatedAt,
+        fullDocument: verifyDoc.data()
+      });
+
+      if (verifiedBalance !== newTokenBalance) {
+        console.error('CRITICAL: Firestore update verification failed!', {
+          uid,
+          expected: newTokenBalance,
+          actual: verifiedBalance,
+          difference: newTokenBalance - verifiedBalance
+        });
+      }
+
+    } catch (err) {
+      console.error('Firestore token_balance update failed:', {
+        uid,
+        error: err,
+        errorMessage: err instanceof Error ? err.message : 'Unknown error',
+        errorStack: err instanceof Error ? err.stack : undefined
+      });
+      throw err; // Re-throw to trigger the outer catch block
+    }
 
     // Store the idea and analysis in Firestore
     const ideaRef = adminDb
