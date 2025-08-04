@@ -77,8 +77,8 @@ export const PricingSection = () => {
     setSelectedPlan(planName);
     
     if (!user) {
-      // TODO: Show sign-in modal or redirect to sign-in
-      console.log('User not signed in');
+      // Show sign-in prompt
+      alert('Please sign in to purchase tokens. You can sign in using the button in the header.');
       return;
     }
     
@@ -176,7 +176,14 @@ export const PricingSection = () => {
                     onClick={() => handlePlanSelect(plan.name)}
                     disabled={isLoading}
                   >
-                    {isLoading ? 'Processing...' : plan.buttonText}
+                    {isLoading ? (
+                      <>
+                        <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2"></div>
+                        Processing...
+                      </>
+                    ) : (
+                      plan.buttonText
+                    )}
                   </Button>
                 </div>
               </Card>
@@ -232,7 +239,14 @@ export const PricingSection = () => {
                     onClick={() => handlePlanSelect(plan.name)}
                     disabled={isLoading}
                   >
-                    {isLoading ? 'Processing...' : plan.buttonText}
+                    {isLoading ? (
+                      <>
+                        <div className="w-4 h-4 border-2 border-brand/30 border-t-brand rounded-full animate-spin mr-2"></div>
+                        Processing...
+                      </>
+                    ) : (
+                      plan.buttonText
+                    )}
                   </Button>
                 </div>
               </Card>

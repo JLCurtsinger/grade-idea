@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
+import { useStripeCheckout } from "@/hooks/use-stripe-checkout";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -45,6 +46,7 @@ interface UserProfile {
 export default function DashboardPage() {
   const { user } = useAuth();
   const router = useRouter();
+  const { createCheckoutSession, isLoading, error } = useStripeCheckout();
   const [ideas, setIdeas] = useState<Idea[]>([]);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
@@ -120,6 +122,16 @@ export default function DashboardPage() {
     });
   };
 
+  const handleBuyTokens = async () => {
+    if (!user) {
+      alert('Please sign in to purchase tokens. You can sign in using the button in the header.');
+      return;
+    }
+    
+    // Default to "Popular Pack" for dashboard quick buy
+    await createCheckoutSession('Popular Pack');
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -143,6 +155,15 @@ export default function DashboardPage() {
           <h1 className="text-3xl font-bold text-foreground mb-2">Dashboard</h1>
           <p className="text-foreground-muted">Manage your ideas and track your progress</p>
         </div>
+
+        {/* Error Display */}
+        {error && (
+          <div className="mb-6">
+            <div className="max-w-md mx-auto p-4 bg-danger/10 border border-danger/30 rounded-lg">
+              <p className="text-danger text-sm">{error}</p>
+            </div>
+          </div>
+        )}
 
         {/* User Info & Token Balance */}
         <div className="grid md:grid-cols-3 gap-6 mb-8">
@@ -168,9 +189,22 @@ export default function DashboardPage() {
                 <p className="text-2xl font-bold text-success">{profile?.token_balance}</p>
               </div>
             </div>
-            <Button className="w-full btn-primary">
-              <Plus className="w-4 h-4 mr-2" />
-              Buy Tokens
+            <Button 
+              className="w-full btn-primary"
+              onClick={handleBuyTokens}
+              disabled={isLoading}
+            >
+              {isLoading ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2"></div>
+                  Processing...
+                </>
+              ) : (
+                <>
+                  <Plus className="w-4 h-4 mr-2" />
+                  Buy Tokens
+                </>
+              )}
             </Button>
           </Card>
 
