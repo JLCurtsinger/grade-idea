@@ -16,6 +16,7 @@ export default function HomePage() {
   const { user } = useAuth();
   const [tokenBalance, setTokenBalance] = useState<number | null>(null);
   const [scansRemaining, setScansRemaining] = useState(2);
+  const [analysisResult, setAnalysisResult] = useState<any>(null);
 
   // Fetch token balance for logged-in users
   useEffect(() => {
@@ -59,6 +60,48 @@ export default function HomePage() {
         alert('You need at least 1 token to analyze an idea. Please purchase more tokens.');
         return;
       }
+
+      // Call the grade-idea API for signed-in users
+      try {
+        const idToken = await user.getIdToken();
+        const response = await fetch('/api/grade-idea', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${idToken}`,
+          },
+          body: JSON.stringify({
+            idea,
+            idToken,
+          }),
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Failed to analyze idea');
+        }
+
+        const result = await response.json();
+        setAnalysisResult(result.analysis);
+
+        // Refresh token balance after successful analysis
+        const fetchTokens = async () => {
+          try {
+            const docRef = doc(db, "users", user.uid);
+            const docSnap = await getDoc(docRef);
+            if (docSnap.exists()) {
+              setTokenBalance(docSnap.data().token_balance ?? 0);
+            }
+          } catch (error) {
+            console.error('Error refreshing token balance:', error);
+          }
+        };
+        fetchTokens();
+      } catch (error) {
+        console.error('Error analyzing idea:', error);
+        alert('Failed to analyze idea. Please try again.');
+        return;
+      }
     }
 
     setCurrentIdea(idea);
@@ -79,7 +122,7 @@ export default function HomePage() {
         </>
       ) : (
         <>
-          <ResultsSection idea={currentIdea} />
+          <ResultsSection idea={currentIdea} analysis={analysisResult} />
           <ConversionFooter 
             scansRemaining={scansRemaining}
             onTryAnother={handleTryAnother}

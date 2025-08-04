@@ -18,9 +18,18 @@ import {
 
 interface ResultsSectionProps {
   idea: string;
+  analysis?: {
+    overall_score: number;
+    market_potential: number;
+    competition: number;
+    monetization: number;
+    execution: number;
+    recommendation: string;
+    insights: string[];
+  };
 }
 
-export const ResultsSection = ({ idea: _idea }: ResultsSectionProps) => {
+export const ResultsSection = ({ idea, analysis: apiAnalysis }: ResultsSectionProps) => {
   const [animateScores, setAnimateScores] = useState(false);
 
   useEffect(() => {
@@ -28,16 +37,31 @@ export const ResultsSection = ({ idea: _idea }: ResultsSectionProps) => {
     return () => clearTimeout(timer);
   }, []);
 
-  // Mock data - would come from API in real app
-  const analysis = {
+  // Use real analysis data if available, otherwise fall back to mock data
+  const analysisData = apiAnalysis || {
+    overall_score: 85,
+    market_potential: 85,
+    competition: 72,
+    monetization: 90,
+    execution: 68,
     recommendation: "Worth Building",
-    recommendationColor: "success" as "success" | "warning" | "danger",
-    summary: "Your AI tool for digital nomads addresses a growing market with clear monetization paths. The remote work trend provides strong tailwinds, though competition is emerging.",
+    insights: [
+      'Market size appears substantial',
+      'Competition is moderate',
+      'Clear monetization path identified',
+      'Execution complexity is manageable'
+    ]
+  };
+
+  const analysis = {
+    recommendation: analysisData.recommendation,
+    recommendationColor: analysisData.recommendation === "Worth Building" ? "success" as "success" | "warning" | "danger" : "warning" as "success" | "warning" | "danger",
+    summary: `Analysis of "${idea}": ${analysisData.insights.join('. ')}`,
     similarProducts: [
-      { name: "Nomad List", logo: "🌍" },
-      { name: "Remote Year", logo: "✈️" },
-      { name: "WiFi Tribe", logo: "📶" },
-      { name: "Hacker Paradise", logo: "💻" }
+      { name: "Competitor A", logo: "🏢" },
+      { name: "Competitor B", logo: "💼" },
+      { name: "Competitor C", logo: "📈" },
+      { name: "Competitor D", logo: "🎯" }
     ],
     monetization: ["Subscription", "Marketplace", "Premium Features"],
     gtmChannels: ["Content Marketing", "Community", "Partnerships"],
@@ -45,42 +69,42 @@ export const ResultsSection = ({ idea: _idea }: ResultsSectionProps) => {
       {
         id: "market",
         label: "Market Potential",
-        score: 85,
+        score: analysisData.market_potential,
         icon: TrendingUp,
         color: "success" as const,
-        justification: "Large and growing remote work market with 50M+ digital nomads globally"
+        justification: analysisData.insights[0] || "Market analysis based on current trends"
       },
       {
         id: "competition",
         label: "Competitive Advantage",
-        score: 72,
+        score: analysisData.competition,
         icon: Target,
         color: "brand" as const,
-        justification: "Some existing players but room for differentiation with AI features"
+        justification: analysisData.insights[1] || "Competitive landscape analysis"
       },
       {
         id: "monetization",
         label: "Monetization Clarity",
-        score: 90,
+        score: analysisData.monetization,
         icon: DollarSign,
         color: "success" as const,
-        justification: "Multiple clear revenue streams with proven willingness to pay"
+        justification: analysisData.insights[2] || "Revenue model assessment"
       },
       {
         id: "execution",
         label: "Execution Difficulty",
-        score: 68,
+        score: analysisData.execution,
         icon: Zap,
         color: "warning" as const,
-        justification: "Moderate technical complexity but requires community building"
+        justification: analysisData.insights[3] || "Implementation complexity evaluation"
       },
       {
-        id: "growth",
-        label: "Growth Potential",
-        score: 88,
+        id: "overall",
+        label: "Overall Score",
+        score: analysisData.overall_score,
         icon: Users,
         color: "success" as const,
-        justification: "Strong network effects and viral potential in nomad community"
+        justification: "Comprehensive evaluation of all factors"
       }
     ]
   };
