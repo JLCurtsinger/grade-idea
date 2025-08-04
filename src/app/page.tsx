@@ -62,6 +62,13 @@ export default function HomePage() {
         const idToken = await user.getIdToken();
         console.log('Calling grade-idea API:', { uid: user.uid, ideaLength: idea.length });
         
+        // TEST 4: Frontend UID Verification
+        console.log('=== FRONTEND UID VERIFICATION ===');
+        console.log('Frontend UID:', user.uid);
+        console.log('Frontend UID type:', typeof user.uid);
+        console.log('Frontend UID length:', user.uid.length);
+        console.log('Frontend UID matches pattern:', /^[a-zA-Z0-9]{28}$/.test(user.uid));
+        
         const response = await fetch('/api/grade-idea', {
           method: 'POST',
           headers: {

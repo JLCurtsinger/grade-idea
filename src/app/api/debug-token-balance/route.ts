@@ -20,6 +20,24 @@ export async function GET(request: NextRequest) {
     console.log('Debug endpoint - UID from token:', uid);
     console.log('Debug endpoint - Admin DB initialized:', !!adminDb);
     
+    // TEST 1: Hardcoded Write Check
+    console.log('=== TESTING FIRESTORE WRITE ===');
+    try {
+      await adminDb.collection('debug-check').doc('test-write').set({
+        timestamp: new Date(),
+        test: 'write-from-api',
+        uid: uid,
+        message: 'Testing if we can write to the correct Firestore instance'
+      });
+      console.log('✅ Hardcoded write test SUCCESSFUL');
+    } catch (writeError) {
+      console.error('❌ Hardcoded write test FAILED:', writeError);
+      return NextResponse.json({
+        error: 'Firestore write test failed',
+        writeError: writeError instanceof Error ? writeError.message : 'Unknown error'
+      }, { status: 500 });
+    }
+    
     // Read the current token balance from Firestore
     const userRef = adminDb.collection('users').doc(uid);
     const userDoc = await userRef.get();
@@ -29,7 +47,8 @@ export async function GET(request: NextRequest) {
         uid,
         exists: false,
         token_balance: 0,
-        message: 'User document not found'
+        message: 'User document not found',
+        firestore_path: userRef.path
       });
     }
     
@@ -50,7 +69,8 @@ export async function GET(request: NextRequest) {
       token_balance: tokenBalance,
       updated_at: updatedAt,
       firestore_path: userRef.path,
-      full_document: userData
+      full_document: userData,
+      write_test: 'successful'
     });
     
   } catch (error) {

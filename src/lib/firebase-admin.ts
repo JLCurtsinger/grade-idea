@@ -36,9 +36,16 @@ if (!apps.length) {
     
     initializeApp({
       credential: cert(serviceAccount),
+      databaseURL: `https://${serviceAccount.projectId}.firebaseio.com`,
     });
     
     console.log('Firebase Admin SDK initialized successfully');
+    console.log('Firebase Admin SDK config:', {
+      projectId: serviceAccount.projectId,
+      clientEmail: serviceAccount.clientEmail,
+      hasPrivateKey: !!serviceAccount.privateKey,
+      databaseURL: `https://${serviceAccount.projectId}.firebaseio.com`
+    });
   } catch (error) {
     console.error('Failed to initialize Firebase Admin SDK:', error);
     

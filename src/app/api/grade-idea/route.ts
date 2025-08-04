@@ -35,6 +35,13 @@ export async function POST(request: NextRequest) {
     const decoded = await verifyFirebaseIdToken(idToken);
     const uid = decoded.uid;
     console.log('User authenticated:', { uid });
+    
+    // TEST 2: UID Verification
+    console.log('=== UID VERIFICATION ===');
+    console.log('API UID:', uid);
+    console.log('API UID type:', typeof uid);
+    console.log('API UID length:', uid.length);
+    console.log('API UID matches pattern:', /^[a-zA-Z0-9]{28}$/.test(uid));
 
     // Read current token balance from Firestore
     const userRef = adminDb.collection('users').doc(uid);
@@ -103,11 +110,13 @@ export async function POST(request: NextRequest) {
         userRefPath: userRef.path
       });
 
-      await userRef.update({
+      // TEST 3: Check Firestore Write Result
+      const updateResult = await userRef.update({
         token_balance: newTokenBalance,
         updated_at: new Date(),
       });
-
+      
+      console.log('Firestore update result:', updateResult);
       console.log('Token balance updated in Firestore successfully');
 
       // Verify the update by reading back the value
