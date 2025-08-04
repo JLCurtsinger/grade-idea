@@ -13,7 +13,8 @@ import {
   signOut,
   onAuthStateChanged
 } from 'firebase/auth';
-import { auth } from '@/lib/firebase';
+import { auth, db } from '@/lib/firebase';
+import { doc, setDoc } from 'firebase/firestore';
 
 interface AuthContextType {
   user: User | null;
@@ -52,11 +53,34 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [resetCode, setResetCode] = useState<string | null>(null);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
       setUser(user);
       setLoading(false);
+      
       if (user) {
         setIsModalOpen(false);
+        
+        // Transfer guest scans to user account
+        const guestScansUsed = parseInt(localStorage.getItem("guestScansUsed") || "0", 10);
+        const remaining = Math.max(0, 2 - guestScansUsed);
+        
+        if (remaining > 0) {
+          try {
+            const userRef = doc(db, "users", user.uid);
+            await setDoc(userRef, { 
+              token_balance: remaining,
+              created_at: new Date(),
+              updated_at: new Date()
+            }, { merge: true });
+            
+            // Clear guest scans from localStorage
+            localStorage.removeItem("guestScansUsed");
+            
+            console.log(`Transferred ${remaining} free scans to user account`);
+          } catch (error) {
+            console.error('Error transferring guest scans:', error);
+          }
+        }
       }
     });
 

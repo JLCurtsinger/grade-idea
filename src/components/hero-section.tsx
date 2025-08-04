@@ -7,9 +7,10 @@ import { ArrowRight, Sparkles } from "lucide-react";
 
 interface HeroSectionProps {
   onSubmit: (idea: string) => void;
+  tokenBalance?: number | null;
 }
 
-export const HeroSection = ({ onSubmit }: HeroSectionProps) => {
+export const HeroSection = ({ onSubmit, tokenBalance }: HeroSectionProps) => {
   const [idea, setIdea] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
@@ -85,6 +86,13 @@ export const HeroSection = ({ onSubmit }: HeroSectionProps) => {
                   )}
                 </Button>
               </div>
+
+              {/* Token Balance Display */}
+              {tokenBalance !== null && (
+                <p className="text-sm text-foreground-muted text-center">
+                  You have {tokenBalance} tokens remaining
+                </p>
+              )}
 
               {/* Suggestion Chips */}
               <div className="flex flex-wrap gap-2">

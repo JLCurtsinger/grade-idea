@@ -37,7 +37,7 @@ export const ConversionFooter = ({ scansRemaining, onTryAnother }: ConversionFoo
             
             <Button className="btn-primary">
               <Zap className="w-4 h-4 mr-2" />
-              Buy More Scans
+              Buy More Tokens
             </Button>
           </div>
         </div>
