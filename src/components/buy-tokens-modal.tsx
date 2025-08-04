@@ -5,7 +5,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { X, Coins } from "lucide-react";
-import { PricingButton } from "@/components/pricing-button";
+import { useStripeCheckout } from "@/hooks/use-stripe-checkout";
+import { useAuth } from "@/context/AuthContext";
 
 interface BuyTokensModalProps {
   isOpen: boolean;
@@ -38,9 +39,18 @@ const tokenPlans = [
 
 export const BuyTokensModal = ({ isOpen, onClose }: BuyTokensModalProps) => {
   const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
+  const { createCheckoutSession, isLoading } = useStripeCheckout();
+  const { user } = useAuth();
 
   const handlePlanSelect = async (planName: string) => {
-    setSelectedPlan(planName);
+    console.log('Modal selected plan:', planName);
+    
+    if (!user) {
+      alert('Please sign in to purchase tokens. You can sign in using the button in the header.');
+      return;
+    }
+
+    await createCheckoutSession(planName);
     onClose();
   };
 
@@ -102,11 +112,20 @@ export const BuyTokensModal = ({ isOpen, onClose }: BuyTokensModalProps) => {
                 </div>
                 
                 <div className="mt-4">
-                  <PricingButton
-                    planName={plan.name}
-                    buttonText="Buy Tokens"
+                  <Button
                     className="w-full"
-                  />
+                    onClick={() => handlePlanSelect(plan.name)}
+                    disabled={isLoading}
+                  >
+                    {isLoading ? (
+                      <>
+                        <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2"></div>
+                        Processing...
+                      </>
+                    ) : (
+                      "Buy Tokens"
+                    )}
+                  </Button>
                 </div>
               </Card>
             ))}
