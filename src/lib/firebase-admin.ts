@@ -1,6 +1,7 @@
 import { initializeApp, getApps, cert } from 'firebase-admin/app';
 import { getFirestore } from 'firebase-admin/firestore';
 import { getAuth } from 'firebase-admin/auth';
+import { getApp } from 'firebase-admin/app';
 
 // Validate Firebase Admin SDK environment variables
 const validateFirebaseConfig = () => {
@@ -98,7 +99,7 @@ const isFirebaseInitialized = () => {
 };
 
 export const adminAuth = getAuth();
-export const adminDb = getFirestore();
+export const adminDb = getFirestore(getApp());
 
 // One-time startup log (guarded for test environment)
 if (process.env.NODE_ENV !== 'test') {
