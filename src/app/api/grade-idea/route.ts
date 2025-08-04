@@ -102,6 +102,7 @@ export async function POST(request: NextRequest) {
     // Deduct 1 token and update Firestore
     const newTokenBalance = tokenBalance - 1;
     console.log('Deducting 1 token:', { uid, previousBalance: tokenBalance, newBalance: newTokenBalance });
+    console.log('[TOKEN_TRANSACTION] Context: deduction | User: ' + uid + ' | Tokens: -1');
     logTokenUpdate(uid, tokenBalance, newTokenBalance, 'deduction');
     
     // Validate UID match and log Firestore path

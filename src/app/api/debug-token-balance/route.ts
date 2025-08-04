@@ -55,11 +55,13 @@ export async function GET(request: NextRequest) {
     const userData = userDoc.data();
     const tokenBalance = userData?.token_balance || 0;
     const updatedAt = userData?.updated_at;
+    const lastTokenSource = userData?.last_token_source || 'unknown';
     
     console.log('Debug endpoint - Firestore data:', {
       uid,
       token_balance: tokenBalance,
       updated_at: updatedAt,
+      last_token_source: lastTokenSource,
       fullDocument: userData
     });
     
@@ -68,6 +70,7 @@ export async function GET(request: NextRequest) {
       exists: true,
       token_balance: tokenBalance,
       updated_at: updatedAt,
+      last_token_source: lastTokenSource,
       firestore_path: userRef.path,
       full_document: userData,
       write_test: 'successful'

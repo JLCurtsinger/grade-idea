@@ -127,10 +127,12 @@ if (process.env.NODE_ENV !== 'test') {
 }
 
 // Increment user's token balance using Firestore transaction
-export const incrementUserTokens = async (userId: string, tokenCount: number): Promise<void> => {
+export const incrementUserTokens = async (userId: string, tokenCount: number, context: 'onboarding' | 'purchase' | 'test' | 'unknown' = 'unknown'): Promise<void> => {
   if (!isFirebaseInitialized()) {
     throw new Error('Firebase Admin SDK not initialized');
   }
+
+  console.log(`[TOKEN_TRANSACTION] Context: ${context} | User: ${userId} | Tokens: ${tokenCount}`);
 
   const userRef = adminDb.collection('users').doc(userId);
   
@@ -143,14 +145,18 @@ export const incrementUserTokens = async (userId: string, tokenCount: number): P
         token_balance: tokenCount,
         created_at: new Date(),
         updated_at: new Date(),
+        last_token_source: context,
       });
+      console.log(`[TOKEN_TRANSACTION] Created new user document with ${tokenCount} tokens | Context: ${context}`);
     } else {
       // Increment existing token balance
       const currentBalance = userDoc.data()?.token_balance || 0;
       transaction.update(userRef, {
         token_balance: currentBalance + tokenCount,
         updated_at: new Date(),
+        last_token_source: context,
       });
+      console.log(`[TOKEN_TRANSACTION] Incremented existing balance from ${currentBalance} to ${currentBalance + tokenCount} | Context: ${context}`);
     }
   });
 };

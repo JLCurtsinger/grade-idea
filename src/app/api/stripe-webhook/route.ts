@@ -143,7 +143,7 @@ export async function POST(request: NextRequest) {
 
         // Increment user's token balance
         console.log(`Incrementing ${tokenCount} tokens for user ${userId}`);
-        await incrementUserTokens(userId, tokenCount);
+        await incrementUserTokens(userId, tokenCount, 'purchase');
         
         console.log(`Successfully added ${tokenCount} tokens to user ${userId}`);
         

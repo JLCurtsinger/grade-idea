@@ -14,7 +14,7 @@ import {
   onAuthStateChanged
 } from 'firebase/auth';
 import { auth, db } from '@/lib/firebase';
-import { doc, setDoc } from 'firebase/firestore';
+import { doc, setDoc, getDoc } from 'firebase/firestore';
 
 interface AuthContextType {
   user: User | null;
@@ -60,23 +60,35 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       if (user) {
         setIsModalOpen(false);
         
-        // Transfer guest scans to user account
+        // Transfer guest scans to user account - ONLY if user document doesn't exist
         const guestScansUsed = parseInt(localStorage.getItem("guestScansUsed") || "0", 10);
         const remaining = Math.max(0, 2 - guestScansUsed);
         
         if (remaining > 0) {
           try {
             const userRef = doc(db, "users", user.uid);
-            await setDoc(userRef, { 
-              token_balance: remaining,
-              created_at: new Date(),
-              updated_at: new Date()
-            }, { merge: true });
             
-            // Clear guest scans from localStorage
+            // Check if user document already exists
+            const userSnap = await getDoc(userRef);
+            
+            if (!userSnap.exists()) {
+              // Only create user document with tokens if it doesn't exist
+              await setDoc(userRef, { 
+                token_balance: remaining,
+                created_at: new Date(),
+                updated_at: new Date(),
+                last_token_source: 'onboarding'
+              });
+              
+              console.log(`[TOKEN_TRANSACTION] Context: onboarding | User: ${user.uid} | Tokens: ${remaining}`);
+              console.log(`Transferred ${remaining} free scans to new user account`);
+            } else {
+              console.log(`[TOKEN_TRANSACTION] Context: onboarding | User: ${user.uid} | Skipped - user document already exists`);
+            }
+            
+            // Clear guest scans from localStorage regardless
             localStorage.removeItem("guestScansUsed");
             
-            console.log(`Transferred ${remaining} free scans to user account`);
           } catch (error) {
             console.error('Error transferring guest scans:', error);
           }
