@@ -24,10 +24,17 @@ export const useTokenBalance = () => {
       if (docSnap.exists()) {
         const balance = docSnap.data().token_balance ?? 0;
         setTokenBalance(balance);
-        console.log('Token balance fetched from Firestore:', { uid: user.uid, balance });
+        console.log('Token balance fetched from Firestore:', { 
+          uid: user.uid, 
+          balance,
+          timestamp: new Date().toISOString()
+        });
       } else {
         setTokenBalance(0);
-        console.log('User document not found, setting balance to 0');
+        console.log('User document not found, setting balance to 0:', { 
+          uid: user.uid,
+          timestamp: new Date().toISOString()
+        });
       }
     } catch (error) {
       console.error('Error fetching token balance:', error);
@@ -52,7 +59,8 @@ export const useTokenBalance = () => {
   const updateBalanceOptimistically = (newBalance: number) => {
     console.log('Optimistically updating token balance:', { 
       previousBalance: tokenBalance, 
-      newBalance 
+      newBalance,
+      timestamp: new Date().toISOString()
     });
     setTokenBalance(newBalance);
   };
@@ -61,7 +69,8 @@ export const useTokenBalance = () => {
   const revertBalance = (originalBalance: number) => {
     console.log('Reverting optimistic token balance update:', { 
       currentBalance: tokenBalance, 
-      originalBalance 
+      originalBalance,
+      timestamp: new Date().toISOString()
     });
     setTokenBalance(originalBalance);
   };
@@ -78,10 +87,17 @@ export const useTokenBalance = () => {
       if (docSnap.exists()) {
         const balance = docSnap.data().token_balance ?? 0;
         setTokenBalance(balance);
-        console.log('Force refresh completed - new balance:', { uid: user.uid, balance });
+        console.log('Force refresh completed - new balance:', { 
+          uid: user.uid, 
+          balance,
+          timestamp: new Date().toISOString()
+        });
       } else {
         setTokenBalance(0);
-        console.log('Force refresh - user document not found, setting to 0');
+        console.log('Force refresh - user document not found, setting to 0:', { 
+          uid: user.uid,
+          timestamp: new Date().toISOString()
+        });
       }
     } catch (error) {
       console.error('Error during force refresh:', error);

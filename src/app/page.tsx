@@ -75,29 +75,32 @@ export default function HomePage() {
         const result = await response.json();
         setAnalysisResult(result.analysis);
 
-        // Update token balance with the actual remaining tokens from the API
+        // Use only updatedTokenBalance as the single source of truth
         if (result.success && result.updatedTokenBalance !== undefined) {
-          updateBalanceOptimistically(result.updatedTokenBalance);
-          console.log('Token balance updated from API response:', {
+          console.log('=== TOKEN BALANCE UPDATE ===');
+          console.log('Backend response received:', {
+            success: result.success,
             updatedTokenBalance: result.updatedTokenBalance,
-            tokensRemaining: result.tokens_remaining
+            tokens_remaining: result.tokens_remaining
+          });
+          
+          // Update token balance with the verified backend value
+          updateBalanceOptimistically(result.updatedTokenBalance);
+          console.log('Token balance updated from backend:', {
+            previousBalance: tokenBalance,
+            newBalance: result.updatedTokenBalance
           });
           
           // Force refresh from Firestore to ensure consistency
           await forceRefreshFromFirestore();
+          console.log('Force refresh completed');
         } else {
-          // Fallback to tokens_remaining if updatedTokenBalance is not available
-          updateBalanceOptimistically(result.tokens_remaining);
-          console.log('Token balance updated from fallback:', {
-            tokensRemaining: result.tokens_remaining
-          });
-          
-          // Force refresh from Firestore to ensure consistency
-          await forceRefreshFromFirestore();
+          console.error('Invalid backend response:', result);
+          throw new Error('Invalid response from backend');
         }
         
         console.log('Idea analysis completed successfully:', {
-          tokensRemaining: result.tokens_remaining,
+          finalTokenBalance: result.updatedTokenBalance,
           analysisScore: result.analysis.overall_score
         });
       } catch (error) {

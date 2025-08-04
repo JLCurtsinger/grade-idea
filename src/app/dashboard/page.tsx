@@ -99,7 +99,8 @@ export default function DashboardPage() {
         
         console.log('Dashboard token balance updated from Firestore:', { 
           uid: user.uid, 
-          tokenBalance 
+          tokenBalance,
+          timestamp: new Date().toISOString()
         });
       } catch (error) {
         console.error('Error fetching profile:', error);
@@ -122,7 +123,9 @@ export default function DashboardPage() {
   useEffect(() => {
     const handleFocus = () => {
       // Refresh profile when user returns to the tab
-      console.log('Window focused, refreshing token balance...');
+      console.log('Window focused, refreshing token balance...', {
+        timestamp: new Date().toISOString()
+      });
       setProfileRefreshKey(prev => prev + 1);
     };
 
@@ -132,7 +135,9 @@ export default function DashboardPage() {
 
   // Function to manually refresh token balance
   const refreshTokenBalance = () => {
-    console.log('Manually refreshing token balance...');
+    console.log('Manually refreshing token balance...', {
+      timestamp: new Date().toISOString()
+    });
     setProfileRefreshKey(prev => prev + 1);
   };
 
