@@ -17,9 +17,16 @@ const verifyFirebaseIdToken = async (idToken: string) => {
 export async function POST(request: NextRequest) {
   console.log('=== IDEA GRADING REQUEST START ===');
   
+  // Declare variables at function level for catch block access
+  let idea: string | undefined;
+  let idToken: string | undefined;
+  let uid: string | undefined;
+  
   try {
     // Parse request
-    const { idea, idToken } = await request.json();
+    const requestData = await request.json();
+    idea = requestData.idea;
+    idToken = requestData.idToken;
     console.log('Request parsed:', { ideaLength: idea?.length || 0, hasIdToken: !!idToken });
 
     // Validate input
@@ -33,7 +40,7 @@ export async function POST(request: NextRequest) {
 
     // Authenticate user
     const decoded = await verifyFirebaseIdToken(idToken);
-    const uid = decoded.uid;
+    uid = decoded.uid;
     console.log('User authenticated:', { uid });
     
     // TEST 2: UID Verification
@@ -178,6 +185,13 @@ export async function POST(request: NextRequest) {
 
   } catch (error) {
     console.error('=== IDEA GRADING REQUEST ERROR ===');
+    console.error('NO TOKEN DEDUCTED — FINAL FALLBACK HIT');
+    console.error('Raw request context:', {
+      ideaPresent: !!idea,
+      idTokenPresent: !!idToken,
+      uidKnown: typeof uid !== 'undefined' ? uid : 'unknown',
+      projectId: process.env.FIREBASE_PROJECT_ID || 'unknown'
+    });
     console.error('Error details:', {
       message: error instanceof Error ? error.message : 'Unknown error',
       stack: error instanceof Error ? error.stack : undefined,
@@ -185,8 +199,7 @@ export async function POST(request: NextRequest) {
     });
 
     // Log error with UID if available
-    const uid = 'unknown';
-    logTokenError(uid, error instanceof Error ? error.message : 'Unknown error', 'grade_idea_route');
+    logTokenError(uid || 'unknown', error instanceof Error ? error.message : 'Unknown error', 'grade_idea_route');
 
     // Return consistent error response
     return NextResponse.json({
