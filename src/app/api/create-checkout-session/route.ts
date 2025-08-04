@@ -43,8 +43,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Determine mode based on plan type
+    const isSubscription = ['basic', 'standard', 'pro'].includes(plan);
+    const mode = isSubscription ? 'subscription' : 'payment';
+
     // Get origin for success/cancel URLs
     const origin = request.headers.get('origin') || 'http://localhost:3000';
+
+    console.log("Creating checkout session:", { plan, stripePriceId, mode });
 
     // Create Stripe Checkout Session
     const session = await stripe.checkout.sessions.create({
@@ -55,7 +61,7 @@ export async function POST(request: NextRequest) {
           quantity: 1,
         },
       ],
-      mode: 'payment',
+      mode,
       success_url: `${origin}/success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${origin}/pricing`,
       client_reference_id: userId, // Store Firebase UID for webhook
