@@ -133,6 +133,17 @@ export default function DashboardPage() {
     return () => window.removeEventListener('focus', handleFocus);
   }, []);
 
+  // Refresh profile when component mounts or user changes
+  useEffect(() => {
+    if (user) {
+      console.log('Dashboard mounted or user changed, refreshing token balance...', {
+        uid: user.uid,
+        timestamp: new Date().toISOString()
+      });
+      setProfileRefreshKey(prev => prev + 1);
+    }
+  }, [user]);
+
   // Function to manually refresh token balance
   const refreshTokenBalance = () => {
     console.log('Manually refreshing token balance...', {

@@ -49,6 +49,14 @@ export const useTokenBalance = () => {
     fetchTokenBalance();
   }, [user, refreshKey]);
 
+  // Reset state when user changes to prevent stale data
+  useEffect(() => {
+    if (!user) {
+      setTokenBalance(null);
+      setLoading(false);
+    }
+  }, [user]);
+
   // Refresh token balance manually
   const refreshBalance = () => {
     console.log('Manually refreshing token balance...');
@@ -65,14 +73,19 @@ export const useTokenBalance = () => {
     setTokenBalance(newBalance);
   };
 
-  // Revert optimistic update
-  const revertBalance = (originalBalance: number) => {
+  // Revert optimistic update and force refresh from Firestore
+  const revertBalance = async (originalBalance: number) => {
     console.log('Reverting optimistic token balance update:', { 
       currentBalance: tokenBalance, 
       originalBalance,
       timestamp: new Date().toISOString()
     });
+    
+    // First revert to original balance
     setTokenBalance(originalBalance);
+    
+    // Then force refresh from Firestore to ensure consistency
+    await forceRefreshFromFirestore();
   };
 
   // Force refresh from Firestore (for after deductions)

@@ -59,9 +59,9 @@ export default function HomePage() {
         if (!response.ok) {
           const errorData = await response.json();
           
-          // Revert optimistic update on error
+          // Revert optimistic update and force refresh from Firestore on error
           if (previousBalance !== null) {
-            revertBalance(previousBalance);
+            await revertBalance(previousBalance);
           }
           
           if (errorData.error === 'Not enough tokens') {
@@ -106,9 +106,9 @@ export default function HomePage() {
       } catch (error) {
         console.error('Error analyzing idea:', error);
         
-        // Revert optimistic update on error
+        // Revert optimistic update and force refresh from Firestore on error
         if (previousBalance !== null) {
-          revertBalance(previousBalance);
+          await revertBalance(previousBalance);
         }
         
         alert('Failed to analyze idea. Please try again.');
