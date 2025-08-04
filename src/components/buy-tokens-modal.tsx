@@ -50,8 +50,13 @@ export const BuyTokensModal = ({ isOpen, onClose }: BuyTokensModalProps) => {
       return;
     }
 
-    await createCheckoutSession(planName);
-    onClose();
+    try {
+      await createCheckoutSession(planName);
+      onClose();
+    } catch (error) {
+      console.error('Modal checkout error:', error);
+      // Error is already handled in the hook with user-friendly alerts
+    }
   };
 
   const handleClose = () => {

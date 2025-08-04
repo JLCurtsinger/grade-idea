@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
-import { getPriceIdForPlan } from '@/lib/pricing';
+import { validateAndNormalizePlan } from '@/lib/pricing';
 
 export const useStripeCheckout = () => {
   const [isLoading, setIsLoading] = useState(false);
@@ -17,6 +17,13 @@ export const useStripeCheckout = () => {
     setError(null);
 
     try {
+      // Validate and normalize plan name
+      console.log('=== FRONTEND CHECKOUT REQUEST ===');
+      console.log('Original plan name:', planName);
+      
+      const normalizedPlan = validateAndNormalizePlan(planName);
+      console.log('Normalized plan name:', normalizedPlan);
+
       // Get Firebase ID token for authentication
       const idToken = await user.getIdToken();
       
@@ -35,16 +42,26 @@ export const useStripeCheckout = () => {
 
       if (!response.ok) {
         const errorData = await response.json();
+        console.error('Checkout API error:', errorData);
         throw new Error(errorData.error || 'Failed to create checkout session');
       }
 
       const { url } = await response.json();
+      console.log('Checkout session created, redirecting to:', url);
       
       // Redirect to Stripe Checkout
       window.location.href = url;
     } catch (err) {
       console.error('Checkout error:', err);
-      setError(err instanceof Error ? err.message : 'An error occurred');
+      const errorMessage = err instanceof Error ? err.message : 'An error occurred during checkout';
+      setError(errorMessage);
+      
+      // Show user-friendly error
+      if (errorMessage.includes('Invalid plan name')) {
+        alert('Invalid plan selected. Please try again or contact support.');
+      } else {
+        alert(`Checkout failed: ${errorMessage}`);
+      }
     } finally {
       setIsLoading(false);
     }

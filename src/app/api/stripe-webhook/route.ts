@@ -3,8 +3,25 @@ import { stripe } from '@/lib/stripe';
 import { incrementUserTokens } from '@/lib/firebase-admin';
 import Stripe from 'stripe';
 
-// Map plan names to Stripe price IDs
-const getStripePriceId = (planName: string): string => {
+// Robust plan name normalization (server-side)
+const normalizePlanName = (plan: string): 'basic' | 'standard' | 'pro' | 'starter' | 'popular' | 'value' | null => {
+  if (!plan) return null;
+  
+  const cleaned = plan.trim().toLowerCase();
+  
+  // Handle various input formats
+  if (cleaned.includes('starter') || cleaned === 'starter pack') return 'starter';
+  if (cleaned.includes('popular') || cleaned === 'popular pack') return 'popular';
+  if (cleaned.includes('value') || cleaned === 'value pack') return 'value';
+  if (cleaned.includes('basic')) return 'basic';
+  if (cleaned.includes('standard')) return 'standard';
+  if (cleaned.includes('pro')) return 'pro';
+  
+  return null;
+};
+
+// Map normalized plan names to Stripe price IDs
+const getStripePriceId = (normalizedPlan: string): string => {
   const priceMap: Record<string, string> = {
     'basic': process.env.STRIPE_PRICE_ID_BASIC || '',
     'standard': process.env.STRIPE_PRICE_ID_STANDARD || '',
@@ -14,7 +31,7 @@ const getStripePriceId = (planName: string): string => {
     'value': process.env.STRIPE_PRICE_ID_VALUE || '',
   };
   
-  return priceMap[planName] || '';
+  return priceMap[normalizedPlan] || '';
 };
 
 // Map Stripe price IDs to token counts
@@ -36,6 +53,7 @@ export async function POST(request: NextRequest) {
   const signature = request.headers.get('stripe-signature');
 
   if (!signature) {
+    console.error('Missing stripe-signature header');
     return NextResponse.json(
       { error: 'Missing stripe-signature header' },
       { status: 400 }
@@ -63,10 +81,18 @@ export async function POST(request: NextRequest) {
     case 'checkout.session.completed':
       const session = event.data.object as Stripe.Checkout.Session;
       
+      console.log('=== WEBHOOK: CHECKOUT SESSION COMPLETED ===');
+      console.log('Session ID:', session.id);
+      console.log('Session metadata:', session.metadata);
+      console.log('Client reference ID:', session.client_reference_id);
+      
       try {
         // Extract user ID and plan name
         const userId = session.client_reference_id;
         const planName = session.metadata?.planName;
+        const normalizedPlan = session.metadata?.normalizedPlan;
+        
+        console.log('Extracted data:', { userId, planName, normalizedPlan });
         
         if (!userId || !planName) {
           console.error('Missing userId or planName in session:', session.id);
@@ -76,11 +102,14 @@ export async function POST(request: NextRequest) {
           );
         }
 
-        // Map plan name to price ID for token count lookup
-        const plan = planName.toLowerCase();
-        const priceId = getStripePriceId(plan);
+        // Use normalized plan if available, otherwise normalize the plan name
+        let finalNormalizedPlan = normalizedPlan;
+        if (!finalNormalizedPlan) {
+          finalNormalizedPlan = normalizePlanName(planName);
+          console.log('Plan normalization:', { original: planName, normalized: finalNormalizedPlan });
+        }
         
-        if (!priceId) {
+        if (!finalNormalizedPlan) {
           console.error('Invalid plan name:', planName);
           return NextResponse.json(
             { error: 'Invalid plan name' },
@@ -88,11 +117,24 @@ export async function POST(request: NextRequest) {
           );
         }
 
+        // Map normalized plan to price ID for token count lookup
+        const priceId = getStripePriceId(finalNormalizedPlan);
+        console.log('Price ID mapping:', { normalizedPlan: finalNormalizedPlan, priceId });
+        
+        if (!priceId) {
+          console.error('No price ID found for normalized plan:', finalNormalizedPlan);
+          return NextResponse.json(
+            { error: 'Invalid plan configuration' },
+            { status: 400 }
+          );
+        }
+
         // Get token count for this price ID
         const tokenCount = getTokenCountForPriceId(priceId);
+        console.log('Token count lookup:', { priceId, tokenCount });
         
         if (tokenCount === 0) {
-          console.error('Invalid price ID:', priceId);
+          console.error('No token count found for price ID:', priceId);
           return NextResponse.json(
             { error: 'Invalid price ID' },
             { status: 400 }
@@ -100,6 +142,7 @@ export async function POST(request: NextRequest) {
         }
 
         // Increment user's token balance
+        console.log(`Incrementing ${tokenCount} tokens for user ${userId}`);
         await incrementUserTokens(userId, tokenCount);
         
         console.log(`Successfully added ${tokenCount} tokens to user ${userId}`);
