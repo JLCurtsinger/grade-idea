@@ -1,7 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { stripe, getTokenCountForPriceId } from '@/lib/stripe';
+import { stripe } from '@/lib/stripe';
 import { incrementUserTokens } from '@/lib/firebase-admin';
 import Stripe from 'stripe';
+
+// Map Stripe price IDs to token counts
+const getTokenCountForPriceId = (priceId: string): number => {
+  const tokenMap: Record<string, number> = {
+    [process.env.STRIPE_PRICE_ID_STARTER!]: 10,
+    [process.env.STRIPE_PRICE_ID_POPULAR!]: 25,
+    [process.env.STRIPE_PRICE_ID_VALUE!]: 60,
+    [process.env.STRIPE_PRICE_ID_BASIC!]: 12,
+    [process.env.STRIPE_PRICE_ID_STANDARD!]: 28,
+    [process.env.STRIPE_PRICE_ID_PRO!]: 45,
+  };
+  
+  return tokenMap[priceId] || 0;
+};
 
 export async function POST(request: NextRequest) {
   const body = await request.text();

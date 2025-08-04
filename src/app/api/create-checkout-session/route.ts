@@ -1,5 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { stripe, isValidPriceId } from '@/lib/stripe';
+import { stripe } from '@/lib/stripe';
+
+// Map plan names to Stripe price IDs
+const getStripePriceId = (planName: string): string => {
+  const priceMap: Record<string, string> = {
+    'basic': process.env.STRIPE_PRICE_ID_BASIC || '',
+    'standard': process.env.STRIPE_PRICE_ID_STANDARD || '',
+    'pro': process.env.STRIPE_PRICE_ID_PRO || '',
+    'starter': process.env.STRIPE_PRICE_ID_STARTER || '',
+    'popular': process.env.STRIPE_PRICE_ID_POPULAR || '',
+    'value': process.env.STRIPE_PRICE_ID_VALUE || '',
+  };
+  
+  return priceMap[planName] || '';
+};
 
 export async function POST(request: NextRequest) {
   try {
@@ -13,9 +27,12 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (!isValidPriceId(priceId)) {
+    // Map plan name to actual Stripe price ID
+    const stripePriceId = getStripePriceId(priceId);
+    
+    if (!stripePriceId) {
       return NextResponse.json(
-        { error: 'Invalid price ID' },
+        { error: 'Invalid plan selected' },
         { status: 400 }
       );
     }
@@ -28,7 +45,7 @@ export async function POST(request: NextRequest) {
       payment_method_types: ['card'],
       line_items: [
         {
-          price: priceId,
+          price: stripePriceId,
           quantity: 1,
         },
       ],

@@ -5,15 +5,19 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Menu, X } from "lucide-react";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { useCurrentIdea } from "@/context/CurrentIdeaContext";
 import { useAuth } from "@/context/AuthContext";
 
 export const Header = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const router = useRouter();
+  const pathname = usePathname();
   const { setCurrentIdea } = useCurrentIdea();
   const { user, openModal, logout } = useAuth();
+  
+  // Check if we're on the landing page
+  const isLandingPage = pathname === '/';
 
   // Handle escape key and body scroll
   useEffect(() => {
@@ -36,6 +40,22 @@ export const Header = () => {
     };
   }, [isMobileMenuOpen]);
 
+  // Handle hash navigation on landing page
+  useEffect(() => {
+    if (isLandingPage && typeof window !== 'undefined') {
+      const hash = window.location.hash;
+      if (hash) {
+        // Small delay to ensure the page is fully loaded
+        setTimeout(() => {
+          const targetElement = document.querySelector(hash);
+          if (targetElement) {
+            targetElement.scrollIntoView({ behavior: 'smooth' });
+          }
+        }, 100);
+      }
+    }
+  }, [isLandingPage]);
+
   const handleLogoClick = () => {
     setCurrentIdea(null);
     router.push('/');
@@ -45,19 +65,35 @@ export const Header = () => {
 
   const handleFeaturesClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
     e.preventDefault();
-    const featuresSection = document.getElementById('features');
-    if (featuresSection) {
-      featuresSection.scrollIntoView({ behavior: 'smooth' });
+    
+    if (isLandingPage) {
+      // On landing page, scroll smoothly to the section
+      const featuresSection = document.getElementById('features');
+      if (featuresSection) {
+        featuresSection.scrollIntoView({ behavior: 'smooth' });
+      }
+    } else {
+      // On other pages, navigate to landing page with hash
+      router.push('/#features');
     }
+    
     setIsMobileMenuOpen(false);
   };
 
   const handlePricingClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
     e.preventDefault();
-    const pricingSection = document.getElementById('pricing');
-    if (pricingSection) {
-      pricingSection.scrollIntoView({ behavior: 'smooth' });
+    
+    if (isLandingPage) {
+      // On landing page, scroll smoothly to the section
+      const pricingSection = document.getElementById('pricing');
+      if (pricingSection) {
+        pricingSection.scrollIntoView({ behavior: 'smooth' });
+      }
+    } else {
+      // On other pages, navigate to landing page with hash
+      router.push('/#pricing');
     }
+    
     setIsMobileMenuOpen(false);
   };
 
