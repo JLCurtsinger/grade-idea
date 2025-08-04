@@ -10,6 +10,7 @@ import { useCurrentIdea } from "@/context/CurrentIdeaContext";
 import { useAuth } from "@/context/AuthContext";
 import { useTokenBalance } from "@/hooks/use-token-balance";
 import { logTokenDisplay, logTokenError } from "@/lib/utils";
+import { testGA } from "@/lib/ga-test";
 
 export default function HomePage() {
   const { currentIdea, setCurrentIdea } = useCurrentIdea();
@@ -25,6 +26,13 @@ export default function HomePage() {
       forceRefreshFromFirestore();
     }
   }, []); // Empty dependency array to run only on mount
+
+  // Test Google Analytics in development
+  useEffect(() => {
+    if (process.env.NODE_ENV === 'development') {
+      testGA();
+    }
+  }, []);
 
   // Log token balance display
   useEffect(() => {
