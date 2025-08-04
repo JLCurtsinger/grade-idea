@@ -14,139 +14,54 @@ const verifyFirebaseIdToken = async (idToken: string) => {
 };
 
 export async function POST(request: NextRequest) {
+  console.log('=== IDEA GRADING REQUEST START ===');
+  
   try {
+    // Parse request
     const { idea, idToken } = await request.json();
+    console.log('Request parsed:', { ideaLength: idea?.length || 0, hasIdToken: !!idToken });
 
-    console.log('=== IDEA GRADING REQUEST ===');
-    console.log('Idea length:', idea?.length || 0);
-
+    // Validate input
     if (!idea || !idToken) {
       console.error('Missing required fields:', { hasIdea: !!idea, hasIdToken: !!idToken });
-      return NextResponse.json(
-        { error: 'Missing required fields: idea and idToken' },
-        { status: 400 }
-      );
+      return NextResponse.json({
+        success: false,
+        error: 'Missing required fields: idea and idToken'
+      }, { status: 400 });
     }
 
-    // Verify the Firebase ID token
+    // Authenticate user
     const decoded = await verifyFirebaseIdToken(idToken);
     const uid = decoded.uid;
-    console.log('Authenticated user:', uid);
+    console.log('User authenticated:', { uid });
 
-    // First, get the current balance to verify we can read from Firestore
-    const initialDoc = await adminDb.collection('users').doc(uid).get();
-    if (!initialDoc.exists) {
-      console.error('User document does not exist:', uid);
-      return NextResponse.json(
-        { error: 'User not found' },
-        { status: 404 }
-      );
-    }
-
-    const initialBalance = initialDoc.data()?.token_balance || 0;
-    console.log('Initial balance from Firestore:', { uid, initialBalance });
-
-    if (initialBalance < 1) {
-      console.error('Insufficient tokens:', { uid, initialBalance });
-      return NextResponse.json(
-        { error: 'Not enough tokens' },
-        { status: 403 }
-      );
-    }
-
-    // Use Firestore transaction to safely deduct tokens
-    let tokensRemaining: number;
-    let transactionCommitted = false;
+    // Read current token balance from Firestore
+    const userRef = adminDb.collection('users').doc(uid);
+    const userDoc = await userRef.get();
     
-    console.log('Starting token deduction transaction for user:', uid);
-    
-    try {
-      const result = await adminDb.runTransaction(async (transaction) => {
-        const userRef = adminDb.collection('users').doc(uid);
-        const userDoc = await transaction.get(userRef);
-        
-        if (!userDoc.exists) {
-          throw new Error('User not found');
-        }
-        
-        const userData = userDoc.data();
-        const currentBalance = userData?.token_balance || 0;
-        console.log('Transaction - Current balance:', { uid, currentBalance });
-        
-        // Check if user has enough tokens
-        if (currentBalance < 1) {
-          throw new Error('Not enough tokens');
-        }
-        
-        // Deduct 1 token atomically
-        tokensRemaining = currentBalance - 1;
-        console.log('Transaction - Deducting 1 token:', { 
-          uid, 
-          previousBalance: currentBalance, 
-          newBalance: tokensRemaining 
-        });
-        
-        transaction.update(userRef, {
-          token_balance: tokensRemaining,
-          updated_at: new Date(),
-        });
-        
-        console.log('Transaction - Update queued successfully');
-        
-        // Return the new balance from the transaction
-        return tokensRemaining;
-      });
-      
-      transactionCommitted = true;
-      tokensRemaining = result; // Use the result from the transaction
-      
-      console.log('Token deduction transaction completed successfully:', { 
-        uid, 
-        previousBalance: initialBalance, 
-        newBalance: tokensRemaining 
-      });
-      
-    } catch (transactionError) {
-      console.error('Transaction failed:', transactionError);
-      throw transactionError;
+    if (!userDoc.exists) {
+      console.error('User document not found:', { uid });
+      return NextResponse.json({
+        success: false,
+        error: 'User not found'
+      }, { status: 404 });
     }
 
-    // Verify the deduction was actually persisted
-    if (transactionCommitted) {
-      try {
-        // Wait a moment for the transaction to fully commit
-        await new Promise(resolve => setTimeout(resolve, 100));
-        
-        const verificationDoc = await adminDb.collection('users').doc(uid).get();
-        const actualBalance = verificationDoc.data()?.token_balance || 0;
-        console.log('Verification - Actual balance in Firestore:', { 
-          uid, 
-          actualBalance, 
-          expectedBalance: tokensRemaining,
-          initialBalance 
-        });
-        
-        if (actualBalance !== tokensRemaining) {
-          console.error('CRITICAL: Token deduction verification failed!', {
-            uid,
-            initialBalance,
-            expectedBalance: tokensRemaining,
-            actualBalance,
-            difference: actualBalance - tokensRemaining
-          });
-          throw new Error('Token deduction verification failed');
-        }
-        
-        console.log('Token deduction verification successful!');
-      } catch (verificationError) {
-        console.error('Error during verification:', verificationError);
-        throw new Error('Failed to verify token deduction');
-      }
+    const tokenBalance = userDoc.data()?.token_balance || 0;
+    console.log('Current token balance from Firestore:', { uid, tokenBalance });
+
+    // Validate sufficient tokens
+    if (tokenBalance < 1) {
+      console.error('Insufficient tokens:', { uid, tokenBalance });
+      return NextResponse.json({
+        success: false,
+        error: 'Not enough tokens'
+      }, { status: 403 });
     }
 
-    // TODO: Implement actual idea analysis logic here
-    // For now, return a mock analysis
-    const mockAnalysis = {
+    // Perform idea analysis (mock for now)
+    console.log('Starting idea analysis...');
+    const analysis = {
       overall_score: Math.floor(Math.random() * 40) + 60, // 60-100
       market_potential: Math.floor(Math.random() * 30) + 70,
       competition: Math.floor(Math.random() * 40) + 60,
@@ -160,6 +75,17 @@ export async function POST(request: NextRequest) {
         'Execution complexity is manageable'
       ]
     };
+    console.log('Idea analysis completed successfully');
+
+    // Deduct 1 token and update Firestore
+    const newTokenBalance = tokenBalance - 1;
+    console.log('Deducting 1 token:', { uid, previousBalance: tokenBalance, newBalance: newTokenBalance });
+    
+    await userRef.update({
+      token_balance: newTokenBalance,
+      updated_at: new Date(),
+    });
+    console.log('Token balance updated in Firestore successfully');
 
     // Store the idea and analysis in Firestore
     const ideaRef = adminDb
@@ -170,67 +96,31 @@ export async function POST(request: NextRequest) {
 
     await ideaRef.set({
       ideaText: idea,
-      analysis: mockAnalysis,
+      analysis: analysis,
       createdAt: Timestamp.now(),
       tokensUsed: 1,
     });
+    console.log('Idea analysis stored in Firestore:', { ideaId: ideaRef.id, uid });
 
-    console.log('Idea analysis stored successfully:', { 
-      ideaId: ideaRef.id, 
-      uid, 
-      tokensRemaining 
-    });
-
+    console.log('=== IDEA GRADING REQUEST SUCCESS ===');
     return NextResponse.json({
       success: true,
-      analysis: mockAnalysis,
-      tokens_remaining: tokensRemaining,
-      updatedTokenBalance: tokensRemaining
+      tokenBalance: newTokenBalance,
+      analysis: analysis
     });
 
   } catch (error) {
-    console.error('Error in grade-idea API:', error);
-    
-    if (error instanceof Error) {
-      if (error.message === 'Invalid ID token') {
-        return NextResponse.json(
-          { error: 'Authentication failed' },
-          { status: 401 }
-        );
-      }
-      
-      if (error.message === 'Not enough tokens') {
-        return NextResponse.json(
-          { error: 'Not enough tokens' },
-          { status: 403 }
-        );
-      }
-      
-      if (error.message === 'User not found') {
-        return NextResponse.json(
-          { error: 'User not found' },
-          { status: 404 }
-        );
-      }
-      
-      if (error.message === 'Token deduction verification failed') {
-        return NextResponse.json(
-          { error: 'Token deduction failed - please try again' },
-          { status: 500 }
-        );
-      }
-      
-      if (error.message === 'Failed to verify token deduction') {
-        return NextResponse.json(
-          { error: 'Failed to verify token deduction - please try again' },
-          { status: 500 }
-        );
-      }
-    }
+    console.error('=== IDEA GRADING REQUEST ERROR ===');
+    console.error('Error details:', {
+      message: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined,
+      error: error
+    });
 
-    return NextResponse.json(
-      { error: 'Failed to analyze idea' },
-      { status: 500 }
-    );
+    // Return consistent error response
+    return NextResponse.json({
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to analyze idea'
+    }, { status: 500 });
   }
 } 

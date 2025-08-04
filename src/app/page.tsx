@@ -75,20 +75,19 @@ export default function HomePage() {
         const result = await response.json();
         setAnalysisResult(result.analysis);
 
-        // Use only updatedTokenBalance as the single source of truth
-        if (result.success && result.updatedTokenBalance !== undefined) {
+        // Use only tokenBalance as the single source of truth
+        if (result.success && result.tokenBalance !== undefined) {
           console.log('=== TOKEN BALANCE UPDATE ===');
           console.log('Backend response received:', {
             success: result.success,
-            updatedTokenBalance: result.updatedTokenBalance,
-            tokens_remaining: result.tokens_remaining
+            tokenBalance: result.tokenBalance
           });
           
           // Update token balance with the verified backend value
-          updateBalanceOptimistically(result.updatedTokenBalance);
+          updateBalanceOptimistically(result.tokenBalance);
           console.log('Token balance updated from backend:', {
             previousBalance: tokenBalance,
-            newBalance: result.updatedTokenBalance
+            newBalance: result.tokenBalance
           });
           
           // Force refresh from Firestore to ensure consistency
@@ -100,7 +99,7 @@ export default function HomePage() {
         }
         
         console.log('Idea analysis completed successfully:', {
-          finalTokenBalance: result.updatedTokenBalance,
+          finalTokenBalance: result.tokenBalance,
           analysisScore: result.analysis.overall_score
         });
       } catch (error) {
