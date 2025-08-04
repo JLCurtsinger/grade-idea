@@ -3,15 +3,11 @@
 import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Check, Star } from "lucide-react";
-import { useStripeCheckout } from "@/hooks/use-stripe-checkout";
-import { useAuth } from "@/context/AuthContext";
+import { PricingButton } from "@/components/pricing-button";
 
 export const PricingSection = () => {
   const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
-  const { createCheckoutSession, isLoading, error } = useStripeCheckout();
-  const { user } = useAuth();
 
   const subscriptionPlans = [
     {
@@ -73,17 +69,7 @@ export const PricingSection = () => {
     }
   ];
 
-  const handlePlanSelect = async (planName: string) => {
-    setSelectedPlan(planName);
-    
-    if (!user) {
-      // Show sign-in prompt
-      alert('Please sign in to purchase tokens. You can sign in using the button in the header.');
-      return;
-    }
-    
-    await createCheckoutSession(planName);
-  };
+
 
   return (
     <section id="pricing" className="py-24 bg-background">
@@ -167,24 +153,15 @@ export const PricingSection = () => {
                   </div>
 
                   {/* CTA Button */}
-                  <Button
+                  <PricingButton
+                    planName={plan.name}
+                    buttonText={plan.buttonText}
                     className={`w-full ${
                       plan.popular 
                         ? 'btn-primary' 
                         : 'btn-secondary'
                     }`}
-                    onClick={() => handlePlanSelect(plan.name)}
-                    disabled={isLoading}
-                  >
-                    {isLoading ? (
-                      <>
-                        <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2"></div>
-                        Processing...
-                      </>
-                    ) : (
-                      plan.buttonText
-                    )}
-                  </Button>
+                  />
                 </div>
               </Card>
             ))}
@@ -233,35 +210,19 @@ export const PricingSection = () => {
                   </div>
 
                   {/* CTA Button */}
-                  <Button
+                  <PricingButton
+                    planName={plan.name}
+                    buttonText={plan.buttonText}
                     variant="outline"
                     className="w-full border-brand/30 text-brand hover:bg-brand/10 hover:border-brand/50"
-                    onClick={() => handlePlanSelect(plan.name)}
-                    disabled={isLoading}
-                  >
-                    {isLoading ? (
-                      <>
-                        <div className="w-4 h-4 border-2 border-brand/30 border-t-brand rounded-full animate-spin mr-2"></div>
-                        Processing...
-                      </>
-                    ) : (
-                      plan.buttonText
-                    )}
-                  </Button>
+                  />
                 </div>
               </Card>
             ))}
           </div>
         </div>
 
-        {/* Error Display */}
-        {error && (
-          <div className="mt-8 text-center">
-            <div className="max-w-md mx-auto p-4 bg-danger/10 border border-danger/30 rounded-lg">
-              <p className="text-danger text-sm">{error}</p>
-            </div>
-          </div>
-        )}
+
 
         {/* Additional Info */}
         <div className="mt-16 text-center">

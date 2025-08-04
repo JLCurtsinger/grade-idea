@@ -5,7 +5,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { X, Coins } from "lucide-react";
-import { useStripeCheckout } from "@/hooks/use-stripe-checkout";
+import { PricingButton } from "@/components/pricing-button";
 
 interface BuyTokensModalProps {
   isOpen: boolean;
@@ -37,19 +37,15 @@ const tokenPlans = [
 ];
 
 export const BuyTokensModal = ({ isOpen, onClose }: BuyTokensModalProps) => {
-  const { createCheckoutSession, isLoading, error } = useStripeCheckout();
   const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
 
   const handlePlanSelect = async (planName: string) => {
     setSelectedPlan(planName);
-    await createCheckoutSession(planName);
     onClose();
   };
 
   const handleClose = () => {
-    if (!isLoading) {
-      onClose();
-    }
+    onClose();
   };
 
   return (
@@ -64,7 +60,6 @@ export const BuyTokensModal = ({ isOpen, onClose }: BuyTokensModalProps) => {
               variant="ghost"
               size="icon"
               onClick={handleClose}
-              disabled={isLoading}
               className="h-8 w-8"
             >
               <X className="h-4 w-4" />
@@ -73,18 +68,11 @@ export const BuyTokensModal = ({ isOpen, onClose }: BuyTokensModalProps) => {
         </DialogHeader>
 
         <div className="space-y-4">
-          {error && (
-            <div className="p-3 bg-danger/10 border border-danger/30 rounded-lg">
-              <p className="text-danger text-sm">{error}</p>
-            </div>
-          )}
-
           <div className="grid gap-4">
             {tokenPlans.map((plan) => (
               <Card 
                 key={plan.name}
-                className="p-4 hover:shadow-md transition-shadow cursor-pointer border-2 hover:border-brand/30"
-                onClick={() => handlePlanSelect(plan.name)}
+                className="p-4 hover:shadow-md transition-shadow border-2 hover:border-brand/30"
               >
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
@@ -112,20 +100,19 @@ export const BuyTokensModal = ({ isOpen, onClose }: BuyTokensModalProps) => {
                     </div>
                   </div>
                 </div>
+                
+                <div className="mt-4">
+                  <PricingButton
+                    planName={plan.name}
+                    buttonText="Buy Tokens"
+                    className="w-full"
+                  />
+                </div>
               </Card>
             ))}
           </div>
 
-          {isLoading && (
-            <div className="text-center py-4">
-              <div className="inline-flex items-center gap-2">
-                <div className="w-4 h-4 border-2 border-brand/30 border-t-brand rounded-full animate-spin"></div>
-                <span className="text-sm text-foreground-muted">
-                  Processing your selection...
-                </span>
-              </div>
-            </div>
-          )}
+
         </div>
       </DialogContent>
     </Dialog>

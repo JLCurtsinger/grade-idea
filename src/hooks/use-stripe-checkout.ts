@@ -23,6 +23,8 @@ export const useStripeCheckout = () => {
       // Get price ID for the plan
       const priceId = getPriceIdForPlan(planName);
       
+
+      
       if (!priceId) {
         throw new Error('Invalid plan selected');
       }
