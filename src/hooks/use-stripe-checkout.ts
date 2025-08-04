@@ -20,15 +20,6 @@ export const useStripeCheckout = () => {
       // Get Firebase ID token for authentication
       const idToken = await user.getIdToken();
       
-      // Get price ID for the plan
-      const priceId = getPriceIdForPlan(planName);
-      
-
-      
-      if (!priceId) {
-        throw new Error('Invalid plan selected');
-      }
-
       // Create checkout session
       const response = await fetch('/api/create-checkout-session', {
         method: 'POST',
@@ -37,7 +28,7 @@ export const useStripeCheckout = () => {
           'Authorization': `Bearer ${idToken}`,
         },
         body: JSON.stringify({
-          priceId,
+          planName,
           userId: user.uid,
         }),
       });

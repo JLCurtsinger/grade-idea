@@ -3,6 +3,20 @@ import { stripe } from '@/lib/stripe';
 import { incrementUserTokens } from '@/lib/firebase-admin';
 import Stripe from 'stripe';
 
+// Map plan names to Stripe price IDs
+const getStripePriceId = (planName: string): string => {
+  const priceMap: Record<string, string> = {
+    'basic': process.env.STRIPE_PRICE_ID_BASIC || '',
+    'standard': process.env.STRIPE_PRICE_ID_STANDARD || '',
+    'pro': process.env.STRIPE_PRICE_ID_PRO || '',
+    'starter': process.env.STRIPE_PRICE_ID_STARTER || '',
+    'popular': process.env.STRIPE_PRICE_ID_POPULAR || '',
+    'value': process.env.STRIPE_PRICE_ID_VALUE || '',
+  };
+  
+  return priceMap[planName] || '';
+};
+
 // Map Stripe price IDs to token counts
 const getTokenCountForPriceId = (priceId: string): number => {
   const tokenMap: Record<string, number> = {
@@ -50,14 +64,26 @@ export async function POST(request: NextRequest) {
       const session = event.data.object as Stripe.Checkout.Session;
       
       try {
-        // Extract user ID and price ID
+        // Extract user ID and plan name
         const userId = session.client_reference_id;
-        const priceId = session.metadata?.priceId;
+        const planName = session.metadata?.planName;
         
-        if (!userId || !priceId) {
-          console.error('Missing userId or priceId in session:', session.id);
+        if (!userId || !planName) {
+          console.error('Missing userId or planName in session:', session.id);
           return NextResponse.json(
-            { error: 'Missing user or price information' },
+            { error: 'Missing user or plan information' },
+            { status: 400 }
+          );
+        }
+
+        // Map plan name to price ID for token count lookup
+        const plan = planName.toLowerCase();
+        const priceId = getStripePriceId(plan);
+        
+        if (!priceId) {
+          console.error('Invalid plan name:', planName);
+          return NextResponse.json(
+            { error: 'Invalid plan name' },
             { status: 400 }
           );
         }

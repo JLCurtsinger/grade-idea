@@ -17,22 +17,28 @@ const getStripePriceId = (planName: string): string => {
 
 export async function POST(request: NextRequest) {
   try {
-    const { priceId, userId } = await request.json();
+    const { planName, userId } = await request.json();
+
+    // Log the incoming plan name for debugging
+    console.log('API received planName:', planName, 'userId:', userId);
 
     // Validate inputs
-    if (!priceId || !userId) {
+    if (!planName || !userId) {
       return NextResponse.json(
-        { error: 'Missing required fields: priceId and userId' },
+        { error: 'Missing required fields: planName and userId' },
         { status: 400 }
       );
     }
 
-    // Map plan name to actual Stripe price ID
-    const stripePriceId = getStripePriceId(priceId);
+    // Immediately apply toLowerCase() and map plan name to actual Stripe price ID
+    const plan = (planName || '').toLowerCase();
+    const stripePriceId = getStripePriceId(plan);
+    
+    console.log('Mapped plan:', plan, 'to stripePriceId:', stripePriceId);
     
     if (!stripePriceId) {
       return NextResponse.json(
-        { error: 'Invalid plan selected' },
+        { error: 'Invalid or missing plan name' },
         { status: 400 }
       );
     }
@@ -55,7 +61,7 @@ export async function POST(request: NextRequest) {
       client_reference_id: userId, // Store Firebase UID for webhook
       metadata: {
         userId: userId,
-        priceId: priceId,
+        planName: planName,
       },
     });
 
