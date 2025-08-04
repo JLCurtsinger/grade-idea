@@ -7,6 +7,8 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { BuyTokensModal } from "@/components/buy-tokens-modal";
+import { collection, query, orderBy, limit, getDocs } from "firebase/firestore";
+import { db } from "@/lib/firebase";
 import { 
   User, 
   Coins, 
@@ -23,18 +25,21 @@ import {
 
 interface Idea {
   id: string;
-  user_id: string;
-  idea: string;
-  submitted_at: string;
-  scores: {
-    market: number;
-    execution: number;
-    monetization: number;
+  ideaText: string;
+  analysis: {
+    overall_score: number;
+    market_potential: number;
     competition: number;
-    growth: number;
+    monetization: number;
+    execution: number;
+    recommendation: string;
+    insights: string[];
   };
-  checklist: string[];
-  notes?: string;
+  createdAt: {
+    seconds: number;
+    nanoseconds: number;
+  };
+  tokensUsed: number;
 }
 
 interface UserProfile {
@@ -57,55 +62,43 @@ export default function DashboardPage() {
       return;
     }
 
-    // Mock data for MVP - replace with actual Supabase calls
-    const mockProfile: UserProfile = {
-      id: user.uid,
-      email: user.email || '',
-      token_balance: 5
+    const fetchIdeas = async () => {
+      try {
+        const ideasRef = collection(db, "users", user.uid, "ideas");
+        const q = query(ideasRef, orderBy("createdAt", "desc"), limit(10));
+        const querySnap = await getDocs(q);
+        const results = querySnap.docs.map(doc => ({ 
+          id: doc.id, 
+          ...doc.data() 
+        })) as Idea[];
+        setIdeas(results);
+      } catch (error) {
+        console.error('Error fetching ideas:', error);
+        setIdeas([]);
+      }
     };
 
-    // For testing empty state, you can set this to empty array: []
-    const mockIdeas: Idea[] = [
-      {
-        id: '1',
-        user_id: user.uid,
-        idea: 'AI-powered meal planning app for busy professionals with dietary restrictions and grocery delivery integration',
-        submitted_at: '2024-01-15T10:30:00Z',
-        scores: {
-          market: 85,
-          execution: 72,
-          monetization: 90,
-          competition: 68,
-          growth: 88
-        },
-        checklist: ['Define target audience', 'Choose niche market', 'Clarify monetization'],
-        notes: 'Great potential but need to focus on specific user segment.'
-      },
-      {
-        id: '2',
-        user_id: user.uid,
-        idea: 'SaaS platform for small restaurant inventory management with real-time analytics and automated reordering',
-        submitted_at: '2024-01-10T14:20:00Z',
-        scores: {
-          market: 78,
-          execution: 65,
-          monetization: 82,
-          competition: 75,
-          growth: 70
-        },
-        checklist: ['De-risk execution', 'Clarify monetization model'],
-        notes: 'Solid market opportunity with clear pain point.'
+    const fetchProfile = async () => {
+      try {
+        // For now, use a simple profile structure
+        const profile: UserProfile = {
+          id: user.uid,
+          email: user.email || '',
+          token_balance: 5 // This should be fetched from Firestore in the future
+        };
+        setProfile(profile);
+      } catch (error) {
+        console.error('Error fetching profile:', error);
       }
-    ];
+    };
 
-    setProfile(mockProfile);
-    setIdeas(mockIdeas);
+    fetchIdeas();
+    fetchProfile();
     setLoading(false);
   }, [user, router]);
 
-  const getOverallScore = (scores: Idea['scores']) => {
-    const total = Object.values(scores).reduce((sum, score) => sum + score, 0);
-    return Math.round(total / Object.keys(scores).length);
+  const getOverallScore = (analysis: Idea['analysis']) => {
+    return analysis.overall_score;
   };
 
   const getScoreColor = (score: number) => {
@@ -114,8 +107,8 @@ export default function DashboardPage() {
     return 'text-warning';
   };
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
+  const formatDate = (timestamp: { seconds: number; nanoseconds: number }) => {
+    return new Date(timestamp.seconds * 1000).toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'short',
       day: 'numeric'
@@ -267,30 +260,30 @@ export default function DashboardPage() {
                       </thead>
                       <tbody>
                         {ideas.map((idea) => {
-                          const overallScore = getOverallScore(idea.scores);
+                          const overallScore = getOverallScore(idea.analysis);
                           return (
                             <tr key={idea.id} className="border-b border-border hover:bg-surface-elevated/50 transition-colors">
                               <td className="p-4">
                                 <div className="max-w-xs">
                                   <p 
                                     className="font-medium text-foreground truncate cursor-help"
-                                    title={idea.idea}
+                                    title={idea.ideaText}
                                   >
-                                    {idea.idea}
+                                    {idea.ideaText}
                                   </p>
                                 </div>
                               </td>
                               <td className="p-4 text-foreground-muted">
-                                {formatDate(idea.submitted_at)}
+                                {formatDate(idea.createdAt)}
                               </td>
                               <td className="p-4">
-                                <span className={`font-semibold ${getScoreColor(idea.scores.market)}`}>
-                                  {idea.scores.market}%
+                                <span className={`font-semibold ${getScoreColor(idea.analysis.market_potential)}`}>
+                                  {idea.analysis.market_potential}%
                                 </span>
                               </td>
                               <td className="p-4">
-                                <span className={`font-semibold ${getScoreColor(idea.scores.execution)}`}>
-                                  {idea.scores.execution}%
+                                <span className={`font-semibold ${getScoreColor(idea.analysis.execution)}`}>
+                                  {idea.analysis.execution}%
                                 </span>
                               </td>
                               <td className="p-4">
@@ -324,29 +317,29 @@ export default function DashboardPage() {
               {/* Mobile Card View */}
               <div className="md:hidden space-y-4">
                 {ideas.map((idea) => {
-                  const overallScore = getOverallScore(idea.scores);
+                  const overallScore = getOverallScore(idea.analysis);
                   return (
                     <Card key={idea.id} className="p-4">
                       <div className="space-y-3">
                         <div>
-                          <h3 className="font-medium text-foreground mb-1">{idea.idea}</h3>
+                          <h3 className="font-medium text-foreground mb-1">{idea.ideaText}</h3>
                           <p className="text-sm text-foreground-muted flex items-center gap-2">
                             <Calendar className="w-4 h-4" />
-                            {formatDate(idea.submitted_at)}
+                            {formatDate(idea.createdAt)}
                           </p>
                         </div>
                         
                         <div className="flex items-center gap-4">
                           <div>
                             <p className="text-xs text-foreground-muted">Market</p>
-                            <p className={`font-semibold ${getScoreColor(idea.scores.market)}`}>
-                              {idea.scores.market}%
+                            <p className={`font-semibold ${getScoreColor(idea.analysis.market_potential)}`}>
+                              {idea.analysis.market_potential}%
                             </p>
                           </div>
                           <div>
                             <p className="text-xs text-foreground-muted">Execution</p>
-                            <p className={`font-semibold ${getScoreColor(idea.scores.execution)}`}>
-                              {idea.scores.execution}%
+                            <p className={`font-semibold ${getScoreColor(idea.analysis.execution)}`}>
+                              {idea.analysis.execution}%
                             </p>
                           </div>
                           <div>

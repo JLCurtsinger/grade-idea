@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { adminAuth, adminDb, getUserTokenBalance } from '@/lib/firebase-admin';
+import { Timestamp } from 'firebase-admin/firestore';
 
 // Verify Firebase ID token
 const verifyFirebaseIdToken = async (idToken: string) => {
@@ -61,6 +62,20 @@ export async function POST(request: NextRequest) {
         'Execution complexity is manageable'
       ]
     };
+
+    // Store the idea and analysis in Firestore
+    const ideaRef = adminDb
+      .collection("users")
+      .doc(uid)
+      .collection("ideas")
+      .doc();
+
+    await ideaRef.set({
+      ideaText: idea,
+      analysis: mockAnalysis,
+      createdAt: Timestamp.now(),
+      tokensUsed: 1,
+    });
 
     return NextResponse.json({
       analysis: mockAnalysis,
