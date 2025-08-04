@@ -13,7 +13,7 @@ import { useTokenBalance } from "@/hooks/use-token-balance";
 export default function HomePage() {
   const { currentIdea, setCurrentIdea } = useCurrentIdea();
   const { user } = useAuth();
-  const { tokenBalance, updateBalanceOptimistically, revertBalance } = useTokenBalance();
+  const { tokenBalance, updateBalanceOptimistically, revertBalance, forceRefreshFromFirestore } = useTokenBalance();
   const [scansRemaining, setScansRemaining] = useState(2);
   const [analysisResult, setAnalysisResult] = useState<any>(null);
 
@@ -82,12 +82,18 @@ export default function HomePage() {
             updatedTokenBalance: result.updatedTokenBalance,
             tokensRemaining: result.tokens_remaining
           });
+          
+          // Force refresh from Firestore to ensure consistency
+          await forceRefreshFromFirestore();
         } else {
           // Fallback to tokens_remaining if updatedTokenBalance is not available
           updateBalanceOptimistically(result.tokens_remaining);
           console.log('Token balance updated from fallback:', {
             tokensRemaining: result.tokens_remaining
           });
+          
+          // Force refresh from Firestore to ensure consistency
+          await forceRefreshFromFirestore();
         }
         
         console.log('Idea analysis completed successfully:', {

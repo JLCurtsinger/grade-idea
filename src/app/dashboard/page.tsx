@@ -97,7 +97,7 @@ export default function DashboardPage() {
         };
         setProfile(profile);
         
-        console.log('Dashboard token balance updated:', { 
+        console.log('Dashboard token balance updated from Firestore:', { 
           uid: user.uid, 
           tokenBalance 
         });
