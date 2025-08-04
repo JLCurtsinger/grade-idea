@@ -7,7 +7,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { BuyTokensModal } from "@/components/buy-tokens-modal";
-import { collection, query, orderBy, limit, getDocs } from "firebase/firestore";
+import { collection, query, orderBy, limit, getDocs, doc, getDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { 
   User, 
@@ -55,6 +55,7 @@ export default function DashboardPage() {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [isBuyTokensModalOpen, setIsBuyTokensModalOpen] = useState(false);
+  const [profileRefreshKey, setProfileRefreshKey] = useState(0);
 
   useEffect(() => {
     if (!user) {
@@ -80,22 +81,48 @@ export default function DashboardPage() {
 
     const fetchProfile = async () => {
       try {
-        // For now, use a simple profile structure
+        // Fetch actual token balance from Firestore
+        const userRef = doc(db, "users", user.uid);
+        const userSnap = await getDoc(userRef);
+        
+        let tokenBalance = 0;
+        if (userSnap.exists()) {
+          tokenBalance = userSnap.data().token_balance ?? 0;
+        }
+        
         const profile: UserProfile = {
           id: user.uid,
           email: user.email || '',
-          token_balance: 5 // This should be fetched from Firestore in the future
+          token_balance: tokenBalance
         };
         setProfile(profile);
       } catch (error) {
         console.error('Error fetching profile:', error);
+        // Fallback to 0 tokens if there's an error
+        const profile: UserProfile = {
+          id: user.uid,
+          email: user.email || '',
+          token_balance: 0
+        };
+        setProfile(profile);
       }
     };
 
     fetchIdeas();
     fetchProfile();
     setLoading(false);
-  }, [user, router]);
+  }, [user, router, profileRefreshKey]);
+
+  // Refresh profile when user returns from Stripe checkout
+  useEffect(() => {
+    const handleFocus = () => {
+      // Refresh profile when user returns to the tab
+      setProfileRefreshKey(prev => prev + 1);
+    };
+
+    window.addEventListener('focus', handleFocus);
+    return () => window.removeEventListener('focus', handleFocus);
+  }, []);
 
   const getOverallScore = (analysis: Idea['analysis']) => {
     return analysis.overall_score;
@@ -122,6 +149,12 @@ export default function DashboardPage() {
     }
     
     setIsBuyTokensModalOpen(true);
+  };
+
+  const handleBuyTokensModalClose = () => {
+    setIsBuyTokensModalOpen(false);
+    // Refresh profile to get updated token balance
+    setProfileRefreshKey(prev => prev + 1);
   };
 
   if (loading) {
@@ -413,7 +446,7 @@ export default function DashboardPage() {
       {/* Buy Tokens Modal */}
       <BuyTokensModal 
         isOpen={isBuyTokensModalOpen}
-        onClose={() => setIsBuyTokensModalOpen(false)}
+        onClose={handleBuyTokensModalClose}
       />
     </div>
   );
