@@ -76,7 +76,19 @@ export default function HomePage() {
         setAnalysisResult(result.analysis);
 
         // Update token balance with the actual remaining tokens from the API
-        updateBalanceOptimistically(result.tokens_remaining);
+        if (result.success && result.updatedTokenBalance !== undefined) {
+          updateBalanceOptimistically(result.updatedTokenBalance);
+          console.log('Token balance updated from API response:', {
+            updatedTokenBalance: result.updatedTokenBalance,
+            tokensRemaining: result.tokens_remaining
+          });
+        } else {
+          // Fallback to tokens_remaining if updatedTokenBalance is not available
+          updateBalanceOptimistically(result.tokens_remaining);
+          console.log('Token balance updated from fallback:', {
+            tokensRemaining: result.tokens_remaining
+          });
+        }
         
         console.log('Idea analysis completed successfully:', {
           tokensRemaining: result.tokens_remaining,

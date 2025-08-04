@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { adminAuth, adminDb, getUserTokenBalance } from '@/lib/firebase-admin';
+import { adminAuth, adminDb } from '@/lib/firebase-admin';
 import { Timestamp } from 'firebase-admin/firestore';
 
 // Verify Firebase ID token
@@ -36,38 +36,75 @@ export async function POST(request: NextRequest) {
     // Use Firestore transaction to safely check and deduct tokens
     let tokenBalance: number;
     let tokensRemaining: number;
+    let transactionSuccess = false;
     
-    await adminDb.runTransaction(async (transaction) => {
-      const userRef = adminDb.collection('users').doc(uid);
-      const userDoc = await transaction.get(userRef);
-      
-      if (!userDoc.exists) {
-        console.error('User document does not exist:', uid);
-        throw new Error('User not found');
-      }
-      
-      tokenBalance = userDoc.data()?.token_balance || 0;
-      console.log('Current token balance:', tokenBalance);
-      
-      // Check if user has enough tokens
-      if (tokenBalance < 1) {
-        console.error('Insufficient tokens:', { uid, tokenBalance });
-        throw new Error('Not enough tokens');
-      }
-      
-      // Deduct 1 token atomically
-      tokensRemaining = tokenBalance - 1;
-      transaction.update(userRef, {
-        token_balance: tokensRemaining,
-        updated_at: new Date(),
+    console.log('Starting token deduction transaction for user:', uid);
+    
+    try {
+      await adminDb.runTransaction(async (transaction) => {
+        const userRef = adminDb.collection('users').doc(uid);
+        const userDoc = await transaction.get(userRef);
+        
+        if (!userDoc.exists) {
+          console.error('User document does not exist:', uid);
+          throw new Error('User not found');
+        }
+        
+        const userData = userDoc.data();
+        tokenBalance = userData?.token_balance || 0;
+        console.log('Current token balance:', { uid, tokenBalance });
+        
+        // Check if user has enough tokens
+        if (tokenBalance < 1) {
+          console.error('Insufficient tokens:', { uid, tokenBalance });
+          throw new Error('Not enough tokens');
+        }
+        
+        // Deduct 1 token atomically
+        tokensRemaining = tokenBalance - 1;
+        console.log('Deducting 1 token:', { uid, previousBalance: tokenBalance, newBalance: tokensRemaining });
+        
+        transaction.update(userRef, {
+          token_balance: tokensRemaining,
+          updated_at: new Date(),
+        });
+        
+        console.log('Transaction update queued successfully');
       });
       
-      console.log('Token deduction successful:', { 
+      transactionSuccess = true;
+      console.log('Token deduction transaction completed successfully:', { 
         uid, 
         previousBalance: tokenBalance, 
         newBalance: tokensRemaining 
       });
-    });
+      
+    } catch (transactionError) {
+      console.error('Transaction failed:', transactionError);
+      throw transactionError;
+    }
+
+    // Verify the deduction was actually persisted
+    if (transactionSuccess) {
+      try {
+        const verificationDoc = await adminDb.collection('users').doc(uid).get();
+        const actualBalance = verificationDoc.data()?.token_balance || 0;
+        console.log('Verification - Actual balance in Firestore:', { uid, actualBalance, expectedBalance: tokensRemaining });
+        
+        if (actualBalance !== tokensRemaining) {
+          console.error('CRITICAL: Token deduction verification failed!', {
+            uid,
+            expectedBalance: tokensRemaining,
+            actualBalance,
+            difference: actualBalance - tokensRemaining
+          });
+          throw new Error('Token deduction verification failed');
+        }
+      } catch (verificationError) {
+        console.error('Error during verification:', verificationError);
+        throw new Error('Failed to verify token deduction');
+      }
+    }
 
     // TODO: Implement actual idea analysis logic here
     // For now, return a mock analysis
@@ -107,8 +144,10 @@ export async function POST(request: NextRequest) {
     });
 
     return NextResponse.json({
+      success: true,
       analysis: mockAnalysis,
-      tokens_remaining: tokensRemaining
+      tokens_remaining: tokensRemaining,
+      updatedTokenBalance: tokensRemaining
     });
 
   } catch (error) {
@@ -133,6 +172,20 @@ export async function POST(request: NextRequest) {
         return NextResponse.json(
           { error: 'User not found' },
           { status: 404 }
+        );
+      }
+      
+      if (error.message === 'Token deduction verification failed') {
+        return NextResponse.json(
+          { error: 'Token deduction failed - please try again' },
+          { status: 500 }
+        );
+      }
+      
+      if (error.message === 'Failed to verify token deduction') {
+        return NextResponse.json(
+          { error: 'Failed to verify token deduction - please try again' },
+          { status: 500 }
         );
       }
     }
