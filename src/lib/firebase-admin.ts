@@ -24,7 +24,7 @@ const validateFirebaseConfig = () => {
   return {
     projectId: requiredEnvVars.projectId!,
     clientEmail: requiredEnvVars.clientEmail!,
-    privateKey: requiredEnvVars.privateKey!.replace(/\\n/g, '\n'),
+    privateKey: requiredEnvVars.privateKey!.replace(/^"|"$/g, '').replace(/\\n/g, '\n'),
   };
 };
 
@@ -79,6 +79,9 @@ if (!apps.length) {
         FIREBASE_PRIVATE_KEY_PRESENT: !!process.env.FIREBASE_PRIVATE_KEY,
       }
     });
+    
+    // Success log only when all environment variables are valid and SDK is properly initialized
+    console.log('Firebase Admin SDK initialized successfully');
   } catch (error) {
     console.error('Failed to initialize Firebase Admin SDK:', error);
     
