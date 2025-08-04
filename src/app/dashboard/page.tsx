@@ -7,6 +7,8 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { BuyTokensModal } from "@/components/buy-tokens-modal";
+import { IdeaDetailModal } from "@/components/IdeaDetailModal";
+import { DeleteConfirmationModal } from "@/components/DeleteConfirmationModal";
 import { collection, query, orderBy, limit, getDocs, doc, getDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { 
@@ -21,7 +23,8 @@ import {
   Crown,
   Lightbulb,
   Sparkles,
-  RefreshCw
+  RefreshCw,
+  Trash2
 } from "lucide-react";
 import { logTokenDisplay, logTokenError } from "@/lib/utils";
 
@@ -58,6 +61,13 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [isBuyTokensModalOpen, setIsBuyTokensModalOpen] = useState(false);
   const [profileRefreshKey, setProfileRefreshKey] = useState(0);
+  
+  // Modal state management
+  const [selectedIdea, setSelectedIdea] = useState<Idea | null>(null);
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [ideaToDelete, setIdeaToDelete] = useState<Idea | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
     if (!user) {
@@ -175,6 +185,59 @@ export default function DashboardPage() {
     setProfileRefreshKey(prev => prev + 1);
   };
 
+  // Modal handlers
+  const handleIdeaClick = (idea: Idea) => {
+    setSelectedIdea(idea);
+    setIsDetailModalOpen(true);
+  };
+
+  const handleDetailModalClose = () => {
+    setIsDetailModalOpen(false);
+    setSelectedIdea(null);
+  };
+
+  const handleDeleteClick = (e: React.MouseEvent, idea: Idea) => {
+    e.stopPropagation(); // Prevent opening detail modal
+    setIdeaToDelete(idea);
+    setIsDeleteModalOpen(true);
+  };
+
+  const handleDeleteModalClose = () => {
+    setIsDeleteModalOpen(false);
+    setIdeaToDelete(null);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!ideaToDelete) return;
+    
+    setIsDeleting(true);
+    try {
+      // Placeholder delete function - will be wired to Firestore later
+      await deleteIdea(ideaToDelete.id);
+      
+      // Remove from local state
+      setIdeas(prev => prev.filter(idea => idea.id !== ideaToDelete.id));
+      
+      // Close modal
+      handleDeleteModalClose();
+    } catch (error) {
+      console.error('Error deleting idea:', error);
+      alert('Failed to delete idea. Please try again.');
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  // Placeholder delete function - will be wired to Firestore later
+  const deleteIdea = async (ideaId: string) => {
+    // Simulate API call delay
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    console.log('Deleting idea:', ideaId);
+    // TODO: Implement actual Firestore deletion
+    // const ideaRef = doc(db, "users", user!.uid, "ideas", ideaId);
+    // await deleteDoc(ideaRef);
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -253,7 +316,11 @@ export default function DashboardPage() {
           ) : (
             <div className="grid gap-6">
               {ideas.map((idea) => (
-                <Card key={idea.id} className="p-6">
+                <Card 
+                  key={idea.id} 
+                  className="p-6 cursor-pointer hover:shadow-lg transition-all duration-200 hover:scale-[1.01]"
+                  onClick={() => handleIdeaClick(idea)}
+                >
                   <div className="flex items-start justify-between mb-4">
                     <div className="flex-1">
                       <h3 className="text-lg font-semibold text-foreground mb-2">
@@ -270,12 +337,21 @@ export default function DashboardPage() {
                         </div>
                       </div>
                     </div>
-                    <Badge 
-                      variant={idea.analysis.recommendation === "Worth Building" ? "default" : "secondary"}
-                      className="ml-4"
-                    >
-                      {idea.analysis.recommendation}
-                    </Badge>
+                    <div className="flex items-center gap-2">
+                      <Badge 
+                        variant={idea.analysis.recommendation === "Worth Building" ? "default" : "secondary"}
+                        className="ml-4"
+                      >
+                        {idea.analysis.recommendation}
+                      </Badge>
+                      <button
+                        onClick={(e) => handleDeleteClick(e, idea)}
+                        className="p-2 text-foreground-muted hover:text-red-600 hover:bg-red-50 rounded-full transition-colors"
+                        title="Delete idea"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
                   </div>
 
                   {/* Score Grid */}
@@ -329,6 +405,22 @@ export default function DashboardPage() {
       <BuyTokensModal 
         isOpen={isBuyTokensModalOpen} 
         onClose={handleBuyTokensModalClose} 
+      />
+
+      {/* Idea Detail Modal */}
+      <IdeaDetailModal
+        idea={selectedIdea}
+        isOpen={isDetailModalOpen}
+        onClose={handleDetailModalClose}
+      />
+
+      {/* Delete Confirmation Modal */}
+      <DeleteConfirmationModal
+        isOpen={isDeleteModalOpen}
+        onClose={handleDeleteModalClose}
+        onConfirm={handleDeleteConfirm}
+        ideaText={ideaToDelete?.ideaText}
+        isLoading={isDeleting}
       />
     </div>
   );
