@@ -5,9 +5,13 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Check, Star } from "lucide-react";
+import { useStripeCheckout } from "@/hooks/use-stripe-checkout";
+import { useAuth } from "@/context/AuthContext";
 
 export const PricingSection = () => {
   const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
+  const { createCheckoutSession, isLoading, error } = useStripeCheckout();
+  const { user } = useAuth();
 
   const subscriptionPlans = [
     {
@@ -69,10 +73,16 @@ export const PricingSection = () => {
     }
   ];
 
-  const handlePlanSelect = (planName: string) => {
+  const handlePlanSelect = async (planName: string) => {
     setSelectedPlan(planName);
-    // TODO: Integrate with Stripe flow
-    console.log(`Selected plan: ${planName}`);
+    
+    if (!user) {
+      // TODO: Show sign-in modal or redirect to sign-in
+      console.log('User not signed in');
+      return;
+    }
+    
+    await createCheckoutSession(planName);
   };
 
   return (
@@ -164,8 +174,9 @@ export const PricingSection = () => {
                         : 'btn-secondary'
                     }`}
                     onClick={() => handlePlanSelect(plan.name)}
+                    disabled={isLoading}
                   >
-                    {plan.buttonText}
+                    {isLoading ? 'Processing...' : plan.buttonText}
                   </Button>
                 </div>
               </Card>
@@ -219,14 +230,24 @@ export const PricingSection = () => {
                     variant="outline"
                     className="w-full border-brand/30 text-brand hover:bg-brand/10 hover:border-brand/50"
                     onClick={() => handlePlanSelect(plan.name)}
+                    disabled={isLoading}
                   >
-                    {plan.buttonText}
+                    {isLoading ? 'Processing...' : plan.buttonText}
                   </Button>
                 </div>
               </Card>
             ))}
           </div>
         </div>
+
+        {/* Error Display */}
+        {error && (
+          <div className="mt-8 text-center">
+            <div className="max-w-md mx-auto p-4 bg-danger/10 border border-danger/30 rounded-lg">
+              <p className="text-danger text-sm">{error}</p>
+            </div>
+          </div>
+        )}
 
         {/* Additional Info */}
         <div className="mt-16 text-center">
