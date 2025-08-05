@@ -84,6 +84,8 @@ export function IdeaDetailModal({ idea, isOpen, onClose, onScoreUpdate }: IdeaDe
     setDynamicScores(null);
   }, [idea?.id]);
 
+
+
   if (!idea) return null;
 
   const formatDate = (timestamp: { seconds: number; nanoseconds: number }) => {
@@ -248,20 +250,37 @@ export function IdeaDetailModal({ idea, isOpen, onClose, onScoreUpdate }: IdeaDe
                   {dynamicScores ? dynamicScores.overall_score : idea.analysis.overall_score}%
                 </span>
                 {(() => {
-                  const score = dynamicScores ? dynamicScores.overall_score : idea.analysis.overall_score;
-                  const { letter, color } = getLetterGrade(score);
-                  return (
-                    <span className={`text-lg font-bold transition-all duration-300 ${
-                      color === 'green' ? 'text-green-600' :
-                      color === 'lime' ? 'text-lime-600' :
-                      color === 'yellow' ? 'text-yellow-600' :
-                      color === 'orange' ? 'text-orange-600' :
-                      color === 'red' ? 'text-red-600' :
-                      'text-gray-600'
-                    }`}>
-                      {letter}
-                    </span>
-                  );
+                  if (dynamicScores) {
+                    // Use the letter_grade from dynamicScores
+                    const { letter, color } = getLetterGrade(dynamicScores.overall_score);
+                    return (
+                      <span className={`text-lg font-bold transition-all duration-300 ${
+                        color === 'green' ? 'text-green-600' :
+                        color === 'lime' ? 'text-lime-600' :
+                        color === 'yellow' ? 'text-yellow-600' :
+                        color === 'orange' ? 'text-orange-600' :
+                        color === 'red' ? 'text-red-600' :
+                        'text-gray-600'
+                      }`}>
+                        {letter}
+                      </span>
+                    );
+                  } else {
+                    // Use original idea analysis for letter grade
+                    const { letter, color } = getLetterGrade(idea.analysis.overall_score);
+                    return (
+                      <span className={`text-lg font-bold transition-all duration-300 ${
+                        color === 'green' ? 'text-green-600' :
+                        color === 'lime' ? 'text-lime-600' :
+                        color === 'yellow' ? 'text-yellow-600' :
+                        color === 'orange' ? 'text-orange-600' :
+                        color === 'red' ? 'text-red-600' :
+                        'text-gray-600'
+                      }`}>
+                        {letter}
+                      </span>
+                    );
+                  }
                 })()}
                 {/* Show base score indicator if different from current score */}
                 {dynamicScores && dynamicScores.overall_score > baseScore && (
