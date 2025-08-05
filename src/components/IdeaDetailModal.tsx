@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { 
   Dialog, 
   DialogContent, 
@@ -23,6 +24,7 @@ import {
   XCircle
 } from "lucide-react";
 import { IdeaChecklist } from "./IdeaChecklist";
+import { calculateDynamicScores } from "@/lib/scoring";
 
 interface Idea {
   id: string;
@@ -50,6 +52,14 @@ interface IdeaDetailModalProps {
 }
 
 export function IdeaDetailModal({ idea, isOpen, onClose }: IdeaDetailModalProps) {
+  const [dynamicScores, setDynamicScores] = useState<{
+    market_potential: number;
+    monetization: number;
+    execution: number;
+    overall_score: number;
+    letter_grade: string;
+  } | null>(null);
+
   if (!idea) return null;
 
   const formatDate = (timestamp: { seconds: number; nanoseconds: number }) => {
@@ -86,6 +96,16 @@ export function IdeaDetailModal({ idea, isOpen, onClose }: IdeaDetailModalProps)
       default:
         return "bg-gray-100 text-gray-800 border-gray-200";
     }
+  };
+
+  const handleScoreUpdate = (scores: {
+    market_potential: number;
+    monetization: number;
+    execution: number;
+    overall_score: number;
+    letter_grade: string;
+  }) => {
+    setDynamicScores(scores);
   };
 
   return (
@@ -133,13 +153,16 @@ export function IdeaDetailModal({ idea, isOpen, onClose }: IdeaDetailModalProps)
               </Badge>
               <div className="flex items-center gap-2">
                 <span className="text-sm text-foreground-muted">Overall Score:</span>
-                <span className={`text-lg font-bold ${getScoreColor(idea.analysis.overall_score)}`}>
-                  {idea.analysis.overall_score}%
+                <span className={`text-lg font-bold transition-all duration-300 ${
+                  dynamicScores ? getScoreColor(dynamicScores.overall_score) : getScoreColor(idea.analysis.overall_score)
+                }`}>
+                  {dynamicScores ? dynamicScores.overall_score : idea.analysis.overall_score}%
                 </span>
                 {(() => {
-                  const { letter, color } = getLetterGrade(idea.analysis.overall_score);
+                  const score = dynamicScores ? dynamicScores.overall_score : idea.analysis.overall_score;
+                  const { letter, color } = getLetterGrade(score);
                   return (
-                    <span className={`text-lg font-bold ${
+                    <span className={`text-lg font-bold transition-all duration-300 ${
                       color === 'green' ? 'text-green-600' :
                       color === 'lime' ? 'text-lime-600' :
                       color === 'yellow' ? 'text-yellow-600' :
@@ -165,18 +188,20 @@ export function IdeaDetailModal({ idea, isOpen, onClose }: IdeaDetailModalProps)
                   <h4 className="font-medium text-foreground">Market Potential</h4>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className={`text-2xl font-bold ${getScoreColor(idea.analysis.market_potential)}`}>
-                    {idea.analysis.market_potential}%
+                  <span className={`text-2xl font-bold transition-all duration-300 ${
+                    dynamicScores ? getScoreColor(dynamicScores.market_potential) : getScoreColor(idea.analysis.market_potential)
+                  }`}>
+                    {dynamicScores ? dynamicScores.market_potential : idea.analysis.market_potential}%
                   </span>
-                  {getScoreIcon(idea.analysis.market_potential)}
+                  {getScoreIcon(dynamicScores ? dynamicScores.market_potential : idea.analysis.market_potential)}
                 </div>
                 <div className="mt-2 h-2 bg-surface-elevated rounded-full overflow-hidden">
                   <div 
                     className={`h-full rounded-full transition-all duration-1000 ${
-                      idea.analysis.market_potential >= 80 ? 'bg-green-500' :
-                      idea.analysis.market_potential >= 60 ? 'bg-yellow-500' : 'bg-red-500'
+                      (dynamicScores ? dynamicScores.market_potential : idea.analysis.market_potential) >= 80 ? 'bg-green-500' :
+                      (dynamicScores ? dynamicScores.market_potential : idea.analysis.market_potential) >= 60 ? 'bg-yellow-500' : 'bg-red-500'
                     }`}
-                    style={{ width: `${idea.analysis.market_potential}%` }}
+                    style={{ width: `${dynamicScores ? dynamicScores.market_potential : idea.analysis.market_potential}%` }}
                   />
                 </div>
               </Card>
@@ -187,18 +212,20 @@ export function IdeaDetailModal({ idea, isOpen, onClose }: IdeaDetailModalProps)
                   <h4 className="font-medium text-foreground">Competition</h4>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className={`text-2xl font-bold ${getScoreColor(idea.analysis.competition)}`}>
-                    {idea.analysis.competition}%
+                  <span className={`text-2xl font-bold transition-all duration-300 ${
+                    dynamicScores ? getScoreColor(dynamicScores.market_potential) : getScoreColor(idea.analysis.competition)
+                  }`}>
+                    {dynamicScores ? dynamicScores.market_potential : idea.analysis.competition}%
                   </span>
-                  {getScoreIcon(idea.analysis.competition)}
+                  {getScoreIcon(dynamicScores ? dynamicScores.market_potential : idea.analysis.competition)}
                 </div>
                 <div className="mt-2 h-2 bg-surface-elevated rounded-full overflow-hidden">
                   <div 
                     className={`h-full rounded-full transition-all duration-1000 ${
-                      idea.analysis.competition >= 80 ? 'bg-green-500' :
-                      idea.analysis.competition >= 60 ? 'bg-yellow-500' : 'bg-red-500'
+                      (dynamicScores ? dynamicScores.market_potential : idea.analysis.competition) >= 80 ? 'bg-green-500' :
+                      (dynamicScores ? dynamicScores.market_potential : idea.analysis.competition) >= 60 ? 'bg-yellow-500' : 'bg-red-500'
                     }`}
-                    style={{ width: `${idea.analysis.competition}%` }}
+                    style={{ width: `${dynamicScores ? dynamicScores.market_potential : idea.analysis.competition}%` }}
                   />
                 </div>
               </Card>
@@ -209,18 +236,20 @@ export function IdeaDetailModal({ idea, isOpen, onClose }: IdeaDetailModalProps)
                   <h4 className="font-medium text-foreground">Monetization</h4>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className={`text-2xl font-bold ${getScoreColor(idea.analysis.monetization)}`}>
-                    {idea.analysis.monetization}%
+                  <span className={`text-2xl font-bold transition-all duration-300 ${
+                    dynamicScores ? getScoreColor(dynamicScores.monetization) : getScoreColor(idea.analysis.monetization)
+                  }`}>
+                    {dynamicScores ? dynamicScores.monetization : idea.analysis.monetization}%
                   </span>
-                  {getScoreIcon(idea.analysis.monetization)}
+                  {getScoreIcon(dynamicScores ? dynamicScores.monetization : idea.analysis.monetization)}
                 </div>
                 <div className="mt-2 h-2 bg-surface-elevated rounded-full overflow-hidden">
                   <div 
                     className={`h-full rounded-full transition-all duration-1000 ${
-                      idea.analysis.monetization >= 80 ? 'bg-green-500' :
-                      idea.analysis.monetization >= 60 ? 'bg-yellow-500' : 'bg-red-500'
+                      (dynamicScores ? dynamicScores.monetization : idea.analysis.monetization) >= 80 ? 'bg-green-500' :
+                      (dynamicScores ? dynamicScores.monetization : idea.analysis.monetization) >= 60 ? 'bg-yellow-500' : 'bg-red-500'
                     }`}
-                    style={{ width: `${idea.analysis.monetization}%` }}
+                    style={{ width: `${dynamicScores ? dynamicScores.monetization : idea.analysis.monetization}%` }}
                   />
                 </div>
               </Card>
@@ -231,18 +260,20 @@ export function IdeaDetailModal({ idea, isOpen, onClose }: IdeaDetailModalProps)
                   <h4 className="font-medium text-foreground">Execution</h4>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className={`text-2xl font-bold ${getScoreColor(idea.analysis.execution)}`}>
-                    {idea.analysis.execution}%
+                  <span className={`text-2xl font-bold transition-all duration-300 ${
+                    dynamicScores ? getScoreColor(dynamicScores.execution) : getScoreColor(idea.analysis.execution)
+                  }`}>
+                    {dynamicScores ? dynamicScores.execution : idea.analysis.execution}%
                   </span>
-                  {getScoreIcon(idea.analysis.execution)}
+                  {getScoreIcon(dynamicScores ? dynamicScores.execution : idea.analysis.execution)}
                 </div>
                 <div className="mt-2 h-2 bg-surface-elevated rounded-full overflow-hidden">
                   <div 
                     className={`h-full rounded-full transition-all duration-1000 ${
-                      idea.analysis.execution >= 80 ? 'bg-green-500' :
-                      idea.analysis.execution >= 60 ? 'bg-yellow-500' : 'bg-red-500'
+                      (dynamicScores ? dynamicScores.execution : idea.analysis.execution) >= 80 ? 'bg-green-500' :
+                      (dynamicScores ? dynamicScores.execution : idea.analysis.execution) >= 60 ? 'bg-yellow-500' : 'bg-red-500'
                     }`}
-                    style={{ width: `${idea.analysis.execution}%` }}
+                    style={{ width: `${dynamicScores ? dynamicScores.execution : idea.analysis.execution}%` }}
                   />
                 </div>
               </Card>
@@ -269,7 +300,7 @@ export function IdeaDetailModal({ idea, isOpen, onClose }: IdeaDetailModalProps)
 
           {/* Action Items Checklist */}
           <div className="space-y-3">
-            <IdeaChecklist ideaId={idea.id} />
+            <IdeaChecklist ideaId={idea.id} onScoreUpdate={handleScoreUpdate} />
           </div>
         </div>
       </DialogContent>

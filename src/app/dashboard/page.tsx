@@ -63,6 +63,7 @@ export default function DashboardPage() {
   const [isBuyTokensModalOpen, setIsBuyTokensModalOpen] = useState(false);
   const [profileRefreshKey, setProfileRefreshKey] = useState(0);
   const [ideasRefreshKey, setIdeasRefreshKey] = useState(0);
+  const [forceRefresh, setForceRefresh] = useState(0);
   
   // Modal state management
   const [selectedIdea, setSelectedIdea] = useState<Idea | null>(null);
@@ -133,7 +134,7 @@ export default function DashboardPage() {
     };
 
     loadData();
-  }, [user, profileRefreshKey, ideasRefreshKey]);
+  }, [user, profileRefreshKey, ideasRefreshKey, forceRefresh]);
 
   // Force refresh token balance on page mount to ensure fresh data
   useEffect(() => {
@@ -151,6 +152,7 @@ export default function DashboardPage() {
         console.log('Window focused - refreshing profile and ideas');
         setProfileRefreshKey(prev => prev + 1);
         setIdeasRefreshKey(prev => prev + 1);
+        setForceRefresh(prev => prev + 1);
       }
     };
 

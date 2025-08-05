@@ -16,12 +16,21 @@ import {
 } from "lucide-react";
 import { useChecklist } from "@/hooks/useChecklist";
 import { ChecklistData } from "@/lib/checklist";
+import { calculateDynamicScoresFromClient } from "@/lib/scoring";
+import { getLetterGrade } from "@/lib/gradingScale";
 
 interface IdeaChecklistProps {
   ideaId: string;
+  onScoreUpdate?: (scores: {
+    market_potential: number;
+    monetization: number;
+    execution: number;
+    overall_score: number;
+    letter_grade: string;
+  }) => void;
 }
 
-export function IdeaChecklist({ ideaId }: IdeaChecklistProps) {
+export function IdeaChecklist({ ideaId, onScoreUpdate }: IdeaChecklistProps) {
   const { 
     checklistData, 
     loading, 
@@ -37,6 +46,12 @@ export function IdeaChecklist({ ideaId }: IdeaChecklistProps) {
     if (!currentItem) return;
     
     await updateChecklistItem(sectionKey, suggestionId, !currentItem.completed);
+    
+    // Calculate new scores and notify parent component
+    if (onScoreUpdate) {
+      const newScores = calculateDynamicScoresFromClient(checklistData);
+      onScoreUpdate(newScores);
+    }
   };
 
   const getScoreColor = (score: number) => {
@@ -167,10 +182,21 @@ export function IdeaChecklist({ ideaId }: IdeaChecklistProps) {
             </div>
             <div className="flex items-center gap-2">
               <div className="flex items-center gap-1">
-                {getScoreIcon(section.score)}
-                <span className={`text-sm font-medium ${getScoreColor(section.score)}`}>
-                  Score: {section.score}/5
-                </span>
+                {(() => {
+                  const dynamicScore = Math.round((getCompletedCount(section.suggestions) / section.suggestions.length) * 100);
+                  const { letter } = getLetterGrade(dynamicScore);
+                  return (
+                    <>
+                      {getScoreIcon(dynamicScore / 20)} {/* Convert to 5-point scale for icon */}
+                      <span className={`text-sm font-medium ${getScoreColor(dynamicScore / 20)}`}>
+                        {dynamicScore}%
+                      </span>
+                      <span className="text-xs text-foreground-muted">
+                        {letter}
+                      </span>
+                    </>
+                  );
+                })()}
               </div>
               <Badge variant="outline" className="text-xs">
                 {getCompletedCount(section.suggestions)}/{section.suggestions.length} done

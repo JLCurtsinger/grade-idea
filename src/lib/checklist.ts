@@ -11,6 +11,8 @@ import {
   Timestamp 
 } from "firebase/firestore";
 import { db } from "./firebase";
+import { calculateDynamicScoresFromClient } from "./scoring";
+import { getAuth } from "firebase/auth";
 
 export interface ChecklistSuggestion {
   id: string;
@@ -137,6 +139,8 @@ export async function updateChecklistItem(
     
     const querySnapshot = await getDocs(q);
     
+    let updatedChecklistData: ChecklistData;
+    
     if (querySnapshot.empty) {
       // Create a new checklist if it doesn't exist
       await createChecklist(ideaId, userId);
@@ -148,12 +152,23 @@ export async function updateChecklistItem(
       const docRef = newQuerySnapshot.docs[0].ref;
       
       // Update the specific item
+      const updatedSuggestions = defaultChecklistData[section].suggestions.map(item =>
+        item.id === itemId ? { ...item, completed } : item
+      );
+      
       await updateDoc(docRef, {
-        [`sections.${section}.suggestions`]: defaultChecklistData[section].suggestions.map(item =>
-          item.id === itemId ? { ...item, completed } : item
-        ),
+        [`sections.${section}.suggestions`]: updatedSuggestions,
         updated_at: serverTimestamp()
       });
+      
+      // Create updated checklist data for score calculation
+      updatedChecklistData = {
+        ...defaultChecklistData,
+        [section]: {
+          ...defaultChecklistData[section],
+          suggestions: updatedSuggestions
+        }
+      };
     } else {
       // Update existing checklist
       const docRef = querySnapshot.docs[0].ref;
@@ -168,7 +183,48 @@ export async function updateChecklistItem(
         [`sections.${section}.suggestions`]: updatedSuggestions,
         updated_at: serverTimestamp()
       });
+      
+      // Create updated checklist data for score calculation
+      updatedChecklistData = {
+        ...currentData.sections,
+        [section]: {
+          ...currentData.sections[section],
+          suggestions: updatedSuggestions
+        }
+      };
     }
+    
+    // Calculate dynamic scores for client-side updates
+    const dynamicScores = calculateDynamicScoresFromClient(updatedChecklistData);
+    
+    // Call API to update scores on server
+    try {
+      const auth = getAuth();
+      const currentUser = auth.currentUser;
+      
+      if (currentUser) {
+        const idToken = await currentUser.getIdToken();
+        
+        const response = await fetch('/api/update-idea-scores', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            ideaId,
+            idToken,
+            checklistData: updatedChecklistData
+          }),
+        });
+        
+        if (!response.ok) {
+          console.error('Failed to update idea scores:', await response.text());
+        }
+      }
+    } catch (error) {
+      console.error('Error updating idea scores:', error);
+    }
+    
   } catch (error) {
     console.error("Error updating checklist item:", error);
     throw error;
