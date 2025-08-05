@@ -9,9 +9,10 @@ interface HeroSectionProps {
   onSubmit: (idea: string) => void;
   tokenBalance?: number | null;
   exampleIdea?: string;
+  isGrading?: boolean;
 }
 
-export const HeroSection = ({ onSubmit, tokenBalance, exampleIdea }: HeroSectionProps) => {
+export const HeroSection = ({ onSubmit, tokenBalance, exampleIdea, isGrading = false }: HeroSectionProps) => {
   const [idea, setIdea] = useState(exampleIdea || "");
   const [isLoading, setIsLoading] = useState(false);
 
@@ -76,18 +77,18 @@ export const HeroSection = ({ onSubmit, tokenBalance, exampleIdea }: HeroSection
                   value={idea}
                   onChange={(e) => setIdea(e.target.value)}
                   placeholder="Describe your idea..."
-                  className="input-primary text-lg py-4 pr-36 min-h-[60px]"
-                  disabled={isLoading}
+                  className={`input-primary text-lg py-4 pr-36 min-h-[60px] ${isGrading ? 'animate-input-pulse' : ''}`}
+                  disabled={isLoading || isGrading}
                   style={{
                     paddingRight: 'calc(8rem + 1rem)', // Account for button width + padding
                   }}
                 />
                 <Button
                   type="submit"
-                  disabled={!idea.trim() || isLoading}
+                  disabled={!idea.trim() || isLoading || isGrading}
                   className="btn-primary-breathing absolute right-2 top-2 bottom-2 h-auto"
                 >
-                  {isLoading ? (
+                  {isLoading || isGrading ? (
                     <div className="w-5 h-5 border-2 border-brand-foreground/30 border-t-brand-foreground rounded-full animate-spin" />
                   ) : (
                     <>
@@ -97,6 +98,22 @@ export const HeroSection = ({ onSubmit, tokenBalance, exampleIdea }: HeroSection
                   )}
                 </Button>
               </div>
+
+              {/* Loading Dots Overlay */}
+              {isGrading && (
+                <div className="fixed inset-0 bg-background/80 backdrop-blur-sm flex items-center justify-center z-50">
+                  <div className="bg-surface border border-border rounded-lg p-8 shadow-lg max-w-md mx-4">
+                    <div className="text-center space-y-4">
+                      <div className="flex items-center justify-center space-x-2">
+                        <div className="w-3 h-3 bg-brand rounded-full animate-loading-dots"></div>
+                        <div className="w-3 h-3 bg-brand rounded-full animate-loading-dots"></div>
+                        <div className="w-3 h-3 bg-brand rounded-full animate-loading-dots"></div>
+                      </div>
+                      <p className="text-foreground-muted font-medium">Grading your idea...</p>
+                    </div>
+                  </div>
+                </div>
+              )}
 
               {/* Token Balance Display */}
               {tokenBalance !== null && (

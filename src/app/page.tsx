@@ -22,6 +22,7 @@ export default function HomePage() {
   const [scansRemaining, setScansRemaining] = useState(2);
   const [analysisResult, setAnalysisResult] = useState<any>(null);
   const [exampleIdea, setExampleIdea] = useState<string>("");
+  const [isGrading, setIsGrading] = useState(false);
   const { toast } = useToast();
   const router = useRouter();
 
@@ -63,12 +64,15 @@ export default function HomePage() {
   }, []);
 
   const handleIdeaSubmit = async (idea: string) => {
+    setIsGrading(true);
+    
     // Guest scan tracking
     if (!user) {
       const used = parseInt(localStorage.getItem("guestScansUsed") || "0", 10);
       if (used >= 2) {
         // Show login prompt (existing modal will handle this)
         alert('Please sign in to continue analyzing ideas. You can sign in using the button in the header.');
+        setIsGrading(false);
         return;
       } else {
         localStorage.setItem("guestScansUsed", (used + 1).toString());
@@ -133,6 +137,7 @@ export default function HomePage() {
 
         // Redirect to dashboard to show the new idea with modal open
         router.push(`/dashboard?open=${result.ideaId}`);
+        setIsGrading(false);
         return;
       } catch (error) {
         console.error('Error analyzing idea:', error);
@@ -149,12 +154,14 @@ export default function HomePage() {
           description: "Failed to analyze idea. Please try again.",
           variant: "destructive",
         });
+        setIsGrading(false);
         return;
       }
     }
 
     setCurrentIdea(idea);
     setScansRemaining(prev => Math.max(0, prev - 1));
+    setIsGrading(false);
   };
 
   const handleTryAnother = () => {
@@ -165,7 +172,7 @@ export default function HomePage() {
     <div className="min-h-screen bg-background">
       {!currentIdea ? (
         <>
-          <HeroSection onSubmit={handleIdeaSubmit} tokenBalance={tokenBalance} exampleIdea={exampleIdea} />
+          <HeroSection onSubmit={handleIdeaSubmit} tokenBalance={tokenBalance} exampleIdea={exampleIdea} isGrading={isGrading} />
           <FeaturesSection />
           <PricingSection />
         </>
