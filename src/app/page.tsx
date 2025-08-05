@@ -65,37 +65,79 @@ export default function HomePage() {
 
   const handleIdeaSubmit = async (idea: string) => {
     setIsGrading(true);
+    let previousBalance: number | null = null;
     
-    // Guest scan tracking
-    if (!user) {
-      const used = parseInt(localStorage.getItem("guestScansUsed") || "0", 10);
-      if (used >= 2) {
-        // Show login prompt (existing modal will handle this)
-        alert('Please sign in to continue analyzing ideas. You can sign in using the button in the header.');
-        setIsGrading(false);
-        return;
-      } else {
-        localStorage.setItem("guestScansUsed", (used + 1).toString());
-      }
-    } else {
-      // Check token balance for signed-in users
-      if (tokenBalance !== null && tokenBalance < 1) {
-        toast({
-          title: "Insufficient Tokens",
-          description: "You need at least 1 token to analyze an idea. Please purchase more tokens.",
-          variant: "destructive",
+    try {
+      if (!user) {
+        // Anonymous user - use anonymous API
+        console.log('Calling anonymous analyzeIdea API:', { ideaLength: idea.length });
+        
+        const response = await fetch('/api/grade-idea-anonymous', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ idea }),
         });
-        return;
-      }
 
-      // Optimistically update UI to show deduction
-      const previousBalance = tokenBalance;
-      if (tokenBalance !== null) {
-        updateBalanceOptimistically(tokenBalance - 1);
-      }
+        const data = await response.json();
+        
+        if (!response.ok) {
+          if (data.requiresSignup) {
+            toast({
+              title: "Free Trial Limit Reached",
+              description: "You've used your 2 free idea analyses. Please sign up to continue analyzing ideas.",
+              variant: "destructive",
+            });
+          } else {
+            toast({
+              title: "Analysis Failed",
+              description: data.error || "Failed to analyze idea. Please try again.",
+              variant: "destructive",
+            });
+          }
+          setIsGrading(false);
+          return;
+        }
 
-      // Call the analyzeIdea API for signed-in users
-      try {
+        if (data.success) {
+          setAnalysisResult(data.analysis);
+          setCurrentIdea(idea);
+          
+          // Show remaining tokens message
+          if (data.tokensRemaining === 0) {
+            toast({
+              title: "Last Free Analysis Used",
+              description: "You've used your last free analysis. Sign up to continue analyzing ideas!",
+              variant: "default",
+            });
+          } else if (data.tokensRemaining === 1) {
+            toast({
+              title: "1 Free Analysis Remaining",
+              description: "You have 1 free analysis left. Sign up for unlimited access!",
+              variant: "default",
+            });
+          }
+        }
+      } else {
+        // Signed-in user - check token balance
+        if (tokenBalance !== null && tokenBalance < 1) {
+          toast({
+            title: "Insufficient Tokens",
+            description: "You need at least 1 token to analyze an idea. Please purchase more tokens.",
+            variant: "destructive",
+          });
+          setIsGrading(false);
+          return;
+        }
+
+        // Optimistically update UI to show deduction
+        previousBalance = tokenBalance;
+        if (tokenBalance !== null) {
+          updateBalanceOptimistically(tokenBalance - 1);
+        }
+
+        // Call the analyzeIdea API for signed-in users
         console.log('Calling analyzeIdea API:', { uid: user.uid, ideaLength: idea.length });
         
         const result = await submitIdeaForAnalysis(idea, user);
@@ -113,6 +155,7 @@ export default function HomePage() {
               description: "You need at least 1 token to analyze an idea. Please purchase more tokens.",
               variant: "destructive",
             });
+            setIsGrading(false);
             return;
           }
           
@@ -141,10 +184,10 @@ export default function HomePage() {
         return;
       } catch (error) {
         console.error('Error analyzing idea:', error);
-        logTokenError(user.uid, error instanceof Error ? error.message : 'Unknown error', 'idea_submission');
+        logTokenError(user?.uid || 'unknown', error instanceof Error ? error.message : 'Unknown error', 'idea_submission');
         
-        // Revert optimistic update and force refresh from Firestore on error
-        if (previousBalance !== null) {
+        // Revert optimistic update and force refresh from Firestore on error (only for signed-in users)
+        if (user && previousBalance !== null) {
           console.log('Error occurred - reverting optimistic update');
           await revertBalance(previousBalance);
         }
@@ -157,11 +200,10 @@ export default function HomePage() {
         setIsGrading(false);
         return;
       }
+    } catch (error) {
+      console.error('Error in handleIdeaSubmit:', error);
+      setIsGrading(false);
     }
-
-    setCurrentIdea(idea);
-    setScansRemaining(prev => Math.max(0, prev - 1));
-    setIsGrading(false);
   };
 
   const handleTryAnother = () => {

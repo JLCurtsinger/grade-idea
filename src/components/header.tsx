@@ -3,11 +3,12 @@
 import { useState, useEffect } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Menu, X } from "lucide-react";
+import { Menu, X, Coins } from "lucide-react";
 import Image from "next/image";
 import { useRouter, usePathname } from "next/navigation";
 import { useCurrentIdea } from "@/context/CurrentIdeaContext";
 import { useAuth } from "@/context/AuthContext";
+import { useTokenBalance } from "@/hooks/use-token-balance";
 
 export const Header = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -15,6 +16,7 @@ export const Header = () => {
   const pathname = usePathname();
   const { setCurrentIdea } = useCurrentIdea();
   const { user, openModal, logout } = useAuth();
+  const { tokenBalance } = useTokenBalance();
   
   // Check if we're on the landing page
   const isLandingPage = pathname === '/';
@@ -182,6 +184,12 @@ export const Header = () => {
 
             {/* Desktop Actions */}
             <div className="hidden md:flex items-center gap-4">
+              {user && tokenBalance !== null && (
+                <div className="flex items-center gap-2 text-sm text-foreground-muted">
+                  <Coins className="w-4 h-4" />
+                  <span>{tokenBalance} tokens</span>
+                </div>
+              )}
               <Button 
                 variant="ghost" 
                 className="text-foreground-muted hover:text-foreground"
@@ -304,6 +312,12 @@ export const Header = () => {
                 <div className="text-foreground font-medium truncate">
                   {user.email}
                 </div>
+                {tokenBalance !== null && (
+                  <div className="flex items-center gap-2 mt-3 text-sm text-foreground-muted">
+                    <Coins className="w-4 h-4" />
+                    <span>{tokenBalance} tokens</span>
+                  </div>
+                )}
               </div>
             )}
 
