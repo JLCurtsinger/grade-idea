@@ -27,6 +27,7 @@ import {
   Trash2
 } from "lucide-react";
 import { logTokenDisplay, logTokenError } from "@/lib/utils";
+import { getLetterGrade } from "@/lib/gradingScale";
 
 interface Idea {
   id: string;
@@ -406,8 +407,25 @@ export default function DashboardPage() {
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
                     <div className="text-center p-3 bg-surface rounded-lg">
                       <div className="text-sm text-foreground-muted mb-1">Overall</div>
-                      <div className={`text-lg font-bold ${getScoreColor(getOverallScore(idea.analysis))}`}>
-                        {getOverallScore(idea.analysis)}%
+                      <div className="flex items-center justify-center gap-2">
+                        <div className={`text-lg font-bold ${getScoreColor(getOverallScore(idea.analysis))}`}>
+                          {getOverallScore(idea.analysis)}%
+                        </div>
+                        {(() => {
+                          const { letter, color } = getLetterGrade(getOverallScore(idea.analysis));
+                          return (
+                            <div className={`text-lg font-bold ${
+                              color === 'green' ? 'text-green-600' :
+                              color === 'lime' ? 'text-lime-600' :
+                              color === 'yellow' ? 'text-yellow-600' :
+                              color === 'orange' ? 'text-orange-600' :
+                              color === 'red' ? 'text-red-600' :
+                              'text-gray-600'
+                            }`}>
+                              {letter}
+                            </div>
+                          );
+                        })()}
                       </div>
                     </div>
                     <div className="text-center p-3 bg-surface rounded-lg">

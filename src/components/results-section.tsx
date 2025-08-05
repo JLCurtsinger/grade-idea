@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
+import { getLetterGrade } from "@/lib/gradingScale";
 import { 
   TrendingUp, 
   Users, 
@@ -248,8 +249,26 @@ export const ResultsSection = ({ idea, analysis: apiAnalysis }: ResultsSectionPr
                 {/* Overall Score */}
                 <div className="pt-6 border-t border-border">
                   <div className="text-center space-y-2">
-                    <div className="text-3xl font-bold text-gradient">
-                      {animateScores ? Math.round(analysis.scores.reduce((sum, s) => sum + s.score, 0) / analysis.scores.length) : 0}
+                    <div className="flex items-center justify-center gap-3">
+                      <div className="text-3xl font-bold text-gradient">
+                        {animateScores ? Math.round(analysis.scores.reduce((sum, s) => sum + s.score, 0) / analysis.scores.length) : 0}
+                      </div>
+                      {animateScores && (() => {
+                        const overallScore = Math.round(analysis.scores.reduce((sum, s) => sum + s.score, 0) / analysis.scores.length);
+                        const { letter, color } = getLetterGrade(overallScore);
+                        return (
+                          <div className={`text-2xl font-bold ${
+                            color === 'green' ? 'text-green-600' :
+                            color === 'lime' ? 'text-lime-600' :
+                            color === 'yellow' ? 'text-yellow-600' :
+                            color === 'orange' ? 'text-orange-600' :
+                            color === 'red' ? 'text-red-600' :
+                            'text-gray-600'
+                          }`}>
+                            {letter}
+                          </div>
+                        );
+                      })()}
                     </div>
                     <div className="text-sm text-foreground-muted">Overall Validation Score</div>
                   </div>

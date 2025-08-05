@@ -9,6 +9,7 @@ import {
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
+import { getLetterGrade } from "@/lib/gradingScale";
 import { 
   Calendar, 
   Coins, 
@@ -135,6 +136,21 @@ export function IdeaDetailModal({ idea, isOpen, onClose }: IdeaDetailModalProps)
                 <span className={`text-lg font-bold ${getScoreColor(idea.analysis.overall_score)}`}>
                   {idea.analysis.overall_score}%
                 </span>
+                {(() => {
+                  const { letter, color } = getLetterGrade(idea.analysis.overall_score);
+                  return (
+                    <span className={`text-lg font-bold ${
+                      color === 'green' ? 'text-green-600' :
+                      color === 'lime' ? 'text-lime-600' :
+                      color === 'yellow' ? 'text-yellow-600' :
+                      color === 'orange' ? 'text-orange-600' :
+                      color === 'red' ? 'text-red-600' :
+                      'text-gray-600'
+                    }`}>
+                      {letter}
+                    </span>
+                  );
+                })()}
               </div>
             </div>
           </div>
