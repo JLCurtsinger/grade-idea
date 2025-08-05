@@ -146,8 +146,8 @@ export const ResultsSection = ({ idea, analysis: apiAnalysis }: ResultsSectionPr
                   This is mock data. Sign up to run a real AI-powered analysis.
                 </p>
                 <Button 
-                  onClick={openModal}
-                  className="bg-blue-600 hover:bg-blue-700 text-white"
+                  onClick={() => openModal('signup')}
+                  className="btn-primary"
                 >
                   Sign Up
                 </Button>
