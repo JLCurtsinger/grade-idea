@@ -58,6 +58,10 @@ export default function ExamplesPage() {
       const response = await fetch('/api/public-ideas');
       const data = await response.json();
       
+      if (process.env.NODE_ENV === 'development') {
+        console.log("[DEBUG] Fetched public ideas:", data);
+      }
+      
       if (data.success) {
         setPublicIdeas(data.ideas);
       }
