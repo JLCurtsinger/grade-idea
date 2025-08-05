@@ -3,13 +3,11 @@
 import { useState, useEffect } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Menu, X, Coins } from "lucide-react";
+import { Menu, X } from "lucide-react";
 import Image from "next/image";
 import { useRouter, usePathname } from "next/navigation";
 import { useCurrentIdea } from "@/context/CurrentIdeaContext";
 import { useAuth } from "@/context/AuthContext";
-import { useTokenBalance } from "@/hooks/use-token-balance";
-import { useAnonymousTokens } from "@/hooks/use-anonymous-tokens";
 
 export const Header = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -17,12 +15,6 @@ export const Header = () => {
   const pathname = usePathname();
   const { setCurrentIdea } = useCurrentIdea();
   const { user, openModal, logout } = useAuth();
-  const { tokenBalance } = useTokenBalance();
-  const { anonymousTokens, isLoading: isAnonymousLoading } = useAnonymousTokens();
-  
-  // Determine user authentication state
-  const isAnonymous = user?.isAnonymous === true;
-  const isSignedIn = user && !isAnonymous;
   
   // Check if we're on the landing page
   const isLandingPage = pathname === '/';
@@ -106,7 +98,7 @@ export const Header = () => {
   };
 
   const handleAuthClick = () => {
-    if (isSignedIn) {
+    if (user) {
       logout();
     } else {
       openModal('signin');
@@ -115,7 +107,7 @@ export const Header = () => {
   };
 
   const handleGetStartedClick = () => {
-    if (isSignedIn) {
+    if (user) {
       router.push('/dashboard');
     } else {
       openModal('signup');
@@ -190,30 +182,18 @@ export const Header = () => {
 
             {/* Desktop Actions */}
             <div className="hidden md:flex items-center gap-4">
-              {isSignedIn && tokenBalance !== null && (
-                <div className="flex items-center gap-2 text-sm text-foreground-muted">
-                  <Coins className="w-4 h-4" />
-                  <span>{tokenBalance} tokens</span>
-                </div>
-              )}
-              {!isSignedIn && !isAnonymousLoading && anonymousTokens !== null && anonymousTokens > 0 && (
-                <div className="flex items-center gap-2 text-sm text-foreground-muted">
-                  <Coins className="w-4 h-4" />
-                  <span>{anonymousTokens} free uses left</span>
-                </div>
-              )}
               <Button 
                 variant="ghost" 
                 className="text-foreground-muted hover:text-foreground"
                 onClick={handleAuthClick}
               >
-                {isSignedIn ? 'Sign Out' : 'Sign In'}
+                {user ? 'Sign Out' : 'Sign In'}
               </Button>
               <Button 
                 className="btn-primary"
                 onClick={handleGetStartedClick}
               >
-                {isSignedIn ? 'My Dashboard' : 'Get Started'}
+                {user ? 'My Dashboard' : 'Get Started'}
               </Button>
             </div>
 
@@ -301,10 +281,10 @@ export const Header = () => {
                 className="w-full btn-primary text-lg py-4"
                 onClick={handleGetStartedClick}
               >
-                {isSignedIn ? 'My Dashboard' : 'Get Started'}
+                {user ? 'My Dashboard' : 'Get Started'}
               </Button>
               
-              {isSignedIn && (
+              {user && (
                 <Button 
                   variant="ghost" 
                   className="w-full justify-start text-lg text-foreground-muted hover:text-foreground py-4"
@@ -316,7 +296,7 @@ export const Header = () => {
             </div>
 
             {/* User Info (if signed in) */}
-            {isSignedIn && (
+            {user && (
               <div className="pt-6 border-t border-border">
                 <div className="text-sm text-foreground-muted mb-2">
                   Signed in as
@@ -324,30 +304,11 @@ export const Header = () => {
                 <div className="text-foreground font-medium truncate">
                   {user.email}
                 </div>
-                {tokenBalance !== null && (
-                  <div className="flex items-center gap-2 mt-3 text-sm text-foreground-muted">
-                    <Coins className="w-4 h-4" />
-                    <span>{tokenBalance} tokens</span>
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* Anonymous User Info */}
-            {!isSignedIn && !isAnonymousLoading && anonymousTokens !== null && anonymousTokens > 0 && (
-              <div className="pt-6 border-t border-border">
-                <div className="text-sm text-foreground-muted mb-2">
-                  Free Trial
-                </div>
-                <div className="flex items-center gap-2 text-sm text-foreground-muted">
-                  <Coins className="w-4 h-4" />
-                  <span>{anonymousTokens} free uses left</span>
-                </div>
               </div>
             )}
 
             {/* Sign In (if not signed in) */}
-            {!isSignedIn && (
+            {!user && (
               <div className="pt-6 border-t border-border">
                 <Button 
                   variant="ghost" 
