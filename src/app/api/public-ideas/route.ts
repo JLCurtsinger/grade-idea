@@ -4,9 +4,11 @@ import { adminDb } from '@/lib/firebase-admin';
 export async function GET(request: NextRequest) {
   try {
     // Get all ideas from all users where public is true
+    // Adding orderBy to trigger index creation if missing
     const ideasSnapshot = await adminDb
       .collectionGroup('ideas')
       .where('public', '==', true)
+      .orderBy('createdAt', 'desc')
       .get();
 
     const ideas = [];
