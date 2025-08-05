@@ -17,6 +17,7 @@ import {
 import { useChecklist } from "@/hooks/useChecklist";
 import { ChecklistData } from "@/lib/checklist";
 import { calculateDynamicScoresFromClient } from "@/lib/scoring";
+import { useEffect } from "react";
 
 
 interface IdeaChecklistProps {
@@ -40,6 +41,14 @@ export function IdeaChecklist({ ideaId, baseScore, onScoreUpdate }: IdeaChecklis
     refreshChecklist 
   } = useChecklist(ideaId);
 
+  // Recalculate scores whenever checklist data changes
+  useEffect(() => {
+    if (checklistData && onScoreUpdate) {
+      const newScores = calculateDynamicScoresFromClient(checklistData, baseScore);
+      onScoreUpdate(newScores);
+    }
+  }, [checklistData, onScoreUpdate, baseScore]);
+
   const handleToggleSuggestion = async (sectionKey: keyof ChecklistData, suggestionId: string) => {
     if (!checklistData) return;
     
@@ -47,12 +56,6 @@ export function IdeaChecklist({ ideaId, baseScore, onScoreUpdate }: IdeaChecklis
     if (!currentItem) return;
     
     await updateChecklistItem(sectionKey, suggestionId, !currentItem.completed);
-    
-    // Calculate new scores and notify parent component
-    if (onScoreUpdate) {
-      const newScores = calculateDynamicScoresFromClient(checklistData, baseScore);
-      onScoreUpdate(newScores);
-    }
   };
 
 
