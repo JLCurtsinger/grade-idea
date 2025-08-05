@@ -140,8 +140,7 @@ export default function DashboardPage() {
     };
 
     loadData();
-    // Clear updated scores when data is refreshed from server
-    setUpdatedIdeaScores({});
+    // Don't clear updated scores - let them persist for user experience
   }, [user, profileRefreshKey, ideasRefreshKey, forceRefresh]);
 
   // Force refresh token balance on page mount to ensure fresh data
@@ -231,14 +230,7 @@ export default function DashboardPage() {
   const handleDetailModalClose = () => {
     setIsDetailModalOpen(false);
     setSelectedIdea(null);
-    // Clear updated scores for this idea when modal closes
-    if (selectedIdea) {
-      setUpdatedIdeaScores(prev => {
-        const newScores = { ...prev };
-        delete newScores[selectedIdea.id];
-        return newScores;
-      });
-    }
+    // Don't clear updated scores - let them persist for dashboard display
   };
 
   const updateIdeaScores = (ideaId: string, scores: {
