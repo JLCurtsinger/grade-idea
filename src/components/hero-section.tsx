@@ -63,18 +63,18 @@ export const HeroSection = ({ onSubmit, tokenBalance }: HeroSectionProps) => {
 
             {/* Input Form */}
             <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="relative">
+              <div className="flex flex-wrap gap-2">
                 <Input
                   value={idea}
                   onChange={(e) => setIdea(e.target.value)}
                   placeholder="Describe your idea..."
-                  className="input-primary text-lg py-4 pr-32 min-h-[60px]"
+                  className="input-primary text-lg py-4 min-h-[60px] flex-1 min-w-0"
                   disabled={isLoading}
                 />
                 <Button
                   type="submit"
                   disabled={!idea.trim() || isLoading}
-                  className="btn-primary-breathing absolute right-2 top-2 bottom-2 h-auto"
+                  className="btn-primary-breathing whitespace-nowrap"
                 >
                   {isLoading ? (
                     <div className="w-5 h-5 border-2 border-brand-foreground/30 border-t-brand-foreground rounded-full animate-spin" />
