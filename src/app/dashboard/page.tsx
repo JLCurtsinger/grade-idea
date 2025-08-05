@@ -52,6 +52,7 @@ interface UserProfile {
   id: string;
   email: string;
   token_balance: number;
+  totalIdeasSubmitted?: number;
 }
 
 export default function DashboardPage() {
@@ -102,19 +103,23 @@ export default function DashboardPage() {
 
     const fetchProfile = async () => {
       try {
-        // Fetch actual token balance from Firestore
+        // Fetch actual token balance and total ideas from Firestore
         const userRef = doc(db, "users", user.uid);
         const userSnap = await getDoc(userRef);
         
         let tokenBalance = 0;
+        let totalIdeasSubmitted = 0;
         if (userSnap.exists()) {
-          tokenBalance = userSnap.data().token_balance ?? 0;
+          const userData = userSnap.data();
+          tokenBalance = userData.token_balance ?? 0;
+          totalIdeasSubmitted = userData.totalIdeasSubmitted ?? 0;
         }
         
         const profile: UserProfile = {
           id: user.uid,
           email: user.email || '',
-          token_balance: tokenBalance
+          token_balance: tokenBalance,
+          totalIdeasSubmitted: totalIdeasSubmitted
         };
         setProfile(profile);
         
@@ -376,7 +381,17 @@ export default function DashboardPage() {
         <div className="space-y-6">
           <div className="flex items-center justify-between">
             <h2 className="text-2xl font-bold text-foreground">Recent Ideas</h2>
-            <Badge variant="secondary">{ideas.length} analyzed</Badge>
+            <Badge variant="secondary">
+              {(() => {
+                // Use totalIdeasSubmitted if available, otherwise fallback to ideas.length with "+" indicator
+                if (profile?.totalIdeasSubmitted !== undefined && profile.totalIdeasSubmitted > 0) {
+                  return `Total Analyzed: ${profile.totalIdeasSubmitted}`;
+                } else {
+                  // Fallback for older users without the counter
+                  return `${ideas.length}+ analyzed`;
+                }
+              })()}
+            </Badge>
           </div>
 
           {ideas.length === 0 ? (

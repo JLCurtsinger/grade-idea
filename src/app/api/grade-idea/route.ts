@@ -105,6 +105,11 @@ export async function POST(request: NextRequest) {
     console.log('[TOKEN_TRANSACTION] Context: deduction | User: ' + uid + ' | Tokens: -1');
     logTokenUpdate(uid, tokenBalance, newTokenBalance, 'deduction');
     
+    // Increment total ideas submitted counter
+    const currentTotalIdeas = userDoc.data()?.totalIdeasSubmitted || 0;
+    const newTotalIdeas = currentTotalIdeas + 1;
+    console.log('Incrementing total ideas submitted:', { uid, previousTotal: currentTotalIdeas, newTotal: newTotalIdeas });
+    
     // Validate UID match and log Firestore path
     console.log('Token deduction - UID being used:', uid);
     console.log('Firestore path:', userRef.path);
@@ -121,6 +126,7 @@ export async function POST(request: NextRequest) {
       // TEST 3: Check Firestore Write Result
       const updateResult = await userRef.update({
         token_balance: newTokenBalance,
+        totalIdeasSubmitted: newTotalIdeas,
         updated_at: new Date(),
       });
       
