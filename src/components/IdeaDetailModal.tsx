@@ -79,6 +79,11 @@ export function IdeaDetailModal({ idea, isOpen, onClose, onScoreUpdate }: IdeaDe
     setIsPublic(idea?.public || false);
   }, [idea?.public]);
 
+  // Reset dynamicScores when idea changes
+  useEffect(() => {
+    setDynamicScores(null);
+  }, [idea?.id]);
+
   if (!idea) return null;
 
   const formatDate = (timestamp: { seconds: number; nanoseconds: number }) => {
