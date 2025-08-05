@@ -11,7 +11,8 @@ import {
   GoogleAuthProvider, 
   sendPasswordResetEmail,
   signOut,
-  onAuthStateChanged
+  onAuthStateChanged,
+  deleteUser
 } from 'firebase/auth';
 import { auth, db } from '@/lib/firebase';
 import { doc, setDoc, getDoc } from 'firebase/firestore';
@@ -156,7 +157,16 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const logout = async () => {
     try {
+      const currentUser = auth.currentUser;
+      if (currentUser?.isAnonymous) {
+        try {
+          await deleteUser(currentUser);
+        } catch (err) {
+          console.warn("Could not delete anonymous user:", err);
+        }
+      }
       await signOut(auth);
+      window.location.reload();
     } catch (error: any) {
       throw new Error(getErrorMessage(error.code));
     }

@@ -21,6 +21,10 @@ export default function HomePage() {
   const { user } = useAuth();
   const { tokenBalance, updateBalanceOptimistically, revertBalance, forceRefreshFromFirestore } = useTokenBalance();
   const { anonymousTokens, decrementTokens, anonymousUser, isLoading: isAnonymousLoading } = useAnonymousTokens();
+  
+  // Determine user authentication state
+  const isAnonymous = user?.isAnonymous === true;
+  const isSignedIn = user && !isAnonymous;
   const [scansRemaining, setScansRemaining] = useState(2);
   const [analysisResult, setAnalysisResult] = useState<any>(null);
   const [exampleIdea, setExampleIdea] = useState<string>("");
@@ -70,7 +74,7 @@ export default function HomePage() {
     let previousBalance: number | null = null;
     
     try {
-      if (!user) {
+      if (!isSignedIn) {
         // Anonymous user - use anonymous API
         console.log('Calling anonymous analyzeIdea API:', { ideaLength: idea.length });
         

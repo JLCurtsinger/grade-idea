@@ -20,6 +20,10 @@ export const Header = () => {
   const { tokenBalance } = useTokenBalance();
   const { anonymousTokens, isLoading: isAnonymousLoading } = useAnonymousTokens();
   
+  // Determine user authentication state
+  const isAnonymous = user?.isAnonymous === true;
+  const isSignedIn = user && !isAnonymous;
+  
   // Check if we're on the landing page
   const isLandingPage = pathname === '/';
 
@@ -102,7 +106,7 @@ export const Header = () => {
   };
 
   const handleAuthClick = () => {
-    if (user) {
+    if (isSignedIn) {
       logout();
     } else {
       openModal('signin');
@@ -111,7 +115,7 @@ export const Header = () => {
   };
 
   const handleGetStartedClick = () => {
-    if (user) {
+    if (isSignedIn) {
       router.push('/dashboard');
     } else {
       openModal('signup');
@@ -186,13 +190,13 @@ export const Header = () => {
 
             {/* Desktop Actions */}
             <div className="hidden md:flex items-center gap-4">
-              {user && tokenBalance !== null && (
+              {isSignedIn && tokenBalance !== null && (
                 <div className="flex items-center gap-2 text-sm text-foreground-muted">
                   <Coins className="w-4 h-4" />
                   <span>{tokenBalance} tokens</span>
                 </div>
               )}
-              {!user && !isAnonymousLoading && anonymousTokens !== null && anonymousTokens > 0 && (
+              {!isSignedIn && !isAnonymousLoading && anonymousTokens !== null && anonymousTokens > 0 && (
                 <div className="flex items-center gap-2 text-sm text-foreground-muted">
                   <Coins className="w-4 h-4" />
                   <span>{anonymousTokens} free uses left</span>
@@ -203,13 +207,13 @@ export const Header = () => {
                 className="text-foreground-muted hover:text-foreground"
                 onClick={handleAuthClick}
               >
-                {user ? 'Sign Out' : 'Sign In'}
+                {isSignedIn ? 'Sign Out' : 'Sign In'}
               </Button>
               <Button 
                 className="btn-primary"
                 onClick={handleGetStartedClick}
               >
-                {user ? 'My Dashboard' : 'Get Started'}
+                {isSignedIn ? 'My Dashboard' : 'Get Started'}
               </Button>
             </div>
 
@@ -297,10 +301,10 @@ export const Header = () => {
                 className="w-full btn-primary text-lg py-4"
                 onClick={handleGetStartedClick}
               >
-                {user ? 'My Dashboard' : 'Get Started'}
+                {isSignedIn ? 'My Dashboard' : 'Get Started'}
               </Button>
               
-              {user && (
+              {isSignedIn && (
                 <Button 
                   variant="ghost" 
                   className="w-full justify-start text-lg text-foreground-muted hover:text-foreground py-4"
@@ -312,7 +316,7 @@ export const Header = () => {
             </div>
 
             {/* User Info (if signed in) */}
-            {user && (
+            {isSignedIn && (
               <div className="pt-6 border-t border-border">
                 <div className="text-sm text-foreground-muted mb-2">
                   Signed in as
@@ -330,7 +334,7 @@ export const Header = () => {
             )}
 
             {/* Anonymous User Info */}
-            {!user && !isAnonymousLoading && anonymousTokens !== null && anonymousTokens > 0 && (
+            {!isSignedIn && !isAnonymousLoading && anonymousTokens !== null && anonymousTokens > 0 && (
               <div className="pt-6 border-t border-border">
                 <div className="text-sm text-foreground-muted mb-2">
                   Free Trial
@@ -343,7 +347,7 @@ export const Header = () => {
             )}
 
             {/* Sign In (if not signed in) */}
-            {!user && (
+            {!isSignedIn && (
               <div className="pt-6 border-t border-border">
                 <Button 
                   variant="ghost" 

@@ -12,7 +12,11 @@ export const useAnonymousTokens = () => {
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
-    if (user) {
+    // Determine user authentication state
+    const isAnonymous = user?.isAnonymous === true;
+    const isSignedIn = user && !isAnonymous;
+    
+    if (isSignedIn) {
       // User is signed in, no anonymous tokens
       setAnonymousTokens(null);
       setAnonymousUser(null);
@@ -63,7 +67,11 @@ export const useAnonymousTokens = () => {
   }, [user]);
 
   const decrementTokens = async () => {
-    if (!user && anonymousUser && anonymousTokens !== null && anonymousTokens > 0) {
+    // Determine user authentication state
+    const isAnonymous = user?.isAnonymous === true;
+    const isSignedIn = user && !isAnonymous;
+    
+    if (!isSignedIn && anonymousUser && anonymousTokens !== null && anonymousTokens > 0) {
       try {
         const newTokens = anonymousTokens - 1;
         setAnonymousTokens(newTokens);
