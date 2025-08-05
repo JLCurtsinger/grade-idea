@@ -9,7 +9,7 @@ import {
   DialogTitle,
   DialogDescription 
 } from "@/components/ui/dialog";
-import { Badge } from "@/components/ui/badge";
+
 import { Card } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { getLetterGrade } from "@/lib/gradingScale";
@@ -107,13 +107,13 @@ export function IdeaDetailModal({ idea, isOpen, onClose, onScoreUpdate }: IdeaDe
   const getRecommendationColor = (recommendation: string) => {
     switch (recommendation) {
       case "Worth Building":
-        return "bg-green-100 text-green-800 border-green-200";
+        return "text-green-600";
       case "Needs Work":
-        return "bg-yellow-100 text-yellow-800 border-yellow-200";
+        return "text-yellow-600";
       case "Not Recommended":
-        return "bg-red-100 text-red-800 border-red-200";
+        return "text-red-600";
       default:
-        return "bg-gray-100 text-gray-800 border-gray-200";
+        return "text-foreground-muted";
     }
   };
 
@@ -231,13 +231,10 @@ export function IdeaDetailModal({ idea, isOpen, onClose, onScoreUpdate }: IdeaDe
           {/* Overall Recommendation */}
           <div className="space-y-3">
             <h3 className="text-lg font-semibold text-foreground">Recommendation</h3>
-            <div className="flex items-center gap-3">
-              <Badge 
-                variant="outline" 
-                className={`text-sm font-medium px-3 py-1 ${getRecommendationColor(idea.analysis.recommendation)}`}
-              >
+            <div className="space-y-3">
+              <p className={`text-lg font-medium ${getRecommendationColor(idea.analysis.recommendation)}`}>
                 {idea.analysis.recommendation}
-              </Badge>
+              </p>
               <div className="flex items-center gap-2">
                 <span className="text-sm text-foreground-muted">Overall Score:</span>
                 <span className={`text-lg font-bold transition-all duration-300 ${
