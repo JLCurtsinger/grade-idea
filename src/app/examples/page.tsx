@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { getLetterGrade } from "@/lib/gradingScale";
 import { useRouter } from "next/navigation";
+import { TopIdeaModal } from "@/components/TopIdeaModal";
 
 interface PublicIdea {
   id: string;
@@ -47,6 +48,8 @@ export default function ExamplesPage() {
   const [publicIdeas, setPublicIdeas] = useState<PublicIdea[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [selectedIdea, setSelectedIdea] = useState<PublicIdea | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
@@ -76,6 +79,16 @@ export default function ExamplesPage() {
     setIsRefreshing(true);
     await fetchPublicIdeas();
     setIsRefreshing(false);
+  };
+
+  const handleIdeaClick = (idea: PublicIdea) => {
+    setSelectedIdea(idea);
+    setIsModalOpen(true);
+  };
+
+  const handleModalClose = () => {
+    setIsModalOpen(false);
+    setSelectedIdea(null);
   };
 
   const handleExampleClick = (prompt: string) => {
@@ -200,7 +213,11 @@ export default function ExamplesPage() {
             ) : publicIdeas.length > 0 ? (
               <div className="space-y-4">
                 {publicIdeas.map((idea, index) => (
-                  <Card key={idea.id} className="p-4">
+                  <Card 
+                    key={idea.id} 
+                    className="p-4 cursor-pointer hover:shadow-md transition-all duration-200 hover:scale-[1.01]"
+                    onClick={() => handleIdeaClick(idea)}
+                  >
                     <div className="space-y-3">
                       {/* Idea Text */}
                       <div>
@@ -289,6 +306,13 @@ export default function ExamplesPage() {
           </div>
         </div>
       </div>
+
+      {/* Top Idea Modal */}
+      <TopIdeaModal
+        idea={selectedIdea}
+        isOpen={isModalOpen}
+        onClose={handleModalClose}
+      />
     </div>
   );
 } 
