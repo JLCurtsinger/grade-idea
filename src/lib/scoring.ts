@@ -82,34 +82,37 @@ export function calculateDynamicScores(checklistData: ChecklistData, baseScore?:
  * @returns Object with all calculated scores and letter grade
  */
 export function calculateDynamicScoresFromClient(checklistData: ChecklistData, baseScore?: number): DynamicScores {
-  // Calculate additional score from completed checklist items
-  const allSuggestions = [
-    ...checklistData.marketPotential.suggestions,
-    ...checklistData.monetizationClarity.suggestions,
-    ...checklistData.executionDifficulty.suggestions
-  ];
+  // Calculate dynamic section scores
+  const calculateSectionScore = (section: any, baseSectionScore: number) => {
+    const completedItems = section.suggestions.filter((item: any) => item.completed);
+    const additionalScore = completedItems.reduce((sum: number, item: any) => sum + (item.impact_score || 0), 0);
+    
+    // Convert base score from 1-5 scale to 0-100 scale (multiply by 20)
+    const baseScore100 = baseSectionScore * 20;
+    
+    // Calculate dynamic score with protection
+    const rawScore = baseScore100 + additionalScore;
+    const dynamicScore = Math.min(100, Math.max(baseScore100, rawScore));
+    
+    return Math.round(dynamicScore);
+  };
   
-  const additionalScore = allSuggestions
-    .filter(item => item.completed)
-    .reduce((sum, item) => sum + (item.scoreValue || 0), 0);
+  // Calculate each section's dynamic score
+  const market_potential = calculateSectionScore(checklistData.marketPotential, checklistData.marketPotential.score);
+  const monetization = calculateSectionScore(checklistData.monetizationClarity, checklistData.monetizationClarity.score);
+  const execution = calculateSectionScore(checklistData.executionDifficulty, checklistData.executionDifficulty.score);
   
-  // Calculate final score with base score protection
-  const rawScore = (baseScore || 0) + additionalScore;
-  const finalScore = Math.min(100, Math.max(baseScore || 0, rawScore));
-  
-  // Calculate category scores based on checklist completion (for display purposes)
-  const market_potential = calculateCategoryScore(checklistData.marketPotential.suggestions);
-  const monetization = calculateCategoryScore(checklistData.monetizationClarity.suggestions);
-  const execution = calculateCategoryScore(checklistData.executionDifficulty.suggestions);
+  // Calculate overall score as average of section scores
+  const overall_score = Math.round((market_potential + monetization + execution) / 3);
   
   // Get letter grade
-  const { letter } = getLetterGrade(finalScore);
+  const { letter } = getLetterGrade(overall_score);
   
   return {
     market_potential,
     monetization,
     execution,
-    overall_score: finalScore,
+    overall_score,
     letter_grade: letter
   };
 } 
