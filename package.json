@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "next lint",
     "export": "next build && next export",
-    "deploy": "npm run build && firebase deploy --only hosting"
+    "deploy": "npm run build && firebase deploy --only hosting",
+    "fix-public-ideas": "node scripts/fix-public-ideas-structure.js"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.0",
