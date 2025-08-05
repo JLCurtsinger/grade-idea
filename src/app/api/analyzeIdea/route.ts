@@ -223,7 +223,16 @@ export async function POST(request: NextRequest) {
       ideaText,
       createdAt: Timestamp.now(),
       tokensUsed: 1,
-      analysis: analysis.grading
+      analysis: analysis.grading,
+      public: false, // Default to private
+      initial_scores: {
+        market: analysis.grading.market_potential,
+        differentiation: analysis.grading.competition,
+        monetization: analysis.grading.monetization,
+        execution: analysis.grading.execution,
+        growth: analysis.grading.market_potential, // Using market potential as growth proxy
+        overall: analysis.grading.overall_score
+      }
     });
     console.log('Idea stored in Firestore:', { ideaId, uid });
 

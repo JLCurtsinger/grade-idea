@@ -21,6 +21,7 @@ export default function HomePage() {
   const { tokenBalance, updateBalanceOptimistically, revertBalance, forceRefreshFromFirestore } = useTokenBalance();
   const [scansRemaining, setScansRemaining] = useState(2);
   const [analysisResult, setAnalysisResult] = useState<any>(null);
+  const [exampleIdea, setExampleIdea] = useState<string>("");
   const { toast } = useToast();
   const router = useRouter();
 
@@ -45,6 +46,21 @@ export default function HomePage() {
       logTokenDisplay(user.uid, tokenBalance, 'landing');
     }
   }, [user, tokenBalance]);
+
+  // Handle example parameter from URL
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const urlParams = new URLSearchParams(window.location.search);
+      const example = urlParams.get('example');
+      if (example) {
+        const decodedExample = decodeURIComponent(example);
+        setExampleIdea(decodedExample);
+        // Clear the URL parameter
+        const newUrl = window.location.pathname;
+        window.history.replaceState({}, '', newUrl);
+      }
+    }
+  }, []);
 
   const handleIdeaSubmit = async (idea: string) => {
     // Guest scan tracking
@@ -149,7 +165,7 @@ export default function HomePage() {
     <div className="min-h-screen bg-background">
       {!currentIdea ? (
         <>
-          <HeroSection onSubmit={handleIdeaSubmit} tokenBalance={tokenBalance} />
+          <HeroSection onSubmit={handleIdeaSubmit} tokenBalance={tokenBalance} exampleIdea={exampleIdea} />
           <FeaturesSection />
           <PricingSection />
         </>

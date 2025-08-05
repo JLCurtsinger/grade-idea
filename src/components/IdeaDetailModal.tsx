@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useAuth } from "@/context/AuthContext";
 import { 
   Dialog, 
   DialogContent, 
@@ -10,6 +11,7 @@ import {
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
+import { Switch } from "@/components/ui/switch";
 import { getLetterGrade } from "@/lib/gradingScale";
 import { 
   Calendar, 
@@ -21,7 +23,9 @@ import {
   Lightbulb,
   CheckCircle,
   AlertCircle,
-  XCircle
+  XCircle,
+  Globe,
+  Lock
 } from "lucide-react";
 import { IdeaChecklist } from "./IdeaChecklist";
 import { calculateDynamicScores } from "@/lib/scoring";
@@ -43,6 +47,7 @@ interface Idea {
     nanoseconds: number;
   };
   tokensUsed: number;
+  public?: boolean;
 }
 
 interface IdeaDetailModalProps {
@@ -58,6 +63,7 @@ interface IdeaDetailModalProps {
 }
 
 export function IdeaDetailModal({ idea, isOpen, onClose, onScoreUpdate }: IdeaDetailModalProps) {
+  const { user } = useAuth();
   const [dynamicScores, setDynamicScores] = useState<{
     market_potential: number;
     monetization: number;
@@ -65,6 +71,13 @@ export function IdeaDetailModal({ idea, isOpen, onClose, onScoreUpdate }: IdeaDe
     overall_score: number;
     letter_grade: string;
   } | null>(null);
+  const [isPublic, setIsPublic] = useState(idea?.public || false);
+  const [isToggling, setIsToggling] = useState(false);
+
+  // Update isPublic when idea changes
+  useEffect(() => {
+    setIsPublic(idea?.public || false);
+  }, [idea?.public]);
 
   if (!idea) return null;
 
@@ -101,6 +114,36 @@ export function IdeaDetailModal({ idea, isOpen, onClose, onScoreUpdate }: IdeaDe
         return "bg-red-100 text-red-800 border-red-200";
       default:
         return "bg-gray-100 text-gray-800 border-gray-200";
+    }
+  };
+
+  const handlePublicToggle = async (checked: boolean) => {
+    if (!user) return;
+    
+    setIsToggling(true);
+    try {
+      const idToken = await user.getIdToken();
+      const response = await fetch('/api/toggle-idea-public', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          ideaId: idea.id,
+          idToken,
+          public: checked
+        }),
+      });
+
+      if (response.ok) {
+        setIsPublic(checked);
+      } else {
+        console.error('Failed to toggle public status');
+      }
+    } catch (error) {
+      console.error('Error toggling public status:', error);
+    } finally {
+      setIsToggling(false);
     }
   };
 
@@ -158,6 +201,32 @@ export function IdeaDetailModal({ idea, isOpen, onClose, onScoreUpdate }: IdeaDe
               {idea.tokensUsed} token{idea.tokensUsed !== 1 ? 's' : ''} used
             </div>
           </div>
+
+          {/* Public Toggle */}
+          {user && (
+            <div className="flex items-center justify-between p-3 bg-surface-elevated rounded-lg border border-border">
+              <div className="flex items-center gap-3">
+                {isPublic ? (
+                  <Globe className="w-4 h-4 text-brand" />
+                ) : (
+                  <Lock className="w-4 h-4 text-foreground-muted" />
+                )}
+                <div>
+                  <p className="text-sm font-medium text-foreground">
+                    Make this idea public?
+                  </p>
+                  <p className="text-xs text-foreground-muted">
+                    {isPublic ? 'This idea is visible to other users' : 'This idea is private'}
+                  </p>
+                </div>
+              </div>
+              <Switch
+                checked={isPublic}
+                onCheckedChange={handlePublicToggle}
+                disabled={isToggling}
+              />
+            </div>
+          )}
 
           {/* Overall Recommendation */}
           <div className="space-y-3">

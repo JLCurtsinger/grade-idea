@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ArrowRight, Sparkles } from "lucide-react";
@@ -8,10 +8,11 @@ import { ArrowRight, Sparkles } from "lucide-react";
 interface HeroSectionProps {
   onSubmit: (idea: string) => void;
   tokenBalance?: number | null;
+  exampleIdea?: string;
 }
 
-export const HeroSection = ({ onSubmit, tokenBalance }: HeroSectionProps) => {
-  const [idea, setIdea] = useState("");
+export const HeroSection = ({ onSubmit, tokenBalance, exampleIdea }: HeroSectionProps) => {
+  const [idea, setIdea] = useState(exampleIdea || "");
   const [isLoading, setIsLoading] = useState(false);
 
   const suggestionChips = [
@@ -20,6 +21,13 @@ export const HeroSection = ({ onSubmit, tokenBalance }: HeroSectionProps) => {
     "Mobile app for fitness tracking",
     "B2B automation platform"
   ];
+
+  // Update idea when exampleIdea changes
+  useEffect(() => {
+    if (exampleIdea) {
+      setIdea(exampleIdea);
+    }
+  }, [exampleIdea]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
