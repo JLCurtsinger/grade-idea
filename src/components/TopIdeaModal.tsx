@@ -23,7 +23,7 @@ import { getLetterGrade } from "@/lib/gradingScale";
 interface PublicIdea {
   id: string;
   ideaText: string;
-  initial_scores: {
+  baseScores: {
     market: number;
     differentiation: number;
     monetization: number;
@@ -75,7 +75,7 @@ export function TopIdeaModal({ idea, isOpen, onClose }: TopIdeaModalProps) {
     return "This idea presents an innovative solution to address market opportunities.";
   };
 
-  const generateEvaluationSummary = (scores: PublicIdea['initial_scores']) => {
+  const generateEvaluationSummary = (scores: PublicIdea['baseScores']) => {
     const { letter } = getLetterGrade(scores.overall);
     
     return `The AI evaluation gave this idea an overall grade of ${letter} (${scores.overall}%). The idea shows ${scores.market >= 70 ? 'strong' : scores.market >= 50 ? 'moderate' : 'limited'} market potential, ${scores.monetization >= 70 ? 'clear' : scores.monetization >= 50 ? 'some' : 'unclear'} monetization pathways, ${scores.differentiation >= 70 ? 'strong' : scores.differentiation >= 50 ? 'moderate' : 'limited'} competitive differentiation, and ${scores.execution >= 70 ? 'feasible' : scores.execution >= 50 ? 'moderately complex' : 'challenging'} execution requirements.`;
@@ -127,7 +127,7 @@ export function TopIdeaModal({ idea, isOpen, onClose }: TopIdeaModalProps) {
           <div className="space-y-3">
             <h3 className="text-lg font-semibold text-foreground">AI Evaluation</h3>
             <p className="text-foreground-muted leading-relaxed">
-              {generateEvaluationSummary(idea.initial_scores)}
+              {generateEvaluationSummary(idea.baseScores)}
             </p>
           </div>
 
@@ -141,8 +141,8 @@ export function TopIdeaModal({ idea, isOpen, onClose }: TopIdeaModalProps) {
                   <h4 className="font-medium text-foreground">Market Potential</h4>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className={`text-2xl font-bold ${getScoreColor(idea.initial_scores.market)}`}>
-                    {idea.initial_scores.market}%
+                  <span className={`text-2xl font-bold ${getScoreColor(idea.baseScores.market)}`}>
+                    {idea.baseScores.market}%
                   </span>
                 </div>
               </Card>
@@ -153,8 +153,8 @@ export function TopIdeaModal({ idea, isOpen, onClose }: TopIdeaModalProps) {
                   <h4 className="font-medium text-foreground">Differentiation</h4>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className={`text-2xl font-bold ${getScoreColor(idea.initial_scores.differentiation)}`}>
-                    {idea.initial_scores.differentiation}%
+                  <span className={`text-2xl font-bold ${getScoreColor(idea.baseScores.differentiation)}`}>
+                    {idea.baseScores.differentiation}%
                   </span>
                 </div>
               </Card>
@@ -165,8 +165,8 @@ export function TopIdeaModal({ idea, isOpen, onClose }: TopIdeaModalProps) {
                   <h4 className="font-medium text-foreground">Monetization</h4>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className={`text-2xl font-bold ${getScoreColor(idea.initial_scores.monetization)}`}>
-                    {idea.initial_scores.monetization}%
+                  <span className={`text-2xl font-bold ${getScoreColor(idea.baseScores.monetization)}`}>
+                    {idea.baseScores.monetization}%
                   </span>
                 </div>
               </Card>
@@ -177,8 +177,8 @@ export function TopIdeaModal({ idea, isOpen, onClose }: TopIdeaModalProps) {
                   <h4 className="font-medium text-foreground">Execution</h4>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className={`text-2xl font-bold ${getScoreColor(idea.initial_scores.execution)}`}>
-                    {idea.initial_scores.execution}%
+                  <span className={`text-2xl font-bold ${getScoreColor(idea.baseScores.execution)}`}>
+                    {idea.baseScores.execution}%
                   </span>
                 </div>
               </Card>
@@ -191,10 +191,10 @@ export function TopIdeaModal({ idea, isOpen, onClose }: TopIdeaModalProps) {
             <div className="flex items-center gap-4">
               <div className="flex items-center gap-3">
                 <span className="text-3xl font-bold text-foreground">
-                  {idea.initial_scores.overall}%
+                  {idea.baseScores.overall}%
                 </span>
                 {(() => {
-                  const { letter, color } = getLetterGrade(idea.initial_scores.overall);
+                  const { letter, color } = getLetterGrade(idea.baseScores.overall);
                   return (
                     <Badge 
                       variant="outline" 

@@ -21,7 +21,7 @@ import { TopIdeaModal } from "@/components/TopIdeaModal";
 interface PublicIdea {
   id: string;
   ideaText: string;
-  initial_scores: {
+  baseScores: {
     market: number;
     differentiation: number;
     monetization: number;
@@ -194,7 +194,7 @@ export default function ExamplesPage() {
               )}
             </div>
             <p className="text-foreground-muted">
-              These are the highest-rated startup ideas submitted by users who chose to make them public. See how your idea compares!
+              These are the highest-rated startup ideas submitted by users who chose to make them public. Scores shown are from the original LLM evaluation. See how your idea compares!
             </p>
 
             {isLoading ? (
@@ -233,10 +233,10 @@ export default function ExamplesPage() {
                       <div className="flex items-center gap-3">
                         <div className="flex items-center gap-2">
                           <span className="text-lg font-bold text-foreground">
-                            {idea.initial_scores.overall}%
+                            {idea.baseScores.overall}%
                           </span>
                           {(() => {
-                            const { letter, color } = getLetterGrade(idea.initial_scores.overall);
+                            const { letter, color } = getLetterGrade(idea.baseScores.overall);
                             return (
                               <Badge 
                                 variant="outline" 
@@ -262,29 +262,29 @@ export default function ExamplesPage() {
                         <div className="flex items-center gap-2">
                           <TrendingUp className="w-4 h-4 text-blue-600" />
                           <span className="text-sm text-foreground-muted">Market:</span>
-                          <span className={`text-sm font-medium ${getScoreColor(idea.initial_scores.market)}`}>
-                            {idea.initial_scores.market}%
+                          <span className={`text-sm font-medium ${getScoreColor(idea.baseScores.market)}`}>
+                            {idea.baseScores.market}%
                           </span>
                         </div>
                         <div className="flex items-center gap-2">
                           <Target className="w-4 h-4 text-purple-600" />
                           <span className="text-sm text-foreground-muted">Differentiation:</span>
-                          <span className={`text-sm font-medium ${getScoreColor(idea.initial_scores.differentiation)}`}>
-                            {idea.initial_scores.differentiation}%
+                          <span className={`text-sm font-medium ${getScoreColor(idea.baseScores.differentiation)}`}>
+                            {idea.baseScores.differentiation}%
                           </span>
                         </div>
                         <div className="flex items-center gap-2">
                           <DollarSign className="w-4 h-4 text-green-600" />
                           <span className="text-sm text-foreground-muted">Monetization:</span>
-                          <span className={`text-sm font-medium ${getScoreColor(idea.initial_scores.monetization)}`}>
-                            {idea.initial_scores.monetization}%
+                          <span className={`text-sm font-medium ${getScoreColor(idea.baseScores.monetization)}`}>
+                            {idea.baseScores.monetization}%
                           </span>
                         </div>
                         <div className="flex items-center gap-2">
                           <Zap className="w-4 h-4 text-orange-600" />
                           <span className="text-sm text-foreground-muted">Execution:</span>
-                          <span className={`text-sm font-medium ${getScoreColor(idea.initial_scores.execution)}`}>
-                            {idea.initial_scores.execution}%
+                          <span className={`text-sm font-medium ${getScoreColor(idea.baseScores.execution)}`}>
+                            {idea.baseScores.execution}%
                           </span>
                         </div>
                       </div>
