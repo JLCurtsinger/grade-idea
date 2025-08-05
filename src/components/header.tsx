@@ -178,15 +178,6 @@ export const Header = () => {
               <a href="/examples" className="text-sm font-medium text-foreground-muted hover:text-foreground transition-colors">
                 Examples
               </a>
-              {user && (
-                <Button 
-                  variant="ghost" 
-                  className="text-sm font-medium text-foreground-muted hover:text-foreground transition-colors"
-                  onClick={handleDashboardClick}
-                >
-                  Dashboard
-                </Button>
-              )}
             </nav>
 
             {/* Desktop Actions */}
@@ -282,14 +273,6 @@ export const Header = () => {
               >
                 Examples
               </a>
-              {user && (
-                <button 
-                  onClick={handleDashboardClick}
-                  className="block text-lg font-medium text-foreground-muted hover:text-foreground transition-colors py-3 border-b border-border/50 w-full text-left"
-                >
-                  Dashboard
-                </button>
-              )}
             </nav>
 
             {/* Auth Actions */}
