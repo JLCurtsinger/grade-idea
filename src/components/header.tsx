@@ -155,7 +155,7 @@ export const Header = () => {
                 </div>
               </div>
               <Badge variant="secondary" className="bg-brand/10 text-brand border-brand/20 text-xs">
-                Beta
+                V1.0
               </Badge>
             </div>
 
