@@ -1,8 +1,8 @@
-# Dashboard Recent Ideas - Clickable with Modals
+# Dashboard Current Ideas - Clickable with Modals
 
 ## ✅ Implementation Complete
 
-The Recent Ideas section in the dashboard has been enhanced with clickable functionality, detail modals, and delete confirmation.
+The Current Ideas section in the dashboard has been enhanced with clickable functionality, detail modals, and delete confirmation.
 
 ## 🎯 Features Implemented
 

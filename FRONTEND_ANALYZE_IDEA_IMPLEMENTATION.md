@@ -80,7 +80,7 @@ Integrated with existing toast system:
 ### 2. Dashboard Integration
 1. User redirected to dashboard after successful analysis
 2. Dashboard automatically refreshes to show new idea
-3. New idea appears in "Recent Ideas" section
+3. New idea appears in "Current Ideas" section
 4. Full analysis data available for viewing
 
 ### 3. Error Handling

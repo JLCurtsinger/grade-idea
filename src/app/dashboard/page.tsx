@@ -101,12 +101,12 @@ export default function DashboardPage() {
           ...doc.data() 
         })) as Idea[];
         
-        // Filter out archived ideas for recent ideas section
+        // Filter out archived ideas for current ideas section
         const recentIdeas = allResults.filter(idea => !idea.archived);
         // Get archived ideas for past ideas section
         const archivedIdeas = allResults.filter(idea => idea.archived);
         
-        // Sort recent ideas: starred first, then by creation date (newest first)
+        // Sort current ideas: starred first, then by creation date (newest first)
         const sortedRecentIdeas = recentIdeas.sort((a, b) => {
           // First sort by starred status (starred ideas first)
           if (a.starred && !b.starred) return -1;
@@ -440,7 +440,7 @@ export default function DashboardPage() {
         {/* Ideas History */}
         <div className="space-y-6">
           <div className="flex items-center justify-between">
-            <h2 className="text-2xl font-bold text-foreground">Recent Ideas</h2>
+            <h2 className="text-2xl font-bold text-foreground">Current Ideas</h2>
             <Badge variant="secondary">
               {(() => {
                 // Use totalIdeasSubmitted if available, otherwise fallback to ideas.length with "+" indicator
@@ -653,7 +653,7 @@ export default function DashboardPage() {
                         <button
                           onClick={(e) => toggleArchive(e, idea)}
                           className="p-2 text-blue-600 hover:text-blue-700 rounded-full transition-colors"
-                          title="Move to Recent Ideas"
+                          title="Move to Current Ideas"
                         >
                           <Archive className="w-4 h-4" />
                         </button>
