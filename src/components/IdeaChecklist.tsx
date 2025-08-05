@@ -1,54 +1,42 @@
 "use client";
 
-import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { 
   TrendingUp, 
   DollarSign, 
   Zap,
   CheckCircle,
   AlertCircle,
-  XCircle
+  XCircle,
+  RefreshCw,
+  AlertTriangle
 } from "lucide-react";
-
-interface ChecklistSuggestion {
-  id: string;
-  text: string;
-  completed: boolean;
-}
-
-interface ChecklistSection {
-  score: number;
-  suggestions: ChecklistSuggestion[];
-}
-
-interface ChecklistData {
-  marketPotential: ChecklistSection;
-  monetizationClarity: ChecklistSection;
-  executionDifficulty: ChecklistSection;
-}
+import { useChecklist } from "@/hooks/useChecklist";
+import { ChecklistData } from "@/lib/checklist";
 
 interface IdeaChecklistProps {
-  checklistData: ChecklistData;
+  ideaId: string;
 }
 
-export function IdeaChecklist({ checklistData }: IdeaChecklistProps) {
-  const [data, setData] = useState<ChecklistData>(checklistData);
+export function IdeaChecklist({ ideaId }: IdeaChecklistProps) {
+  const { 
+    checklistData, 
+    loading, 
+    error, 
+    updateChecklistItem, 
+    refreshChecklist 
+  } = useChecklist(ideaId);
 
-  const handleToggleSuggestion = (sectionKey: keyof ChecklistData, suggestionId: string) => {
-    setData(prevData => ({
-      ...prevData,
-      [sectionKey]: {
-        ...prevData[sectionKey],
-        suggestions: prevData[sectionKey].suggestions.map(suggestion =>
-          suggestion.id === suggestionId
-            ? { ...suggestion, completed: !suggestion.completed }
-            : suggestion
-        )
-      }
-    }));
+  const handleToggleSuggestion = async (sectionKey: keyof ChecklistData, suggestionId: string) => {
+    if (!checklistData) return;
+    
+    const currentItem = checklistData[sectionKey].suggestions.find(item => item.id === suggestionId);
+    if (!currentItem) return;
+    
+    await updateChecklistItem(sectionKey, suggestionId, !currentItem.completed);
   };
 
   const getScoreColor = (score: number) => {
@@ -89,14 +77,77 @@ export function IdeaChecklist({ checklistData }: IdeaChecklistProps) {
     }
   };
 
-  const getCompletedCount = (suggestions: ChecklistSuggestion[]) => {
+  const getCompletedCount = (suggestions: any[]) => {
     return suggestions.filter(suggestion => suggestion.completed).length;
   };
 
-  const getProgressPercentage = (suggestions: ChecklistSuggestion[]) => {
+  const getProgressPercentage = (suggestions: any[]) => {
     if (suggestions.length === 0) return 0;
     return (getCompletedCount(suggestions) / suggestions.length) * 100;
   };
+
+  // Loading state
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center gap-2 mb-4">
+          <h3 className="text-lg font-semibold text-foreground">Action Items</h3>
+          <Badge variant="secondary" className="text-xs">
+            Loading...
+          </Badge>
+        </div>
+        <div className="flex items-center justify-center py-8">
+          <RefreshCw className="w-6 h-6 animate-spin text-foreground/60" />
+        </div>
+      </div>
+    );
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center gap-2 mb-4">
+          <h3 className="text-lg font-semibold text-foreground">Action Items</h3>
+          <Badge variant="secondary" className="text-xs">
+            Error
+          </Badge>
+        </div>
+        <Card className="p-4">
+          <div className="flex items-center gap-3 text-red-600">
+            <AlertTriangle className="w-5 h-5" />
+            <p className="text-sm">{error}</p>
+          </div>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={refreshChecklist}
+            className="mt-3"
+          >
+            <RefreshCw className="w-4 h-4 mr-2" />
+            Retry
+          </Button>
+        </Card>
+      </div>
+    );
+  }
+
+  // No data state
+  if (!checklistData) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center gap-2 mb-4">
+          <h3 className="text-lg font-semibold text-foreground">Action Items</h3>
+          <Badge variant="secondary" className="text-xs">
+            No data
+          </Badge>
+        </div>
+        <Card className="p-4">
+          <p className="text-foreground/60 text-sm">No checklist data available.</p>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -107,7 +158,7 @@ export function IdeaChecklist({ checklistData }: IdeaChecklistProps) {
         </Badge>
       </div>
 
-      {Object.entries(data).map(([sectionKey, section]) => (
+      {Object.entries(checklistData).map(([sectionKey, section]) => (
         <Card key={sectionKey} className="p-4 transition-all duration-200 hover:shadow-md">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-3">
@@ -171,31 +222,4 @@ export function IdeaChecklist({ checklistData }: IdeaChecklistProps) {
       ))}
     </div>
   );
-}
-
-// Mock data for testing
-export const mockChecklistData: ChecklistData = {
-  marketPotential: {
-    score: 3,
-    suggestions: [
-      { id: 'mkt-1', text: 'Estimate your TAM using industry benchmarks', completed: false },
-      { id: 'mkt-2', text: 'Validate interest with a short landing page MVP', completed: false },
-      { id: 'mkt-3', text: 'Conduct 10 customer interviews', completed: false }
-    ]
-  },
-  monetizationClarity: {
-    score: 2,
-    suggestions: [
-      { id: 'mon-1', text: 'Define 2–3 pricing tiers', completed: true },
-      { id: 'mon-2', text: 'Research competitor pricing models', completed: false },
-      { id: 'mon-3', text: 'Create a revenue projection model', completed: false }
-    ]
-  },
-  executionDifficulty: {
-    score: 4,
-    suggestions: [
-      { id: 'exec-1', text: 'Outline the core features in a v1 product', completed: false },
-      { id: 'exec-2', text: 'Identify technical requirements and stack', completed: false }
-    ]
-  }
-}; 
+} 

@@ -1,0 +1,24 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Users can read and write their own user document
+    match /users/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+    
+    // Users can read and write their own ideas
+    match /users/{userId}/ideas/{ideaId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+    
+    // Users can read and write their own checklists
+    match /checklists/{checklistId} {
+      allow read, write: if request.auth != null && 
+        request.auth.uid == resource.data.user_id;
+      
+      // Allow creation if the user_id matches the authenticated user
+      allow create: if request.auth != null && 
+        request.auth.uid == request.resource.data.user_id;
+    }
+  }
+} 

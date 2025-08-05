@@ -21,7 +21,7 @@ import {
   AlertCircle,
   XCircle
 } from "lucide-react";
-import { IdeaChecklist, mockChecklistData } from "./IdeaChecklist";
+import { IdeaChecklist } from "./IdeaChecklist";
 
 interface Idea {
   id: string;
@@ -253,7 +253,7 @@ export function IdeaDetailModal({ idea, isOpen, onClose }: IdeaDetailModalProps)
 
           {/* Action Items Checklist */}
           <div className="space-y-3">
-            <IdeaChecklist checklistData={mockChecklistData} />
+            <IdeaChecklist ideaId={idea.id} />
           </div>
         </div>
       </DialogContent>
