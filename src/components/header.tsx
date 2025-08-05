@@ -175,7 +175,7 @@ export const Header = () => {
               >
                 Pricing
               </a>
-              <a href="#examples" className="text-sm font-medium text-foreground-muted hover:text-foreground transition-colors">
+              <a href="/examples" className="text-sm font-medium text-foreground-muted hover:text-foreground transition-colors">
                 Examples
               </a>
               {user && (
@@ -277,7 +277,7 @@ export const Header = () => {
                 Pricing
               </a>
               <a 
-                href="#examples" 
+                href="/examples" 
                 className="block text-lg font-medium text-foreground-muted hover:text-foreground transition-colors py-3 border-b border-border/50"
               >
                 Examples
