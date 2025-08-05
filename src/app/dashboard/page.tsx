@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { BuyTokensModal } from "@/components/buy-tokens-modal";
 import { IdeaDetailModal } from "@/components/IdeaDetailModal";
 import { DeleteConfirmationModal } from "@/components/DeleteConfirmationModal";
-import { collection, query, orderBy, limit, getDocs, doc, getDoc } from "firebase/firestore";
+import { collection, query, orderBy, limit, getDocs, doc, getDoc, updateDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { 
   User, 
@@ -24,7 +24,9 @@ import {
   Lightbulb,
   Sparkles,
   RefreshCw,
-  Trash2
+  Trash2,
+  Star,
+  Archive
 } from "lucide-react";
 import { logTokenDisplay, logTokenError } from "@/lib/utils";
 import { getLetterGrade } from "@/lib/gradingScale";
@@ -46,6 +48,8 @@ interface Idea {
     nanoseconds: number;
   };
   tokensUsed: number;
+  starred?: boolean;
+  archived?: boolean;
 }
 
 interface UserProfile {
@@ -59,12 +63,14 @@ export default function DashboardPage() {
   const { user } = useAuth();
   const router = useRouter();
   const [ideas, setIdeas] = useState<Idea[]>([]);
+  const [archivedIdeas, setArchivedIdeas] = useState<Idea[]>([]);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [isBuyTokensModalOpen, setIsBuyTokensModalOpen] = useState(false);
   const [profileRefreshKey, setProfileRefreshKey] = useState(0);
   const [ideasRefreshKey, setIdeasRefreshKey] = useState(0);
   const [forceRefresh, setForceRefresh] = useState(0);
+  const [showArchivedIdeas, setShowArchivedIdeas] = useState(false);
   const [updatedIdeaScores, setUpdatedIdeaScores] = useState<Record<string, {
     market_potential: number;
     monetization: number;
@@ -88,16 +94,38 @@ export default function DashboardPage() {
     const fetchIdeas = async () => {
       try {
         const ideasRef = collection(db, "users", user.uid, "ideas");
-        const q = query(ideasRef, orderBy("createdAt", "desc"), limit(10));
+        const q = query(ideasRef, orderBy("createdAt", "desc"));
         const querySnap = await getDocs(q);
-        const results = querySnap.docs.map(doc => ({ 
+        const allResults = querySnap.docs.map(doc => ({ 
           id: doc.id, 
           ...doc.data() 
         })) as Idea[];
-        setIdeas(results);
+        
+        // Filter out archived ideas for recent ideas section
+        const recentIdeas = allResults.filter(idea => !idea.archived);
+        // Get archived ideas for past ideas section
+        const archivedIdeas = allResults.filter(idea => idea.archived);
+        
+        // Sort recent ideas: starred first, then by creation date (newest first)
+        const sortedRecentIdeas = recentIdeas.sort((a, b) => {
+          // First sort by starred status (starred ideas first)
+          if (a.starred && !b.starred) return -1;
+          if (!a.starred && b.starred) return 1;
+          // Then sort by creation date (newest first)
+          return b.createdAt.seconds - a.createdAt.seconds;
+        });
+        
+        // Sort archived ideas by creation date (newest first)
+        const sortedArchivedIdeas = archivedIdeas.sort((a, b) => 
+          b.createdAt.seconds - a.createdAt.seconds
+        );
+        
+        setIdeas(sortedRecentIdeas);
+        setArchivedIdeas(sortedArchivedIdeas);
       } catch (error) {
         console.error('Error fetching ideas:', error);
         setIdeas([]);
+        setArchivedIdeas([]);
       }
     };
 
@@ -320,6 +348,38 @@ export default function DashboardPage() {
     }
   };
 
+  const toggleStar = async (e: React.MouseEvent, idea: Idea) => {
+    e.stopPropagation();
+    try {
+      const ideaRef = doc(db, "users", user.uid, "ideas", idea.id);
+      await updateDoc(ideaRef, {
+        starred: !idea.starred
+      });
+      console.log('Idea starred/unstarred:', idea.id, !idea.starred);
+      
+      // Refresh ideas list
+      setIdeasRefreshKey(prev => prev + 1);
+    } catch (error) {
+      console.error('Error toggling star:', error);
+    }
+  };
+
+  const toggleArchive = async (e: React.MouseEvent, idea: Idea) => {
+    e.stopPropagation();
+    try {
+      const ideaRef = doc(db, "users", user.uid, "ideas", idea.id);
+      await updateDoc(ideaRef, {
+        archived: !idea.archived
+      });
+      console.log('Idea archived/unarchived:', idea.id, !idea.archived);
+      
+      // Refresh ideas list
+      setIdeasRefreshKey(prev => prev + 1);
+    } catch (error) {
+      console.error('Error toggling archive:', error);
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -437,6 +497,24 @@ export default function DashboardPage() {
                         {idea.analysis.recommendation}
                       </Badge>
                       <button
+                        onClick={(e) => toggleStar(e, idea)}
+                        className={`p-2 rounded-full transition-colors ${
+                          idea.starred 
+                            ? 'text-yellow-500 hover:text-yellow-600' 
+                            : 'text-foreground-muted hover:text-yellow-500'
+                        }`}
+                        title={idea.starred ? "Unstar idea" : "Star idea"}
+                      >
+                        <Star className={`w-4 h-4 ${idea.starred ? 'fill-current' : ''}`} />
+                      </button>
+                      <button
+                        onClick={(e) => toggleArchive(e, idea)}
+                        className="p-2 text-foreground-muted hover:text-blue-600 rounded-full transition-colors"
+                        title="Move to Past Ideas"
+                      >
+                        <Archive className="w-4 h-4" />
+                      </button>
+                      <button
                         onClick={(e) => handleDeleteClick(e, idea)}
                         className="p-2 text-foreground-muted hover:text-red-600 hover:bg-red-50 rounded-full transition-colors"
                         title="Delete idea"
@@ -512,6 +590,150 @@ export default function DashboardPage() {
             </div>
           )}
         </div>
+
+        {/* Past Ideas Section */}
+        {archivedIdeas.length > 0 && (
+          <div className="space-y-6 mt-8">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <h2 className="text-2xl font-bold text-foreground">Past Ideas</h2>
+                <Badge variant="outline">{archivedIdeas.length} archived</Badge>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowArchivedIdeas(!showArchivedIdeas)}
+              >
+                {showArchivedIdeas ? 'Hide' : 'Show'} Past Ideas
+              </Button>
+            </div>
+
+            {showArchivedIdeas && (
+              <div className="grid gap-6">
+                {archivedIdeas.map((idea) => (
+                  <Card 
+                    key={idea.id} 
+                    className="p-6 cursor-pointer hover:shadow-lg transition-all duration-200 hover:scale-[1.01] opacity-75"
+                    onClick={() => handleIdeaClick(idea)}
+                  >
+                    <div className="flex items-start justify-between mb-4">
+                      <div className="flex-1">
+                        <h3 className="text-lg font-semibold text-foreground mb-2">
+                          {idea.ideaText}
+                        </h3>
+                        <div className="flex items-center gap-4 text-sm text-foreground-muted">
+                          <div className="flex items-center gap-1">
+                            <Calendar className="w-4 h-4" />
+                            {formatDate(idea.createdAt)}
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <Coins className="w-4 h-4" />
+                            {idea.tokensUsed} token{idea.tokensUsed !== 1 ? 's' : ''}
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Badge 
+                          variant={idea.analysis.recommendation === "Worth Building" ? "default" : "secondary"}
+                          className="ml-4"
+                        >
+                          {idea.analysis.recommendation}
+                        </Badge>
+                        <button
+                          onClick={(e) => toggleStar(e, idea)}
+                          className={`p-2 rounded-full transition-colors ${
+                            idea.starred 
+                              ? 'text-yellow-500 hover:text-yellow-600' 
+                              : 'text-foreground-muted hover:text-yellow-500'
+                          }`}
+                          title={idea.starred ? "Unstar idea" : "Star idea"}
+                        >
+                          <Star className={`w-4 h-4 ${idea.starred ? 'fill-current' : ''}`} />
+                        </button>
+                        <button
+                          onClick={(e) => toggleArchive(e, idea)}
+                          className="p-2 text-blue-600 hover:text-blue-700 rounded-full transition-colors"
+                          title="Move to Recent Ideas"
+                        >
+                          <Archive className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={(e) => handleDeleteClick(e, idea)}
+                          className="p-2 text-foreground-muted hover:text-red-600 hover:bg-red-50 rounded-full transition-colors"
+                          title="Delete idea"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Score Grid */}
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+                      <div className="text-center p-3 bg-surface rounded-lg">
+                        <div className="text-sm text-foreground-muted mb-1">Overall</div>
+                        <div className="flex items-center justify-center gap-2">
+                          {(() => {
+                            const updatedScores = updatedIdeaScores[idea.id];
+                            const overallScore = updatedScores ? updatedScores.overall_score : getOverallScore(idea.analysis);
+                            const { letter, color } = getLetterGrade(overallScore);
+                            return (
+                              <>
+                                <div className={`text-lg font-bold transition-all duration-300 ${getScoreColor(overallScore)}`}>
+                                  {overallScore}%
+                                </div>
+                                <div className={`text-lg font-bold transition-all duration-300 ${
+                                  color === 'green' ? 'text-green-600' :
+                                  color === 'lime' ? 'text-lime-600' :
+                                  color === 'yellow' ? 'text-yellow-600' :
+                                  color === 'orange' ? 'text-orange-600' :
+                                  color === 'red' ? 'text-red-600' :
+                                  'text-gray-600'
+                                }`}>
+                                  {letter}
+                                </div>
+                              </>
+                            );
+                          })()}
+                        </div>
+                      </div>
+                      <div className="text-center p-3 bg-surface rounded-lg">
+                        <div className="text-sm text-foreground-muted mb-1">Market</div>
+                        <div className={`text-lg font-bold transition-all duration-300 ${getScoreColor(updatedIdeaScores[idea.id]?.market_potential ?? idea.analysis.market_potential)}`}>
+                          {updatedIdeaScores[idea.id]?.market_potential ?? idea.analysis.market_potential}%
+                        </div>
+                      </div>
+                      <div className="text-center p-3 bg-surface rounded-lg">
+                        <div className="text-sm text-foreground-muted mb-1">Competition</div>
+                        <div className={`text-lg font-bold transition-all duration-300 ${getScoreColor(idea.analysis.competition)}`}>
+                          {idea.analysis.competition}%
+                        </div>
+                      </div>
+                      <div className="text-center p-3 bg-surface rounded-lg">
+                        <div className="text-sm text-foreground-muted mb-1">Execution</div>
+                        <div className={`text-lg font-bold transition-all duration-300 ${getScoreColor(updatedIdeaScores[idea.id]?.execution ?? idea.analysis.execution)}`}>
+                          {updatedIdeaScores[idea.id]?.execution ?? idea.analysis.execution}%
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Insights */}
+                    <div className="space-y-2">
+                      <h4 className="font-medium text-foreground">Key Insights</h4>
+                      <ul className="space-y-1">
+                        {idea.analysis.insights.slice(0, 3).map((insight, index) => (
+                          <li key={index} className="text-sm text-foreground-muted flex items-start gap-2">
+                            <div className="w-1 h-1 bg-brand rounded-full mt-2 flex-shrink-0"></div>
+                            {insight}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  </Card>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Buy Tokens Modal */}
