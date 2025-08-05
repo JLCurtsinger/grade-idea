@@ -18,7 +18,7 @@ export const Header = () => {
   const { setCurrentIdea } = useCurrentIdea();
   const { user, openModal, logout } = useAuth();
   const { tokenBalance } = useTokenBalance();
-  const { anonymousTokens } = useAnonymousTokens();
+  const { anonymousTokens, isLoading: isAnonymousLoading } = useAnonymousTokens();
   
   // Check if we're on the landing page
   const isLandingPage = pathname === '/';
@@ -192,7 +192,7 @@ export const Header = () => {
                   <span>{tokenBalance} tokens</span>
                 </div>
               )}
-              {!user && anonymousTokens !== null && anonymousTokens > 0 && (
+              {!user && !isAnonymousLoading && anonymousTokens !== null && anonymousTokens > 0 && (
                 <div className="flex items-center gap-2 text-sm text-foreground-muted">
                   <Coins className="w-4 h-4" />
                   <span>{anonymousTokens} free uses left</span>
@@ -330,7 +330,7 @@ export const Header = () => {
             )}
 
             {/* Anonymous User Info */}
-            {!user && anonymousTokens !== null && anonymousTokens > 0 && (
+            {!user && !isAnonymousLoading && anonymousTokens !== null && anonymousTokens > 0 && (
               <div className="pt-6 border-t border-border">
                 <div className="text-sm text-foreground-muted mb-2">
                   Free Trial

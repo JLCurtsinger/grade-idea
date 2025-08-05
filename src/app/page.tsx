@@ -20,7 +20,7 @@ export default function HomePage() {
   const { currentIdea, setCurrentIdea } = useCurrentIdea();
   const { user } = useAuth();
   const { tokenBalance, updateBalanceOptimistically, revertBalance, forceRefreshFromFirestore } = useTokenBalance();
-  const { anonymousTokens, decrementTokens, anonymousUser } = useAnonymousTokens();
+  const { anonymousTokens, decrementTokens, anonymousUser, isLoading: isAnonymousLoading } = useAnonymousTokens();
   const [scansRemaining, setScansRemaining] = useState(2);
   const [analysisResult, setAnalysisResult] = useState<any>(null);
   const [exampleIdea, setExampleIdea] = useState<string>("");
@@ -74,8 +74,41 @@ export default function HomePage() {
         // Anonymous user - use anonymous API
         console.log('Calling anonymous analyzeIdea API:', { ideaLength: idea.length });
         
+        // Ensure anonymous user is available and get Firebase ID token
+        if (!anonymousUser || isAnonymousLoading) {
+          console.log('Anonymous user not ready, waiting...');
+          toast({
+            title: "Please Wait",
+            description: "Setting up your session. Please try again in a moment.",
+            variant: "default",
+          });
+          setIsGrading(false);
+          return;
+        }
+        
+        // Check if anonymous user has tokens
+        if (anonymousTokens === null || anonymousTokens < 1) {
+          toast({
+            title: "No Free Analyses Left",
+            description: "You've used all your free analyses. Please sign up to continue.",
+            variant: "destructive",
+          });
+          setIsGrading(false);
+          return;
+        }
+        
         // Get Firebase ID token for anonymous user
-        const idToken = await anonymousUser?.getIdToken();
+        const idToken = await anonymousUser.getIdToken();
+        
+        if (!idToken) {
+          toast({
+            title: "Authentication Error",
+            description: "Unable to authenticate. Please try again.",
+            variant: "destructive",
+          });
+          setIsGrading(false);
+          return;
+        }
         
         const response = await fetch('/api/grade-idea-anonymous', {
           method: 'POST',

@@ -2,13 +2,14 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { signInAnonymously } from 'firebase/auth';
 import { doc, getDoc, setDoc, updateDoc } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
+import { auth, db } from '@/lib/firebase';
 import { Timestamp } from 'firebase/firestore';
 
 export const useAnonymousTokens = () => {
   const { user } = useAuth();
   const [anonymousTokens, setAnonymousTokens] = useState<number | null>(null);
   const [anonymousUser, setAnonymousUser] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -21,7 +22,10 @@ export const useAnonymousTokens = () => {
     // Create anonymous user if not exists
     const createAnonymousUser = async () => {
       try {
-        const anonymousAuth = await signInAnonymously();
+        setIsLoading(true);
+        console.log('Creating anonymous user...');
+        const anonymousAuth = await signInAnonymously(auth);
+        console.log('Anonymous user created:', anonymousAuth.user.uid);
         setAnonymousUser(anonymousAuth.user);
         
         // Check if user document exists in Firestore
@@ -30,6 +34,7 @@ export const useAnonymousTokens = () => {
         
         if (!userDoc.exists()) {
           // Create anonymous user document
+          console.log('Creating anonymous user document in Firestore...');
           await setDoc(userRef, {
             token_balance: 2,
             is_anonymous: true,
@@ -37,14 +42,20 @@ export const useAnonymousTokens = () => {
             updated_at: Timestamp.now()
           });
           setAnonymousTokens(2);
+          console.log('Anonymous user document created with 2 tokens');
         } else {
           // Get existing token balance
           const userData = userDoc.data();
-          setAnonymousTokens(userData.token_balance || 0);
+          const tokens = userData.token_balance || 0;
+          setAnonymousTokens(tokens);
+          console.log('Existing anonymous user found with', tokens, 'tokens');
         }
       } catch (error) {
         console.error('Error creating anonymous user:', error);
         setAnonymousTokens(0);
+        setAnonymousUser(null);
+      } finally {
+        setIsLoading(false);
       }
     };
 
@@ -77,5 +88,6 @@ export const useAnonymousTokens = () => {
     anonymousTokens,
     decrementTokens,
     anonymousUser,
+    isLoading,
   };
 }; 
