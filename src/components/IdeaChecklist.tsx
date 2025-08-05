@@ -17,7 +17,7 @@ import {
 import { useChecklist } from "@/hooks/useChecklist";
 import { ChecklistData } from "@/lib/checklist";
 import { calculateDynamicScoresFromClient } from "@/lib/scoring";
-import { getLetterGrade } from "@/lib/gradingScale";
+
 
 interface IdeaChecklistProps {
   ideaId: string;
@@ -55,17 +55,7 @@ export function IdeaChecklist({ ideaId, baseScore, onScoreUpdate }: IdeaChecklis
     }
   };
 
-  const getScoreColor = (score: number) => {
-    if (score >= 4) return "text-green-600";
-    if (score >= 3) return "text-yellow-600";
-    return "text-red-600";
-  };
 
-  const getScoreIcon = (score: number) => {
-    if (score >= 4) return <CheckCircle className="w-4 h-4 text-green-600" />;
-    if (score >= 3) return <AlertCircle className="w-4 h-4 text-yellow-600" />;
-    return <XCircle className="w-4 h-4 text-red-600" />;
-  };
 
   const getSectionIcon = (sectionKey: string) => {
     switch (sectionKey) {
@@ -182,23 +172,6 @@ export function IdeaChecklist({ ideaId, baseScore, onScoreUpdate }: IdeaChecklis
               <h4 className="font-medium text-foreground">{getSectionTitle(sectionKey)}</h4>
             </div>
             <div className="flex items-center gap-2">
-              <div className="flex items-center gap-1">
-                {(() => {
-                  const dynamicScore = Math.round((getCompletedCount(section.suggestions) / section.suggestions.length) * 100);
-                  const { letter } = getLetterGrade(dynamicScore);
-                  return (
-                    <>
-                      {getScoreIcon(dynamicScore / 20)} {/* Convert to 5-point scale for icon */}
-                      <span className={`text-sm font-medium ${getScoreColor(dynamicScore / 20)}`}>
-                        {dynamicScore}%
-                      </span>
-                      <span className="text-xs text-foreground-muted">
-                        {letter}
-                      </span>
-                    </>
-                  );
-                })()}
-              </div>
               <Badge variant="outline" className="text-xs">
                 {getCompletedCount(section.suggestions)}/{section.suggestions.length} done
               </Badge>
