@@ -174,4 +174,68 @@ export const getUserTokenBalance = async (userId: string): Promise<number> => {
   }
   
   return userDoc.data()?.token_balance || 0;
+};
+
+// Ideas collection helper functions
+export interface IdeaDocument {
+  id: string;
+  user_id: string;
+  ideaText: string;
+  analysis: {
+    overall_score: number;
+    market_potential: number;
+    competition: number;
+    monetization: number;
+    execution: number;
+    recommendation: string;
+    insights: string[];
+  };
+  createdAt: FirebaseFirestore.Timestamp;
+  tokensUsed: number;
+  status?: string;
+}
+
+// Get user's ideas
+export const getUserIdeas = async (userId: string, limit: number = 10): Promise<IdeaDocument[]> => {
+  if (!isFirebaseInitialized()) {
+    throw new Error('Firebase Admin SDK not initialized');
+  }
+
+  const ideasRef = adminDb
+    .collection("users")
+    .doc(userId)
+    .collection("ideas");
+
+  const snapshot = await ideasRef
+    .orderBy("createdAt", "desc")
+    .limit(limit)
+    .get();
+
+  return snapshot.docs.map(doc => ({
+    id: doc.id,
+    user_id: userId,
+    ...doc.data()
+  })) as IdeaDocument[];
+};
+
+// Delete user's idea
+export const deleteUserIdea = async (userId: string, ideaId: string): Promise<boolean> => {
+  if (!isFirebaseInitialized()) {
+    throw new Error('Firebase Admin SDK not initialized');
+  }
+
+  const ideaRef = adminDb
+    .collection("users")
+    .doc(userId)
+    .collection("ideas")
+    .doc(ideaId);
+
+  const ideaDoc = await ideaRef.get();
+  
+  if (!ideaDoc.exists) {
+    throw new Error('Idea not found');
+  }
+
+  await ideaRef.delete();
+  return true;
 }; 

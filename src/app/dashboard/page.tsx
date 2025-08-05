@@ -228,14 +228,36 @@ export default function DashboardPage() {
     }
   };
 
-  // Placeholder delete function - will be wired to Firestore later
+  // Real delete function with Firestore integration
   const deleteIdea = async (ideaId: string) => {
-    // Simulate API call delay
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    console.log('Deleting idea:', ideaId);
-    // TODO: Implement actual Firestore deletion
-    // const ideaRef = doc(db, "users", user!.uid, "ideas", ideaId);
-    // await deleteDoc(ideaRef);
+    if (!user) {
+      throw new Error('User not authenticated');
+    }
+
+    try {
+      const idToken = await user.getIdToken();
+      const res = await fetch("/api/deleteIdea", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ideaId, idToken }),
+      });
+
+      const data = await res.json();
+      
+      if (!res.ok) {
+        throw new Error(data.error || 'Failed to delete idea');
+      }
+
+      if (data.success) {
+        console.log('Idea deleted successfully:', ideaId);
+        return true;
+      } else {
+        throw new Error(data.error || 'Delete operation failed');
+      }
+    } catch (error) {
+      console.error('Error deleting idea:', error);
+      throw error;
+    }
   };
 
   if (loading) {
