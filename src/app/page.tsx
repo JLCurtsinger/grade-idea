@@ -67,16 +67,9 @@ export default function HomePage() {
     setIsGrading(true);
     
     if (!user) {
-      // Guest user - use mock analysis
+      // Guest user - use mock analysis (no limits)
       const used = parseInt(localStorage.getItem("guestScansUsed") || "0", 10);
-      if (used >= 2) {
-        // Show login prompt (existing modal will handle this)
-        alert('Please sign in to continue analyzing ideas. You can sign in using the button in the header.');
-        setIsGrading(false);
-        return;
-      } else {
-        localStorage.setItem("guestScansUsed", (used + 1).toString());
-      }
+      localStorage.setItem("guestScansUsed", (used + 1).toString());
 
       try {
         console.log('Calling mock analysis API for guest user');
