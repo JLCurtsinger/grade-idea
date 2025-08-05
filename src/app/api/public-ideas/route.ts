@@ -9,6 +9,7 @@ export async function GET(request: NextRequest) {
       .collectionGroup('ideas')
       .where('public', '==', true)
       .orderBy('createdAt', 'desc')
+      .limit(10)
       .get();
 
     const ideas = [];
@@ -61,14 +62,11 @@ export async function GET(request: NextRequest) {
       return bPerfectScores - aPerfectScores;
     });
 
-    // Limit to top 20 ideas
-    const topIdeas = ideas.slice(0, 20);
-
-    console.log('Fetched public ideas:', { count: topIdeas.length });
+    console.log('Fetched public ideas:', { count: ideas.length });
 
     return NextResponse.json({
       success: true,
-      ideas: topIdeas
+      ideas: ideas
     });
 
   } catch (error) {
