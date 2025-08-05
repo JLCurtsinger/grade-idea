@@ -11,6 +11,9 @@ import { useAuth } from "@/context/AuthContext";
 import { useTokenBalance } from "@/hooks/use-token-balance";
 import { logTokenDisplay, logTokenError } from "@/lib/utils";
 import { testGA } from "@/lib/ga-test";
+import { submitIdeaForAnalysis } from "@/lib/api";
+import { useToast } from "@/hooks/use-toast";
+import { useRouter } from "next/navigation";
 
 export default function HomePage() {
   const { currentIdea, setCurrentIdea } = useCurrentIdea();
@@ -18,6 +21,8 @@ export default function HomePage() {
   const { tokenBalance, updateBalanceOptimistically, revertBalance, forceRefreshFromFirestore } = useTokenBalance();
   const [scansRemaining, setScansRemaining] = useState(2);
   const [analysisResult, setAnalysisResult] = useState<any>(null);
+  const { toast } = useToast();
+  const router = useRouter();
 
   // Force refresh token balance on page mount to ensure fresh data
   useEffect(() => {
@@ -55,7 +60,11 @@ export default function HomePage() {
     } else {
       // Check token balance for signed-in users
       if (tokenBalance !== null && tokenBalance < 1) {
-        alert('You need at least 1 token to analyze an idea. Please purchase more tokens.');
+        toast({
+          title: "Insufficient Tokens",
+          description: "You need at least 1 token to analyze an idea. Please purchase more tokens.",
+          variant: "destructive",
+        });
         return;
       }
 
@@ -65,77 +74,50 @@ export default function HomePage() {
         updateBalanceOptimistically(tokenBalance - 1);
       }
 
-      // Call the grade-idea API for signed-in users
+      // Call the analyzeIdea API for signed-in users
       try {
-        const idToken = await user.getIdToken();
-        console.log('Calling grade-idea API:', { uid: user.uid, ideaLength: idea.length });
+        console.log('Calling analyzeIdea API:', { uid: user.uid, ideaLength: idea.length });
         
-        // TEST 4: Frontend UID Verification
-        console.log('=== FRONTEND UID VERIFICATION ===');
-        console.log('Frontend UID:', user.uid);
-        console.log('Frontend UID type:', typeof user.uid);
-        console.log('Frontend UID length:', user.uid.length);
-        console.log('Frontend UID matches pattern:', /^[a-zA-Z0-9]{28}$/.test(user.uid));
-        
-        const response = await fetch('/api/grade-idea', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${idToken}`,
-          },
-          body: JSON.stringify({
-            idea,
-            idToken,
-          }),
-        });
+        const result = await submitIdeaForAnalysis(idea, user);
 
-        if (!response.ok) {
-          const errorData = await response.json();
-          
+        if (!result.success) {
           // Revert optimistic update and force refresh from Firestore on error
           if (previousBalance !== null) {
             console.log('API call failed - reverting optimistic update');
             await revertBalance(previousBalance);
           }
           
-          if (errorData.error === 'Not enough tokens') {
-            alert('You need at least 1 token to analyze an idea. Please purchase more tokens.');
+          if ('error' in result && result.error === 'Not enough tokens') {
+            toast({
+              title: "Insufficient Tokens",
+              description: "You need at least 1 token to analyze an idea. Please purchase more tokens.",
+              variant: "destructive",
+            });
             return;
           }
           
-          throw new Error(errorData.error || 'Failed to analyze idea');
+          throw new Error('error' in result ? result.error : 'Failed to analyze idea');
         }
 
-        const result = await response.json();
-        setAnalysisResult(result.analysis);
+        // Success - show toast and redirect to dashboard
+        toast({
+          title: "Analysis Complete!",
+          description: "Your idea has been analyzed and saved to your dashboard.",
+          variant: "default",
+        });
 
-        // Use only tokenBalance as the single source of truth
-        if (result.success && result.tokenBalance !== undefined) {
-          console.log('=== TOKEN BALANCE UPDATE ===');
-          console.log('Backend response received:', {
-            success: result.success,
-            tokenBalance: result.tokenBalance
-          });
-          
-          // Update token balance with the verified backend value
-          updateBalanceOptimistically(result.tokenBalance);
-          console.log('Token balance updated from backend:', {
-            previousBalance: tokenBalance,
-            newBalance: result.tokenBalance
-          });
-          
-          // Force refresh from Firestore to ensure consistency
-          await forceRefreshFromFirestore();
-          console.log('Force refresh completed');
-        } else {
-          console.error('Invalid backend response:', result);
-          throw new Error('Invalid response from backend');
-        }
+        // Force refresh from Firestore to ensure consistency
+        await forceRefreshFromFirestore();
+        console.log('Force refresh completed');
         
         console.log('Idea analysis completed successfully:', {
-          finalTokenBalance: result.tokenBalance,
-          analysisScore: result.analysis.overall_score
+          ideaId: result.ideaId,
+          userId: user.uid
         });
+
+        // Redirect to dashboard to show the new idea
+        router.push('/dashboard');
+        return;
       } catch (error) {
         console.error('Error analyzing idea:', error);
         logTokenError(user.uid, error instanceof Error ? error.message : 'Unknown error', 'idea_submission');
@@ -146,7 +128,11 @@ export default function HomePage() {
           await revertBalance(previousBalance);
         }
         
-        alert('Failed to analyze idea. Please try again.');
+        toast({
+          title: "Analysis Failed",
+          description: "Failed to analyze idea. Please try again.",
+          variant: "destructive",
+        });
         return;
       }
     }

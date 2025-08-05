@@ -61,6 +61,7 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [isBuyTokensModalOpen, setIsBuyTokensModalOpen] = useState(false);
   const [profileRefreshKey, setProfileRefreshKey] = useState(0);
+  const [ideasRefreshKey, setIdeasRefreshKey] = useState(0);
   
   // Modal state management
   const [selectedIdea, setSelectedIdea] = useState<Idea | null>(null);
@@ -131,13 +132,14 @@ export default function DashboardPage() {
     };
 
     loadData();
-  }, [user, profileRefreshKey]);
+  }, [user, profileRefreshKey, ideasRefreshKey]);
 
   // Force refresh token balance on page mount to ensure fresh data
   useEffect(() => {
     if (user) {
       console.log('Dashboard mounted - forcing token balance refresh');
       setProfileRefreshKey(prev => prev + 1);
+      setIdeasRefreshKey(prev => prev + 1);
     }
   }, []); // Empty dependency array to run only on mount
 
@@ -145,8 +147,9 @@ export default function DashboardPage() {
   useEffect(() => {
     const handleFocus = () => {
       if (user) {
-        console.log('Window focused - refreshing profile');
+        console.log('Window focused - refreshing profile and ideas');
         setProfileRefreshKey(prev => prev + 1);
+        setIdeasRefreshKey(prev => prev + 1);
       }
     };
 
