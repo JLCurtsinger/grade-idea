@@ -43,19 +43,37 @@ export function IdeaChecklist({ ideaId, baseScore, onScoreUpdate }: IdeaChecklis
 
   // Recalculate scores whenever checklist data changes
   useEffect(() => {
-    if (checklistData && onScoreUpdate) {
-      const newScores = calculateDynamicScoresFromClient(checklistData, baseScore);
-      onScoreUpdate(newScores);
+    if (checklistData && onScoreUpdate && !loading) {
+      // Validate that checklistData has the required structure
+      if (checklistData.marketPotential?.suggestions && 
+          checklistData.monetizationClarity?.suggestions && 
+          checklistData.executionDifficulty?.suggestions) {
+        try {
+          // Ensure baseScore is a valid number or undefined
+          const validBaseScore = typeof baseScore === 'number' && !isNaN(baseScore) ? baseScore : undefined;
+          const newScores = calculateDynamicScoresFromClient(checklistData, validBaseScore);
+          onScoreUpdate(newScores);
+        } catch (error) {
+          console.error('Error calculating dynamic scores:', error);
+        }
+      }
     }
-  }, [checklistData, onScoreUpdate, baseScore]);
+  }, [checklistData, onScoreUpdate, baseScore, loading]);
 
   const handleToggleSuggestion = async (sectionKey: keyof ChecklistData, suggestionId: string) => {
     if (!checklistData) return;
     
-    const currentItem = checklistData[sectionKey].suggestions.find(item => item.id === suggestionId);
-    if (!currentItem) return;
-    
-    await updateChecklistItem(sectionKey, suggestionId, !currentItem.completed);
+    try {
+      const section = checklistData[sectionKey];
+      if (!section?.suggestions) return;
+      
+      const currentItem = section.suggestions.find(item => item.id === suggestionId);
+      if (!currentItem) return;
+      
+      await updateChecklistItem(sectionKey, suggestionId, !currentItem.completed);
+    } catch (error) {
+      console.error('Error toggling checklist item:', error);
+    }
   };
 
 
