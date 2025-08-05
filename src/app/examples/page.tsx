@@ -11,7 +11,8 @@ import {
   Zap,
   Lightbulb,
   ArrowRight,
-  Star
+  Star,
+  RefreshCw
 } from "lucide-react";
 import { getLetterGrade } from "@/lib/gradingScale";
 import { useRouter } from "next/navigation";
@@ -45,6 +46,7 @@ const examplePrompts = [
 export default function ExamplesPage() {
   const [publicIdeas, setPublicIdeas] = useState<PublicIdea[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
@@ -64,6 +66,12 @@ export default function ExamplesPage() {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleRefreshIdeas = async () => {
+    setIsRefreshing(true);
+    await fetchPublicIdeas();
+    setIsRefreshing(false);
   };
 
   const handleExampleClick = (prompt: string) => {
@@ -148,11 +156,25 @@ export default function ExamplesPage() {
 
           {/* Section B: Top Public Ideas */}
           <div className="space-y-6">
-            <div className="flex items-center gap-3">
-              <Star className="w-6 h-6 text-brand" />
-              <h2 className="text-2xl font-semibold text-foreground">
-                Top Public Ideas
-              </h2>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <Star className="w-6 h-6 text-brand" />
+                <h2 className="text-2xl font-semibold text-foreground">
+                  Top Public Ideas
+                </h2>
+              </div>
+              {process.env.NODE_ENV === 'development' && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleRefreshIdeas}
+                  disabled={isRefreshing}
+                  className="text-xs"
+                >
+                  <RefreshCw className={`w-3 h-3 mr-1 ${isRefreshing ? 'animate-spin' : ''}`} />
+                  Refresh Ideas
+                </Button>
+              )}
             </div>
             <p className="text-foreground-muted">
               These are the highest-rated startup ideas submitted by users who chose to make them public. See how your idea compares!
