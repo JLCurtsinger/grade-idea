@@ -15,10 +15,11 @@ import { testGA } from "@/lib/ga-test";
 import { submitIdeaForAnalysis } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 import { useRouter } from "next/navigation";
+import { Button } from "@/components/ui/button";
 
 export default function HomePage() {
   const { currentIdea, setCurrentIdea } = useCurrentIdea();
-  const { user } = useAuth();
+  const { user, openModal } = useAuth();
   const { tokenBalance, updateBalanceOptimistically, revertBalance, forceRefreshFromFirestore } = useTokenBalance();
   const { anonymousTokens, decrementTokens, anonymousUser, isLoading: isAnonymousLoading } = useAnonymousTokens();
   
@@ -29,6 +30,7 @@ export default function HomePage() {
   const [analysisResult, setAnalysisResult] = useState<any>(null);
   const [exampleIdea, setExampleIdea] = useState<string>("");
   const [isGrading, setIsGrading] = useState(false);
+  const [showAnonymousCTA, setShowAnonymousCTA] = useState(false);
   const { toast } = useToast();
   const router = useRouter();
 
@@ -249,6 +251,18 @@ export default function HomePage() {
 
   const handleTryAnother = () => {
     setCurrentIdea(null);
+    setAnalysisResult(null);
+    setIsGrading(false); // Clear loading state
+    
+    // For anonymous users, show CTA banner after dismissing results
+    if (!isSignedIn) {
+      setShowAnonymousCTA(true);
+    }
+  };
+
+  const handleAnonymousCTA = () => {
+    setShowAnonymousCTA(false);
+    openModal('signup');
   };
 
   return (
@@ -258,6 +272,42 @@ export default function HomePage() {
           <HeroSection onSubmit={handleIdeaSubmit} tokenBalance={tokenBalance} exampleIdea={exampleIdea} isGrading={isGrading} />
           <FeaturesSection />
           <PricingSection />
+          
+          {/* Anonymous User CTA Banner */}
+          {showAnonymousCTA && !isSignedIn && (
+            <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center p-6">
+              <div className="bg-card border border-border rounded-lg shadow-lg p-8 max-w-md w-full animate-in fade-in-0 zoom-in-95 duration-200">
+                <div className="text-center space-y-4">
+                  <div className="w-12 h-12 bg-brand/20 rounded-full flex items-center justify-center mx-auto">
+                    <svg className="w-6 h-6 text-brand" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                    </svg>
+                  </div>
+                  <h3 className="text-xl font-semibold text-foreground">
+                    Get More Detailed Analysis
+                  </h3>
+                  <p className="text-foreground-muted">
+                    Sign up now for more detailed responses and an interactive checklist for improving your idea.
+                  </p>
+                  <div className="flex flex-col sm:flex-row gap-3 pt-4">
+                    <Button 
+                      className="btn-primary flex-1"
+                      onClick={handleAnonymousCTA}
+                    >
+                      Create Free Account
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      className="flex-1"
+                      onClick={() => setShowAnonymousCTA(false)}
+                    >
+                      Maybe Later
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
         </>
       ) : (
         <>
