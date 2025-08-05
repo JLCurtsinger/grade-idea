@@ -170,6 +170,14 @@ export async function POST(request: NextRequest) {
     await ideaRef.set({
       ideaText: idea,
       analysis: analysis,
+      baseScores: {
+        market: analysis.market_potential,
+        differentiation: analysis.competition,
+        monetization: analysis.monetization,
+        execution: analysis.execution,
+        growth: analysis.market_potential, // Using market potential as growth proxy
+        overall: analysis.overall_score
+      },
       createdAt: Timestamp.now(),
       tokensUsed: 1,
       public: false, // Ideas are private by default

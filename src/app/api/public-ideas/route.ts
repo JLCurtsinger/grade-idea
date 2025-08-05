@@ -22,42 +22,46 @@ export async function GET(request: NextRequest) {
         continue;
       }
 
-      // Support both old initial_scores schema and new analysis schema
-      // Fallback to analysis.scoreBreakdown if initial_scores is not defined
-      let initialScores = data.initial_scores;
-      if (!initialScores && data.analysis) {
-        // Check for nested scoreBreakdown first, then fall back to direct analysis fields
-        const scoreBreakdown = data.analysis.scoreBreakdown || data.analysis;
-        initialScores = {
-          market: scoreBreakdown.market_potential || 0,
-          differentiation: scoreBreakdown.competition || 0,
-          monetization: scoreBreakdown.monetization || 0,
-          execution: scoreBreakdown.execution || 0,
-          growth: scoreBreakdown.market_potential || 0, // Using market potential as growth proxy
-          overall: scoreBreakdown.overall_score || 0
+      // Use baseScores for public ranking (original LLM evaluation only)
+      // Fallback to initial_scores for legacy data, never use analysis (modified scores)
+      let baseScores = data.baseScores;
+      if (!baseScores && data.initial_scores) {
+        // Legacy data fallback - use initial_scores if baseScores doesn't exist
+        baseScores = data.initial_scores;
+      }
+      if (!baseScores && data.analysis) {
+        // Last resort fallback - convert analysis to baseScores format
+        // This ensures we never use modified scores for public ranking
+        baseScores = {
+          market: data.analysis.market_potential || 0,
+          differentiation: data.analysis.competition || 0,
+          monetization: data.analysis.monetization || 0,
+          execution: data.analysis.execution || 0,
+          growth: data.analysis.market_potential || 0, // Using market potential as growth proxy
+          overall: data.analysis.overall_score || 0
         };
       }
 
-      if (initialScores && data.ideaText) {
+      if (baseScores && data.ideaText) {
         ideas.push({
           id: doc.id,
           ideaText: data.ideaText,
-          initial_scores: initialScores,
+          baseScores: baseScores,
           createdAt: data.createdAt
         });
       }
     }
 
-    // Sort by overall score descending, then by number of perfect scores
+    // Sort by base overall score descending (original LLM evaluation only)
     ideas.sort((a, b) => {
-      // First sort by overall score
-      if (b.initial_scores.overall !== a.initial_scores.overall) {
-        return b.initial_scores.overall - a.initial_scores.overall;
+      // First sort by base overall score
+      if (b.baseScores.overall !== a.baseScores.overall) {
+        return b.baseScores.overall - a.baseScores.overall;
       }
       
       // If tied, count perfect scores (100%)
-      const aPerfectScores = Object.values(a.initial_scores).filter(score => score === 100).length;
-      const bPerfectScores = Object.values(b.initial_scores).filter(score => score === 100).length;
+      const aPerfectScores = Object.values(a.baseScores).filter(score => score === 100).length;
+      const bPerfectScores = Object.values(b.baseScores).filter(score => score === 100).length;
       
       return bPerfectScores - aPerfectScores;
     });
