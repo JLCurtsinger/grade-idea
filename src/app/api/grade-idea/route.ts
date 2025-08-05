@@ -172,6 +172,7 @@ export async function POST(request: NextRequest) {
       analysis: analysis,
       createdAt: Timestamp.now(),
       tokensUsed: 1,
+      public: false, // Ideas are private by default
     });
     console.log('Idea analysis stored in Firestore:', { ideaId: ideaRef.id, uid });
 

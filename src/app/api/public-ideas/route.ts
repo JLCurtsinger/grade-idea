@@ -19,16 +19,19 @@ export async function GET(request: NextRequest) {
         continue;
       }
 
-      // Calculate initial_scores from analysis if not present
+      // Support both old initial_scores schema and new analysis schema
+      // Fallback to analysis.scoreBreakdown if initial_scores is not defined
       let initialScores = data.initial_scores;
       if (!initialScores && data.analysis) {
+        // Check for nested scoreBreakdown first, then fall back to direct analysis fields
+        const scoreBreakdown = data.analysis.scoreBreakdown || data.analysis;
         initialScores = {
-          market: data.analysis.market_potential,
-          differentiation: data.analysis.competition,
-          monetization: data.analysis.monetization,
-          execution: data.analysis.execution,
-          growth: data.analysis.market_potential, // Using market potential as growth proxy
-          overall: data.analysis.overall_score
+          market: scoreBreakdown.market_potential || 0,
+          differentiation: scoreBreakdown.competition || 0,
+          monetization: scoreBreakdown.monetization || 0,
+          execution: scoreBreakdown.execution || 0,
+          growth: scoreBreakdown.market_potential || 0, // Using market potential as growth proxy
+          overall: scoreBreakdown.overall_score || 0
         };
       }
 
