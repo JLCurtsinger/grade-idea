@@ -24,23 +24,11 @@ export async function POST(request: NextRequest) {
       }, { status: 400 });
     }
 
-    // Create anonymous user if not exists
-    let anonymousUser;
-    try {
-      anonymousUser = await adminAuth.createUser({
-        email: `anonymous_${Date.now()}@gradeidea.cc`,
-        password: Math.random().toString(36).substring(2, 15),
-        displayName: 'Anonymous User'
-      });
-      uid = anonymousUser.uid;
-      console.log('Created anonymous user:', { uid });
-    } catch (error) {
-      console.error('Error creating anonymous user:', error);
-      return NextResponse.json({
-        success: false,
-        error: 'Failed to create anonymous user'
-      }, { status: 500 });
-    }
+    // For anonymous users, we need to create a temporary anonymous session
+    // This is a simplified approach - in production you'd want to handle this differently
+    const tempUid = `anonymous_${Date.now()}_${Math.random().toString(36).substring(2, 15)}`;
+    uid = tempUid;
+    console.log('Using temporary anonymous UID:', { uid });
 
     // Check if user document exists, create if not
     const userRef = adminDb.collection('users').doc(uid);
@@ -54,7 +42,7 @@ export async function POST(request: NextRequest) {
         email: `anonymous_${Date.now()}@gradeidea.cc`,
         token_balance: 2,
         is_anonymous: true,
-        created_at: Timestamp.now(),
+        createdAt: Timestamp.now(),
         updated_at: Timestamp.now()
       });
       console.log('Created anonymous user document with 2 tokens:', { uid });

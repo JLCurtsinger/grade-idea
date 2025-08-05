@@ -9,6 +9,7 @@ import { PricingSection } from "@/components/pricing-section";
 import { useCurrentIdea } from "@/context/CurrentIdeaContext";
 import { useAuth } from "@/context/AuthContext";
 import { useTokenBalance } from "@/hooks/use-token-balance";
+import { useAnonymousTokens } from "@/hooks/use-anonymous-tokens";
 import { logTokenDisplay, logTokenError } from "@/lib/utils";
 import { testGA } from "@/lib/ga-test";
 import { submitIdeaForAnalysis } from "@/lib/api";
@@ -19,6 +20,7 @@ export default function HomePage() {
   const { currentIdea, setCurrentIdea } = useCurrentIdea();
   const { user } = useAuth();
   const { tokenBalance, updateBalanceOptimistically, revertBalance, forceRefreshFromFirestore } = useTokenBalance();
+  const { anonymousTokens, decrementTokens } = useAnonymousTokens();
   const [scansRemaining, setScansRemaining] = useState(2);
   const [analysisResult, setAnalysisResult] = useState<any>(null);
   const [exampleIdea, setExampleIdea] = useState<string>("");
@@ -104,14 +106,17 @@ export default function HomePage() {
           setAnalysisResult(data.analysis);
           setCurrentIdea(idea);
           
+          // Decrement anonymous tokens
+          const remainingTokens = decrementTokens();
+          
           // Show remaining tokens message
-          if (data.tokensRemaining === 0) {
+          if (remainingTokens === 0) {
             toast({
               title: "Last Free Analysis Used",
               description: "You've used your last free analysis. Sign up to continue analyzing ideas!",
               variant: "default",
             });
-          } else if (data.tokensRemaining === 1) {
+          } else if (remainingTokens === 1) {
             toast({
               title: "1 Free Analysis Remaining",
               description: "You have 1 free analysis left. Sign up for unlimited access!",
@@ -178,11 +183,12 @@ export default function HomePage() {
           userId: user.uid
         });
 
-        // Redirect to dashboard to show the new idea with modal open
+                // Redirect to dashboard to show the new idea with modal open
         router.push(`/dashboard?open=${result.ideaId}`);
         setIsGrading(false);
         return;
-      } catch (error) {
+      }
+    } catch (error) {
         console.error('Error analyzing idea:', error);
         logTokenError(user?.uid || 'unknown', error instanceof Error ? error.message : 'Unknown error', 'idea_submission');
         
@@ -198,12 +204,7 @@ export default function HomePage() {
           variant: "destructive",
         });
         setIsGrading(false);
-        return;
       }
-    } catch (error) {
-      console.error('Error in handleIdeaSubmit:', error);
-      setIsGrading(false);
-    }
   };
 
   const handleTryAnother = () => {
