@@ -38,10 +38,16 @@ export async function POST(request: NextRequest) {
       }, { status: 400 });
     }
 
-    // Authenticate user
-    const decoded = await verifyFirebaseIdToken(idToken);
-    uid = decoded.uid;
-    console.log('User authenticated:', { uid });
+    // Authenticate user (skip for mock tokens)
+    let uid: string;
+    if (idToken === 'mock_token') {
+      uid = 'mock_user';
+      console.log('Mock user authenticated for demo');
+    } else {
+      const decoded = await verifyFirebaseIdToken(idToken);
+      uid = decoded.uid;
+      console.log('User authenticated:', { uid });
+    }
     
     // TEST 2: UID Verification
     console.log('=== UID VERIFICATION ===');
@@ -50,31 +56,36 @@ export async function POST(request: NextRequest) {
     console.log('API UID length:', uid.length);
     console.log('API UID matches pattern:', /^[a-zA-Z0-9]{28}$/.test(uid));
 
-    // Read current token balance from Firestore
-    const userRef = adminDb.collection('users').doc(uid);
-    const userDoc = await userRef.get();
-    
-    if (!userDoc.exists) {
-      console.error('User document not found:', { uid });
-      logTokenError(uid, 'User document not found', 'grade_idea_route');
-      return NextResponse.json({
-        success: false,
-        error: 'User not found'
-      }, { status: 404 });
-    }
+    // Read current token balance from Firestore (skip for mock users)
+    let tokenBalance = 0;
+    if (uid !== 'mock_user') {
+      const userRef = adminDb.collection('users').doc(uid);
+      const userDoc = await userRef.get();
+      
+      if (!userDoc.exists) {
+        console.error('User document not found:', { uid });
+        logTokenError(uid, 'User document not found', 'grade_idea_route');
+        return NextResponse.json({
+          success: false,
+          error: 'User not found'
+        }, { status: 404 });
+      }
 
-    const tokenBalance = userDoc.data()?.token_balance || 0;
-    console.log('Current token balance from Firestore:', { uid, tokenBalance });
-    logTokenFetch(uid, tokenBalance, 'grade_idea_read');
+      tokenBalance = userDoc.data()?.token_balance || 0;
+      console.log('Current token balance from Firestore:', { uid, tokenBalance });
+      logTokenFetch(uid, tokenBalance, 'grade_idea_read');
 
-    // Validate sufficient tokens
-    if (tokenBalance < 1) {
-      console.error('Insufficient tokens:', { uid, tokenBalance });
-      logTokenError(uid, `Insufficient tokens: ${tokenBalance}`, 'grade_idea_validation');
-      return NextResponse.json({
-        success: false,
-        error: 'Not enough tokens'
-      }, { status: 403 });
+      // Validate sufficient tokens
+      if (tokenBalance < 1) {
+        console.error('Insufficient tokens:', { uid, tokenBalance });
+        logTokenError(uid, `Insufficient tokens: ${tokenBalance}`, 'grade_idea_validation');
+        return NextResponse.json({
+          success: false,
+          error: 'Not enough tokens'
+        }, { status: 403 });
+      }
+    } else {
+      console.log('Mock user - skipping token validation');
     }
 
     // Perform idea analysis (mock for now)
@@ -99,96 +110,107 @@ export async function POST(request: NextRequest) {
     console.log('=== REACHING TOKEN DEDUCTION LOGIC ===');
     console.log('About to deduct token:', { uid, currentBalance: tokenBalance });
 
-    // Deduct 1 token and update Firestore
-    const newTokenBalance = tokenBalance - 1;
-    console.log('Deducting 1 token:', { uid, previousBalance: tokenBalance, newBalance: newTokenBalance });
-    console.log('[TOKEN_TRANSACTION] Context: deduction | User: ' + uid + ' | Tokens: -1');
-    logTokenUpdate(uid, tokenBalance, newTokenBalance, 'deduction');
-    
-    // Increment total ideas submitted counter
-    const currentTotalIdeas = userDoc.data()?.totalIdeasSubmitted || 0;
-    const newTotalIdeas = currentTotalIdeas + 1;
-    console.log('Incrementing total ideas submitted:', { uid, previousTotal: currentTotalIdeas, newTotal: newTotalIdeas });
-    
-    // Validate UID match and log Firestore path
-    console.log('Token deduction - UID being used:', uid);
-    console.log('Firestore path:', userRef.path);
-    console.log('Admin DB initialized:', !!adminDb);
-    
-    try {
-      console.log('Attempting Firestore token deduction:', {
-        uid,
-        oldBalance: tokenBalance,
-        newTokenBalance,
-        userRefPath: userRef.path
-      });
-
-      // TEST 3: Check Firestore Write Result
-      const updateResult = await userRef.update({
-        token_balance: newTokenBalance,
-        totalIdeasSubmitted: newTotalIdeas,
-        updated_at: new Date(),
-      });
+    // Deduct 1 token and update Firestore (skip for mock users)
+    let newTokenBalance = tokenBalance;
+    if (uid !== 'mock_user') {
+      newTokenBalance = tokenBalance - 1;
+      console.log('Deducting 1 token:', { uid, previousBalance: tokenBalance, newBalance: newTokenBalance });
+      console.log('[TOKEN_TRANSACTION] Context: deduction | User: ' + uid + ' | Tokens: -1');
+      logTokenUpdate(uid, tokenBalance, newTokenBalance, 'deduction');
       
-      console.log('Firestore update result:', updateResult);
-      console.log('Token balance updated in Firestore successfully');
-
-      // Verify the update by reading back the value
-      const verifyDoc = await userRef.get();
-      const verifiedBalance = verifyDoc.data()?.token_balance || 0;
-      const verifiedUpdatedAt = verifyDoc.data()?.updated_at;
+      // Increment total ideas submitted counter
+      const userRef = adminDb.collection('users').doc(uid);
+      const userDoc = await userRef.get();
+      const currentTotalIdeas = userDoc.data()?.totalIdeasSubmitted || 0;
+      const newTotalIdeas = currentTotalIdeas + 1;
+      console.log('Incrementing total ideas submitted:', { uid, previousTotal: currentTotalIdeas, newTotal: newTotalIdeas });
       
-      console.log('Post-update Firestore check:', {
-        uid,
-        expectedBalance: newTokenBalance,
-        actualBalance: verifiedBalance,
-        updateSuccessful: verifiedBalance === newTokenBalance,
-        verifiedUpdatedAt,
-        fullDocument: verifyDoc.data()
-      });
-
-      if (verifiedBalance !== newTokenBalance) {
-        console.error('CRITICAL: Firestore update verification failed!', {
+      // Validate UID match and log Firestore path
+      console.log('Token deduction - UID being used:', uid);
+      console.log('Firestore path:', userRef.path);
+      console.log('Admin DB initialized:', !!adminDb);
+      
+      try {
+        console.log('Attempting Firestore token deduction:', {
           uid,
-          expected: newTokenBalance,
-          actual: verifiedBalance,
-          difference: newTokenBalance - verifiedBalance
+          oldBalance: tokenBalance,
+          newTokenBalance,
+          userRefPath: userRef.path
         });
-      }
 
-    } catch (err) {
-      console.error('Firestore token_balance update failed:', {
-        uid,
-        error: err,
-        errorMessage: err instanceof Error ? err.message : 'Unknown error',
-        errorStack: err instanceof Error ? err.stack : undefined
-      });
-      throw err; // Re-throw to trigger the outer catch block
+        // TEST 3: Check Firestore Write Result
+        const updateResult = await userRef.update({
+          token_balance: newTokenBalance,
+          totalIdeasSubmitted: newTotalIdeas,
+          updated_at: new Date(),
+        });
+        
+        console.log('Firestore update result:', updateResult);
+        console.log('Token balance updated in Firestore successfully');
+
+        // Verify the update by reading back the value
+        const verifyDoc = await userRef.get();
+        const verifiedBalance = verifyDoc.data()?.token_balance || 0;
+        const verifiedUpdatedAt = verifyDoc.data()?.updated_at;
+        
+        console.log('Post-update Firestore check:', {
+          uid,
+          expectedBalance: newTokenBalance,
+          actualBalance: verifiedBalance,
+          updateSuccessful: verifiedBalance === newTokenBalance,
+          verifiedUpdatedAt,
+          fullDocument: verifyDoc.data()
+        });
+
+        if (verifiedBalance !== newTokenBalance) {
+          console.error('CRITICAL: Firestore update verification failed!', {
+            uid,
+            expected: newTokenBalance,
+            actual: verifiedBalance,
+            difference: newTokenBalance - verifiedBalance
+          });
+        }
+
+      } catch (err) {
+        console.error('Firestore token_balance update failed:', {
+          uid,
+          error: err,
+          errorMessage: err instanceof Error ? err.message : 'Unknown error',
+          errorStack: err instanceof Error ? err.stack : undefined
+        });
+        throw err; // Re-throw to trigger the outer catch block
+      }
+    } else {
+      console.log('Mock user - skipping token deduction');
     }
 
-    // Store the idea and analysis in Firestore
-    const ideaRef = adminDb
-      .collection("users")
-      .doc(uid)
-      .collection("ideas")
-      .doc();
+    // Store the idea and analysis in Firestore (skip for mock users)
+    if (uid !== 'mock_user') {
+      const ideaRef = adminDb
+        .collection("users")
+        .doc(uid)
+        .collection("ideas")
+        .doc();
 
-    await ideaRef.set({
-      ideaText: idea,
-      analysis: analysis,
-      baseScores: {
-        market: analysis.market_potential,
-        differentiation: analysis.competition,
-        monetization: analysis.monetization,
-        execution: analysis.execution,
-        growth: analysis.market_potential, // Using market potential as growth proxy
-        overall: analysis.overall_score
-      },
-      createdAt: Timestamp.now(),
-      tokensUsed: 1,
-      public: false, // Ideas are private by default
-    });
-    console.log('Idea analysis stored in Firestore:', { ideaId: ideaRef.id, uid });
+      await ideaRef.set({
+        ideaText: idea,
+        analysis: analysis,
+        baseScores: {
+          market: analysis.market_potential,
+          differentiation: analysis.competition,
+          monetization: analysis.monetization,
+          execution: analysis.execution,
+          growth: analysis.market_potential, // Using market potential as growth proxy
+          overall: analysis.overall_score
+        },
+        createdAt: Timestamp.now(),
+        tokensUsed: 1,
+        public: false, // Ideas are private by default
+      });
+      console.log('Idea analysis stored in Firestore:', { ideaId: ideaRef.id, uid });
+    } else {
+      console.log('Mock user - skipping Firestore storage');
+    }
 
     console.log('=== IDEA GRADING REQUEST SUCCESS ===');
     console.log('Final token balance returned:', { uid, tokenBalance: newTokenBalance });

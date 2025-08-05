@@ -4,7 +4,9 @@ import { useEffect, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
+import { Button } from "@/components/ui/button";
 import { getLetterGrade } from "@/lib/gradingScale";
+import { useAuth } from "@/context/AuthContext";
 import { 
   TrendingUp, 
   Users, 
@@ -14,7 +16,8 @@ import {
   CheckCircle,
   AlertTriangle,
   XCircle,
-  ExternalLink
+  ExternalLink,
+  Sparkles
 } from "lucide-react";
 
 interface ResultsSectionProps {
@@ -32,6 +35,7 @@ interface ResultsSectionProps {
 
 export const ResultsSection = ({ idea, analysis: apiAnalysis }: ResultsSectionProps) => {
   const [animateScores, setAnimateScores] = useState(false);
+  const { user, openModal } = useAuth();
 
   useEffect(() => {
     const timer = setTimeout(() => setAnimateScores(true), 300);
@@ -129,6 +133,29 @@ export const ResultsSection = ({ idea, analysis: apiAnalysis }: ResultsSectionPr
   return (
     <section className="py-16">
       <div className="container mx-auto px-6">
+        {/* Mock Data Banner for Non-Authenticated Users */}
+        {!user && (
+          <div className="mb-8">
+            <Card className="bg-gradient-to-r from-blue-500/10 to-purple-500/10 border-blue-500/20">
+              <div className="p-6">
+                <div className="flex items-center gap-3 mb-3">
+                  <Sparkles className="w-5 h-5 text-blue-500" />
+                  <h3 className="text-lg font-semibold text-blue-600">Demo Mode</h3>
+                </div>
+                <p className="text-blue-700 mb-4">
+                  This is mock data. Sign up to run a real AI-powered analysis.
+                </p>
+                <Button 
+                  onClick={openModal}
+                  className="bg-blue-600 hover:bg-blue-700 text-white"
+                >
+                  Sign Up
+                </Button>
+              </div>
+            </Card>
+          </div>
+        )}
+        
         <div className="grid lg:grid-cols-2 gap-12">
           {/* Left Panel - Strategic Insights */}
           <div className="space-y-6 animate-slide-up">

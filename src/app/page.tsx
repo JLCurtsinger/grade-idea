@@ -11,7 +11,7 @@ import { useAuth } from "@/context/AuthContext";
 import { useTokenBalance } from "@/hooks/use-token-balance";
 import { logTokenDisplay, logTokenError } from "@/lib/utils";
 import { testGA } from "@/lib/ga-test";
-import { submitIdeaForAnalysis } from "@/lib/api";
+import { submitIdeaForAnalysis, submitIdeaForMockAnalysis } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 import { useRouter } from "next/navigation";
 
@@ -66,8 +66,8 @@ export default function HomePage() {
   const handleIdeaSubmit = async (idea: string) => {
     setIsGrading(true);
     
-    // Guest scan tracking
     if (!user) {
+      // Guest user - use mock analysis
       const used = parseInt(localStorage.getItem("guestScansUsed") || "0", 10);
       if (used >= 2) {
         // Show login prompt (existing modal will handle this)
@@ -77,7 +77,35 @@ export default function HomePage() {
       } else {
         localStorage.setItem("guestScansUsed", (used + 1).toString());
       }
+
+      try {
+        console.log('Calling mock analysis API for guest user');
+        
+        const result = await submitIdeaForMockAnalysis(idea);
+
+        if (!result.success) {
+          throw new Error('error' in result ? result.error : 'Failed to analyze idea');
+        }
+
+        // Success - show mock data
+        setCurrentIdea(idea);
+        setAnalysisResult(result.analysis);
+        setScansRemaining(prev => Math.max(0, prev - 1));
+        setIsGrading(false);
+        return;
+      } catch (error) {
+        console.error('Error analyzing idea:', error);
+        
+        toast({
+          title: "Analysis Failed",
+          description: "Failed to analyze idea. Please try again.",
+          variant: "destructive",
+        });
+        setIsGrading(false);
+        return;
+      }
     } else {
+      // Signed-in user - use real analysis
       // Check token balance for signed-in users
       if (tokenBalance !== null && tokenBalance < 1) {
         toast({
@@ -85,6 +113,7 @@ export default function HomePage() {
           description: "You need at least 1 token to analyze an idea. Please purchase more tokens.",
           variant: "destructive",
         });
+        setIsGrading(false);
         return;
       }
 
@@ -113,6 +142,7 @@ export default function HomePage() {
               description: "You need at least 1 token to analyze an idea. Please purchase more tokens.",
               variant: "destructive",
             });
+            setIsGrading(false);
             return;
           }
           
@@ -158,10 +188,6 @@ export default function HomePage() {
         return;
       }
     }
-
-    setCurrentIdea(idea);
-    setScansRemaining(prev => Math.max(0, prev - 1));
-    setIsGrading(false);
   };
 
   const handleTryAnother = () => {
