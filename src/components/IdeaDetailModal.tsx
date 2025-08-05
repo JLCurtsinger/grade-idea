@@ -154,7 +154,7 @@ export function IdeaDetailModal({ idea, isOpen, onClose, onScoreUpdate }: IdeaDe
     }
   };
 
-  const handleScoreUpdate = (scores: {
+  const handleScoreUpdate = async (scores: {
     market_potential: number;
     monetization: number;
     execution: number;
@@ -162,6 +162,37 @@ export function IdeaDetailModal({ idea, isOpen, onClose, onScoreUpdate }: IdeaDe
     letter_grade: string;
   }) => {
     setDynamicScores(scores);
+    
+    // Persist updated scores to Firestore
+    try {
+      if (user && idea) {
+        const idToken = await user.getIdToken();
+        const response = await fetch('/api/update-idea-scores', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            ideaId: idea.id,
+            idToken,
+            scores: {
+              market_potential: scores.market_potential,
+              monetization: scores.monetization,
+              execution: scores.execution,
+              overall_score: scores.overall_score,
+              letter_grade: scores.letter_grade
+            }
+          }),
+        });
+
+        if (!response.ok) {
+          console.error('Failed to persist score updates to Firestore');
+        }
+      }
+    } catch (error) {
+      console.error('Error persisting score updates:', error);
+    }
+    
     // Notify parent component with specific scores
     if (onScoreUpdate) {
       onScoreUpdate({

@@ -227,10 +227,16 @@ export default function DashboardPage() {
     setIsDetailModalOpen(true);
   };
 
-  const handleDetailModalClose = () => {
+  const handleDetailModalClose = async () => {
     setIsDetailModalOpen(false);
     setSelectedIdea(null);
-    // Don't clear updated scores - let them persist for dashboard display
+    
+    // Re-fetch ideas to get updated scores from Firestore
+    try {
+      setIdeasRefreshKey(prev => prev + 1);
+    } catch (error) {
+      console.error('Error triggering ideas refresh after modal close:', error);
+    }
   };
 
   const updateIdeaScores = (ideaId: string, scores: {

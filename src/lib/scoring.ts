@@ -82,31 +82,34 @@ export function calculateDynamicScores(checklistData: ChecklistData, baseScore?:
  * @returns Object with all calculated scores and letter grade
  */
 export function calculateDynamicScoresFromClient(checklistData: ChecklistData, baseScore?: number): DynamicScores {
-  // Calculate category scores based on checklist completion
+  // Calculate additional score from completed checklist items
+  const allSuggestions = [
+    ...checklistData.marketPotential.suggestions,
+    ...checklistData.monetizationClarity.suggestions,
+    ...checklistData.executionDifficulty.suggestions
+  ];
+  
+  const additionalScore = allSuggestions
+    .filter(item => item.completed)
+    .reduce((sum, item) => sum + (item.scoreValue || 0), 0);
+  
+  // Calculate final score with base score protection
+  const rawScore = (baseScore || 0) + additionalScore;
+  const finalScore = Math.min(100, Math.max(baseScore || 0, rawScore));
+  
+  // Calculate category scores based on checklist completion (for display purposes)
   const market_potential = calculateCategoryScore(checklistData.marketPotential.suggestions);
   const monetization = calculateCategoryScore(checklistData.monetizationClarity.suggestions);
   const execution = calculateCategoryScore(checklistData.executionDifficulty.suggestions);
   
-  // Calculate overall score
-  let overall_score = calculateOverallScore({
-    market_potential,
-    monetization,
-    execution
-  });
-  
-  // Prevent score from dropping below base score if provided
-  if (baseScore !== undefined && overall_score < baseScore) {
-    overall_score = baseScore;
-  }
-  
   // Get letter grade
-  const { letter } = getLetterGrade(overall_score);
+  const { letter } = getLetterGrade(finalScore);
   
   return {
     market_potential,
     monetization,
     execution,
-    overall_score,
+    overall_score: finalScore,
     letter_grade: letter
   };
 } 

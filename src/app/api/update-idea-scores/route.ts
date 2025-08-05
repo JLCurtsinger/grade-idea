@@ -18,6 +18,7 @@ export async function POST(request: NextRequest) {
   
   let ideaId: string | undefined;
   let idToken: string | undefined;
+  let scores: any | undefined;
   let checklistData: any | undefined;
   let uid: string | undefined;
   
@@ -26,24 +27,27 @@ export async function POST(request: NextRequest) {
     const requestData = await request.json();
     ideaId = requestData.ideaId;
     idToken = requestData.idToken;
+    scores = requestData.scores;
     checklistData = requestData.checklistData;
     
     console.log('Request parsed:', { 
       ideaId,
       hasIdToken: !!idToken,
+      hasScores: !!scores,
       hasChecklistData: !!checklistData
     });
 
-    // Validate input
-    if (!ideaId || !idToken || !checklistData) {
+    // Validate input - accept either scores or checklistData
+    if (!ideaId || !idToken || (!scores && !checklistData)) {
       console.error('Missing required fields:', { 
         hasIdeaId: !!ideaId, 
         hasIdToken: !!idToken,
+        hasScores: !!scores,
         hasChecklistData: !!checklistData
       });
       return NextResponse.json({
         success: false,
-        error: 'Missing required fields: ideaId, idToken, and checklistData'
+        error: 'Missing required fields: ideaId, idToken, and either scores or checklistData'
       }, { status: 400 });
     }
 
@@ -66,12 +70,27 @@ export async function POST(request: NextRequest) {
     const ideaData = ideaDoc.data();
     const baseScore = ideaData?.baseScore || ideaData?.analysis?.overall_score;
     
-    // Calculate dynamic scores with base score protection
-    const dynamicScores = calculateDynamicScores(checklistData, baseScore);
-    console.log('Calculated dynamic scores:', dynamicScores);
+    let dynamicScores;
+    
+    if (scores) {
+      // Use scores directly from modal
+      dynamicScores = {
+        market_potential: scores.market_potential,
+        monetization: scores.monetization,
+        execution: scores.execution,
+        overall_score: scores.overall_score,
+        letter_grade: scores.letter_grade
+      };
+      console.log('Using scores from modal:', dynamicScores);
+    } else if (checklistData) {
+      // Calculate dynamic scores with base score protection
+      dynamicScores = calculateDynamicScores(checklistData, baseScore);
+      console.log('Calculated dynamic scores from checklist:', dynamicScores);
+    } else {
+      throw new Error('Neither scores nor checklistData provided');
+    }
 
     // Update the idea document with new scores
-    
     const updateData: any = {
       'analysis.market_potential': dynamicScores.market_potential,
       'analysis.monetization': dynamicScores.monetization,

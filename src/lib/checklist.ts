@@ -18,6 +18,7 @@ export interface ChecklistSuggestion {
   id: string;
   text: string;
   completed: boolean;
+  scoreValue: number;
 }
 
 export interface ChecklistSection {
@@ -45,24 +46,24 @@ export const defaultChecklistData: ChecklistData = {
   marketPotential: {
     score: 3,
     suggestions: [
-      { id: 'mkt-1', text: 'Estimate your TAM using industry benchmarks', completed: false },
-      { id: 'mkt-2', text: 'Validate interest with a short landing page MVP', completed: false },
-      { id: 'mkt-3', text: 'Conduct 10 customer interviews', completed: false }
+      { id: 'mkt-1', text: 'Estimate your TAM using industry benchmarks', completed: false, scoreValue: 5 },
+      { id: 'mkt-2', text: 'Validate interest with a short landing page MVP', completed: false, scoreValue: 8 },
+      { id: 'mkt-3', text: 'Conduct 10 customer interviews', completed: false, scoreValue: 10 }
     ]
   },
   monetizationClarity: {
     score: 2,
     suggestions: [
-      { id: 'mon-1', text: 'Define 2–3 pricing tiers', completed: true },
-      { id: 'mon-2', text: 'Research competitor pricing models', completed: false },
-      { id: 'mon-3', text: 'Create a revenue projection model', completed: false }
+      { id: 'mon-1', text: 'Define 2–3 pricing tiers', completed: true, scoreValue: 6 },
+      { id: 'mon-2', text: 'Research competitor pricing models', completed: false, scoreValue: 4 },
+      { id: 'mon-3', text: 'Create a revenue projection model', completed: false, scoreValue: 7 }
     ]
   },
   executionDifficulty: {
     score: 4,
     suggestions: [
-      { id: 'exec-1', text: 'Outline the core features in a v1 product', completed: false },
-      { id: 'exec-2', text: 'Identify technical requirements and stack', completed: false }
+      { id: 'exec-1', text: 'Outline the core features in a v1 product', completed: false, scoreValue: 6 },
+      { id: 'exec-2', text: 'Identify technical requirements and stack', completed: false, scoreValue: 5 }
     ]
   }
 };
