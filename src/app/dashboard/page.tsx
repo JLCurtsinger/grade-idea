@@ -64,6 +64,12 @@ export default function DashboardPage() {
   const [profileRefreshKey, setProfileRefreshKey] = useState(0);
   const [ideasRefreshKey, setIdeasRefreshKey] = useState(0);
   const [forceRefresh, setForceRefresh] = useState(0);
+  const [updatedIdeaScores, setUpdatedIdeaScores] = useState<Record<string, {
+    market_potential: number;
+    monetization: number;
+    execution: number;
+    overall_score: number;
+  }>>({});
   
   // Modal state management
   const [selectedIdea, setSelectedIdea] = useState<Idea | null>(null);
@@ -134,6 +140,8 @@ export default function DashboardPage() {
     };
 
     loadData();
+    // Clear updated scores when data is refreshed from server
+    setUpdatedIdeaScores({});
   }, [user, profileRefreshKey, ideasRefreshKey, forceRefresh]);
 
   // Force refresh token balance on page mount to ensure fresh data
@@ -223,6 +231,26 @@ export default function DashboardPage() {
   const handleDetailModalClose = () => {
     setIsDetailModalOpen(false);
     setSelectedIdea(null);
+    // Clear updated scores for this idea when modal closes
+    if (selectedIdea) {
+      setUpdatedIdeaScores(prev => {
+        const newScores = { ...prev };
+        delete newScores[selectedIdea.id];
+        return newScores;
+      });
+    }
+  };
+
+  const updateIdeaScores = (ideaId: string, scores: {
+    market_potential: number;
+    monetization: number;
+    execution: number;
+    overall_score: number;
+  }) => {
+    setUpdatedIdeaScores(prev => ({
+      ...prev,
+      [ideaId]: scores
+    }));
   };
 
   const handleDeleteClick = (e: React.MouseEvent, idea: Idea) => {
@@ -410,42 +438,46 @@ export default function DashboardPage() {
                     <div className="text-center p-3 bg-surface rounded-lg">
                       <div className="text-sm text-foreground-muted mb-1">Overall</div>
                       <div className="flex items-center justify-center gap-2">
-                        <div className={`text-lg font-bold ${getScoreColor(getOverallScore(idea.analysis))}`}>
-                          {getOverallScore(idea.analysis)}%
-                        </div>
                         {(() => {
-                          const { letter, color } = getLetterGrade(getOverallScore(idea.analysis));
+                          const updatedScores = updatedIdeaScores[idea.id];
+                          const overallScore = updatedScores ? updatedScores.overall_score : getOverallScore(idea.analysis);
+                          const { letter, color } = getLetterGrade(overallScore);
                           return (
-                            <div className={`text-lg font-bold ${
-                              color === 'green' ? 'text-green-600' :
-                              color === 'lime' ? 'text-lime-600' :
-                              color === 'yellow' ? 'text-yellow-600' :
-                              color === 'orange' ? 'text-orange-600' :
-                              color === 'red' ? 'text-red-600' :
-                              'text-gray-600'
-                            }`}>
-                              {letter}
-                            </div>
+                            <>
+                              <div className={`text-lg font-bold transition-all duration-300 ${getScoreColor(overallScore)}`}>
+                                {overallScore}%
+                              </div>
+                              <div className={`text-lg font-bold transition-all duration-300 ${
+                                color === 'green' ? 'text-green-600' :
+                                color === 'lime' ? 'text-lime-600' :
+                                color === 'yellow' ? 'text-yellow-600' :
+                                color === 'orange' ? 'text-orange-600' :
+                                color === 'red' ? 'text-red-600' :
+                                'text-gray-600'
+                              }`}>
+                                {letter}
+                              </div>
+                            </>
                           );
                         })()}
                       </div>
                     </div>
                     <div className="text-center p-3 bg-surface rounded-lg">
                       <div className="text-sm text-foreground-muted mb-1">Market</div>
-                      <div className={`text-lg font-bold ${getScoreColor(idea.analysis.market_potential)}`}>
-                        {idea.analysis.market_potential}%
+                      <div className={`text-lg font-bold transition-all duration-300 ${getScoreColor(updatedIdeaScores[idea.id]?.market_potential ?? idea.analysis.market_potential)}`}>
+                        {updatedIdeaScores[idea.id]?.market_potential ?? idea.analysis.market_potential}%
                       </div>
                     </div>
                     <div className="text-center p-3 bg-surface rounded-lg">
                       <div className="text-sm text-foreground-muted mb-1">Competition</div>
-                      <div className={`text-lg font-bold ${getScoreColor(idea.analysis.competition)}`}>
+                      <div className={`text-lg font-bold transition-all duration-300 ${getScoreColor(idea.analysis.competition)}`}>
                         {idea.analysis.competition}%
                       </div>
                     </div>
                     <div className="text-center p-3 bg-surface rounded-lg">
                       <div className="text-sm text-foreground-muted mb-1">Execution</div>
-                      <div className={`text-lg font-bold ${getScoreColor(idea.analysis.execution)}`}>
-                        {idea.analysis.execution}%
+                      <div className={`text-lg font-bold transition-all duration-300 ${getScoreColor(updatedIdeaScores[idea.id]?.execution ?? idea.analysis.execution)}`}>
+                        {updatedIdeaScores[idea.id]?.execution ?? idea.analysis.execution}%
                       </div>
                     </div>
                   </div>
@@ -480,9 +512,10 @@ export default function DashboardPage() {
         idea={selectedIdea}
         isOpen={isDetailModalOpen}
         onClose={handleDetailModalClose}
-        onScoreUpdate={() => {
-          // Force refresh of ideas to show updated scores
-          setIdeasRefreshKey(prev => prev + 1);
+        onScoreUpdate={(scores) => {
+          if (selectedIdea) {
+            updateIdeaScores(selectedIdea.id, scores);
+          }
         }}
       />
 

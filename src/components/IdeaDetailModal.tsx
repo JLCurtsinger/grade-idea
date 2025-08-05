@@ -49,7 +49,12 @@ interface IdeaDetailModalProps {
   idea: Idea | null;
   isOpen: boolean;
   onClose: () => void;
-  onScoreUpdate?: () => void; // Callback to refresh dashboard
+  onScoreUpdate?: (scores: {
+    market_potential: number;
+    monetization: number;
+    execution: number;
+    overall_score: number;
+  }) => void; // Callback to refresh dashboard with specific scores
 }
 
 export function IdeaDetailModal({ idea, isOpen, onClose, onScoreUpdate }: IdeaDetailModalProps) {
@@ -107,9 +112,14 @@ export function IdeaDetailModal({ idea, isOpen, onClose, onScoreUpdate }: IdeaDe
     letter_grade: string;
   }) => {
     setDynamicScores(scores);
-    // Notify parent component to refresh dashboard
+    // Notify parent component with specific scores
     if (onScoreUpdate) {
-      onScoreUpdate();
+      onScoreUpdate({
+        market_potential: scores.market_potential,
+        monetization: scores.monetization,
+        execution: scores.execution,
+        overall_score: scores.overall_score
+      });
     }
   };
 
