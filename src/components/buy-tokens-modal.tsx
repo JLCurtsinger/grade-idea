@@ -67,19 +67,9 @@ export const BuyTokensModal = ({ isOpen, onClose }: BuyTokensModalProps) => {
     <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <div className="flex items-center justify-between">
-            <DialogTitle className="text-xl font-semibold">
-              Choose Your Token Pack
-            </DialogTitle>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={handleClose}
-              className="h-8 w-8"
-            >
-              <X className="h-4 w-4" />
-            </Button>
-          </div>
+          <DialogTitle className="text-xl font-semibold">
+            Choose Your Token Pack
+          </DialogTitle>
         </DialogHeader>
 
         <div className="space-y-4">

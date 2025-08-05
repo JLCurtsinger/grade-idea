@@ -85,21 +85,11 @@ export function TopIdeaModal({ idea, isOpen, onClose }: TopIdeaModalProps) {
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <Lightbulb className="w-6 h-6 text-brand" />
-              <DialogTitle className="text-xl font-bold text-foreground">
-                Top-Rated Idea Analysis
-              </DialogTitle>
-            </div>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={onClose}
-              className="h-8 w-8 p-0"
-            >
-              <X className="w-4 h-4" />
-            </Button>
+          <div className="flex items-center gap-3">
+            <Lightbulb className="w-6 h-6 text-brand" />
+            <DialogTitle className="text-xl font-bold text-foreground">
+              Top-Rated Idea Analysis
+            </DialogTitle>
           </div>
           <DialogDescription className="text-foreground-muted">
             Detailed evaluation of this public startup idea
