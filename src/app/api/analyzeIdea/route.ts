@@ -57,7 +57,9 @@ Each checklist section should have:
 - score: 1-5 rating
 - suggestions: Array of actionable items with id, text, impact_score (1-10), and priority (high/medium/low)
 
-Return ONLY valid JSON with "grading" and "checklist" keys.`;
+Return ONLY valid JSON with "grading" and "checklist" keys.
+
+Do NOT use markdown formatting. Do NOT wrap your response in triple backticks. Return raw JSON only.`;
 
 // Verify Firebase ID token
 const verifyFirebaseIdToken = async (idToken: string) => {
@@ -108,7 +110,16 @@ const callOpenAI = async (ideaText: string): Promise<OpenAIResponse> => {
   }
 
   try {
-    const parsed = JSON.parse(content);
+    // Defensive parsing: strip markdown code fences if present
+    let cleanContent = content.trim();
+
+    if (cleanContent.startsWith("```json")) {
+      cleanContent = cleanContent.replace(/^```json/, "").replace(/```$/, "").trim();
+    } else if (cleanContent.startsWith("```")) {
+      cleanContent = cleanContent.replace(/^```/, "").replace(/```$/, "").trim();
+    }
+
+    const parsed = JSON.parse(cleanContent);
     
     // Validate response structure
     if (!parsed.grading || !parsed.checklist) {
