@@ -480,6 +480,10 @@ export default function DashboardPage() {
         idea={selectedIdea}
         isOpen={isDetailModalOpen}
         onClose={handleDetailModalClose}
+        onScoreUpdate={() => {
+          // Force refresh of ideas to show updated scores
+          setIdeasRefreshKey(prev => prev + 1);
+        }}
       />
 
       {/* Delete Confirmation Modal */}

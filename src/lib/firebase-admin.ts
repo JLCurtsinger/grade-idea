@@ -190,6 +190,7 @@ export interface IdeaDocument {
     recommendation: string;
     insights: string[];
   };
+  baseScore?: number; // Original AI-generated score before checklist interactions
   createdAt: FirebaseFirestore.Timestamp;
   tokensUsed: number;
   status?: string;

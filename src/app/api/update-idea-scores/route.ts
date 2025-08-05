@@ -52,20 +52,40 @@ export async function POST(request: NextRequest) {
     uid = decoded.uid;
     console.log('User authenticated:', { uid });
 
-    // Calculate dynamic scores
-    const dynamicScores = calculateDynamicScores(checklistData);
+    // Get the current idea document to check for base score
+    const ideaRef = adminDb.collection("users").doc(uid).collection("ideas").doc(ideaId);
+    const ideaDoc = await ideaRef.get();
+    
+    if (!ideaDoc.exists) {
+      return NextResponse.json({
+        success: false,
+        error: 'Idea not found'
+      }, { status: 404 });
+    }
+    
+    const ideaData = ideaDoc.data();
+    const baseScore = ideaData?.baseScore || ideaData?.analysis?.overall_score;
+    
+    // Calculate dynamic scores with base score protection
+    const dynamicScores = calculateDynamicScores(checklistData, baseScore);
     console.log('Calculated dynamic scores:', dynamicScores);
 
     // Update the idea document with new scores
-    const ideaRef = adminDb.collection("users").doc(uid).collection("ideas").doc(ideaId);
     
-    await ideaRef.update({
+    const updateData: any = {
       'analysis.market_potential': dynamicScores.market_potential,
       'analysis.monetization': dynamicScores.monetization,
       'analysis.execution': dynamicScores.execution,
       'analysis.overall_score': dynamicScores.overall_score,
       'updated_at': new Date()
-    });
+    };
+    
+    // Store base score if it doesn't exist yet
+    if (!ideaData?.baseScore) {
+      updateData.baseScore = ideaData?.analysis?.overall_score;
+    }
+    
+    await ideaRef.update(updateData);
 
     console.log('=== UPDATE IDEA SCORES REQUEST SUCCESS ===');
     

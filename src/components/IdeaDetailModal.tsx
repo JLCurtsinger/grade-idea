@@ -49,9 +49,10 @@ interface IdeaDetailModalProps {
   idea: Idea | null;
   isOpen: boolean;
   onClose: () => void;
+  onScoreUpdate?: () => void; // Callback to refresh dashboard
 }
 
-export function IdeaDetailModal({ idea, isOpen, onClose }: IdeaDetailModalProps) {
+export function IdeaDetailModal({ idea, isOpen, onClose, onScoreUpdate }: IdeaDetailModalProps) {
   const [dynamicScores, setDynamicScores] = useState<{
     market_potential: number;
     monetization: number;
@@ -106,7 +107,14 @@ export function IdeaDetailModal({ idea, isOpen, onClose }: IdeaDetailModalProps)
     letter_grade: string;
   }) => {
     setDynamicScores(scores);
+    // Notify parent component to refresh dashboard
+    if (onScoreUpdate) {
+      onScoreUpdate();
+    }
   };
+
+  // Get base score from idea data
+  const baseScore = (idea as any)?.baseScore || idea.analysis.overall_score;
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -174,6 +182,12 @@ export function IdeaDetailModal({ idea, isOpen, onClose }: IdeaDetailModalProps)
                     </span>
                   );
                 })()}
+                {/* Show base score indicator if different from current score */}
+                {dynamicScores && dynamicScores.overall_score > baseScore && (
+                  <span className="text-xs text-green-600 font-medium">
+                    ↑ from {baseScore}%
+                  </span>
+                )}
               </div>
             </div>
           </div>
@@ -300,7 +314,7 @@ export function IdeaDetailModal({ idea, isOpen, onClose }: IdeaDetailModalProps)
 
           {/* Action Items Checklist */}
           <div className="space-y-3">
-            <IdeaChecklist ideaId={idea.id} onScoreUpdate={handleScoreUpdate} />
+            <IdeaChecklist ideaId={idea.id} baseScore={baseScore} onScoreUpdate={handleScoreUpdate} />
           </div>
         </div>
       </DialogContent>

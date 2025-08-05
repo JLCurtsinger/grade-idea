@@ -21,6 +21,7 @@ import { getLetterGrade } from "@/lib/gradingScale";
 
 interface IdeaChecklistProps {
   ideaId: string;
+  baseScore?: number;
   onScoreUpdate?: (scores: {
     market_potential: number;
     monetization: number;
@@ -30,7 +31,7 @@ interface IdeaChecklistProps {
   }) => void;
 }
 
-export function IdeaChecklist({ ideaId, onScoreUpdate }: IdeaChecklistProps) {
+export function IdeaChecklist({ ideaId, baseScore, onScoreUpdate }: IdeaChecklistProps) {
   const { 
     checklistData, 
     loading, 
@@ -49,7 +50,7 @@ export function IdeaChecklist({ ideaId, onScoreUpdate }: IdeaChecklistProps) {
     
     // Calculate new scores and notify parent component
     if (onScoreUpdate) {
-      const newScores = calculateDynamicScoresFromClient(checklistData);
+      const newScores = calculateDynamicScoresFromClient(checklistData, baseScore);
       onScoreUpdate(newScores);
     }
   };
