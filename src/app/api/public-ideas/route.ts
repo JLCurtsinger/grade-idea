@@ -14,12 +14,29 @@ export async function GET(request: NextRequest) {
     for (const doc of ideasSnapshot.docs) {
       const data = doc.data();
       
-      // Only include ideas that have initial_scores
-      if (data.initial_scores && data.ideaText) {
+      // Only include ideas that have ideaText
+      if (!data.ideaText) {
+        continue;
+      }
+
+      // Calculate initial_scores from analysis if not present
+      let initialScores = data.initial_scores;
+      if (!initialScores && data.analysis) {
+        initialScores = {
+          market: data.analysis.market_potential,
+          differentiation: data.analysis.competition,
+          monetization: data.analysis.monetization,
+          execution: data.analysis.execution,
+          growth: data.analysis.market_potential, // Using market potential as growth proxy
+          overall: data.analysis.overall_score
+        };
+      }
+
+      if (initialScores && data.ideaText) {
         ideas.push({
           id: doc.id,
           ideaText: data.ideaText,
-          initial_scores: data.initial_scores,
+          initial_scores: initialScores,
           createdAt: data.createdAt
         });
       }
