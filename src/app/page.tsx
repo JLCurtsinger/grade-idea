@@ -20,7 +20,7 @@ export default function HomePage() {
   const { currentIdea, setCurrentIdea } = useCurrentIdea();
   const { user } = useAuth();
   const { tokenBalance, updateBalanceOptimistically, revertBalance, forceRefreshFromFirestore } = useTokenBalance();
-  const { anonymousTokens, decrementTokens } = useAnonymousTokens();
+  const { anonymousTokens, decrementTokens, anonymousUser } = useAnonymousTokens();
   const [scansRemaining, setScansRemaining] = useState(2);
   const [analysisResult, setAnalysisResult] = useState<any>(null);
   const [exampleIdea, setExampleIdea] = useState<string>("");
@@ -74,12 +74,15 @@ export default function HomePage() {
         // Anonymous user - use anonymous API
         console.log('Calling anonymous analyzeIdea API:', { ideaLength: idea.length });
         
+        // Get Firebase ID token for anonymous user
+        const idToken = await anonymousUser?.getIdToken();
+        
         const response = await fetch('/api/grade-idea-anonymous', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({ idea }),
+          body: JSON.stringify({ idea, idToken }),
         });
 
         const data = await response.json();
@@ -107,7 +110,7 @@ export default function HomePage() {
           setCurrentIdea(idea);
           
           // Decrement anonymous tokens
-          const remainingTokens = decrementTokens();
+          const remainingTokens = await decrementTokens();
           
           // Show remaining tokens message
           if (remainingTokens === 0) {

@@ -3,6 +3,17 @@ import { adminAuth, adminDb } from '@/lib/firebase-admin';
 import { Timestamp } from 'firebase-admin/firestore';
 import { logTokenFetch, logTokenUpdate, logTokenError } from '@/lib/utils';
 
+// Verify Firebase ID token
+const verifyFirebaseIdToken = async (idToken: string) => {
+  try {
+    const decodedToken = await adminAuth.verifyIdToken(idToken);
+    return decodedToken;
+  } catch (error) {
+    console.error('Error verifying Firebase ID token:', error);
+    throw new Error('Invalid ID token');
+  }
+};
+
 export async function POST(request: NextRequest) {
   console.log('=== ANONYMOUS IDEA GRADING REQUEST START ===');
   
@@ -13,22 +24,22 @@ export async function POST(request: NextRequest) {
     // Parse request
     const requestData = await request.json();
     idea = requestData.idea;
-    console.log('Request parsed:', { ideaLength: idea?.length || 0 });
+    const idToken = requestData.idToken; // Get Firebase ID token
+    console.log('Request parsed:', { ideaLength: idea?.length || 0, hasIdToken: !!idToken });
 
     // Validate input
-    if (!idea) {
-      console.error('Missing required field: idea');
+    if (!idea || !idToken) {
+      console.error('Missing required fields:', { hasIdea: !!idea, hasIdToken: !!idToken });
       return NextResponse.json({
         success: false,
-        error: 'Missing required field: idea'
+        error: 'Missing required fields: idea and idToken'
       }, { status: 400 });
     }
 
-    // For anonymous users, we need to create a temporary anonymous session
-    // This is a simplified approach - in production you'd want to handle this differently
-    const tempUid = `anonymous_${Date.now()}_${Math.random().toString(36).substring(2, 15)}`;
-    uid = tempUid;
-    console.log('Using temporary anonymous UID:', { uid });
+    // Verify Firebase ID token for anonymous user
+    const decoded = await verifyFirebaseIdToken(idToken);
+    uid = decoded.uid;
+    console.log('Anonymous user authenticated:', { uid });
 
     // Check if user document exists, create if not
     const userRef = adminDb.collection('users').doc(uid);
