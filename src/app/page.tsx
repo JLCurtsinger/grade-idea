@@ -115,8 +115,8 @@ export default function HomePage() {
           userId: user.uid
         });
 
-        // Redirect to dashboard to show the new idea
-        router.push('/dashboard');
+        // Redirect to dashboard to show the new idea with modal open
+        router.push(`/dashboard?open=${result.ideaId}`);
         return;
       } catch (error) {
         console.error('Error analyzing idea:', error);

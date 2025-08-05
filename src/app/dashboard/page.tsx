@@ -157,6 +157,29 @@ export default function DashboardPage() {
     return () => window.removeEventListener('focus', handleFocus);
   }, [user]);
 
+  // Auto-open modal for newly created idea
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const urlParams = new URLSearchParams(window.location.search);
+      const openIdeaId = urlParams.get('open');
+      
+      if (openIdeaId && ideas.length > 0 && !isDetailModalOpen) {
+        const ideaToOpen = ideas.find(idea => idea.id === openIdeaId);
+        
+        if (ideaToOpen) {
+          console.log('Auto-opening modal for idea:', openIdeaId);
+          setSelectedIdea(ideaToOpen);
+          setIsDetailModalOpen(true);
+          
+          // Clear the URL parameter to prevent reopening on refresh
+          const newUrl = new URL(window.location.href);
+          newUrl.searchParams.delete('open');
+          window.history.replaceState({}, '', newUrl.toString());
+        }
+      }
+    }
+  }, [ideas, isDetailModalOpen]);
+
   const refreshTokenBalance = () => {
     console.log('Manually refreshing token balance...');
     setProfileRefreshKey(prev => prev + 1);
