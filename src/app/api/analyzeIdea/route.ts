@@ -13,6 +13,19 @@ interface GradingData {
   insights: string[];
 }
 
+interface SimilarProduct {
+  name: string;
+  description: string;
+  url?: string;
+}
+
+interface ScoreExplanation {
+  market_potential: string;
+  competition: string;
+  monetization: string;
+  execution: string;
+}
+
 interface ChecklistSuggestion {
   id: string;
   text: string;
@@ -34,6 +47,10 @@ interface ChecklistData {
 interface OpenAIResponse {
   grading: GradingData;
   checklist: ChecklistData;
+  similar_products: SimilarProduct[];
+  monetization_models: string[];
+  gtm_channels: string[];
+  score_explanations: ScoreExplanation;
 }
 
 // System prompt for OpenAI
@@ -64,9 +81,15 @@ const SYSTEM_MESSAGE = `You are a veteran startup analyst advising experienced f
    - monetizationClarity
    - executionDifficulty
 
-Return ONLY valid JSON with these top-level keys: "grading", "userArchetype", "risks", and "checklist".
+5. Additional Structured Data:
+   - similar_products: Array of 2–4 existing products/services that are similar to this idea. Each should have name, description, and optional url
+   - monetization_models: Array of 2–3 potential revenue models (e.g., "Subscription", "Freemium", "Marketplace")
+   - gtm_channels: Array of 2–3 go-to-market strategies (e.g., "Content Marketing", "Partnerships", "Community")
+   - score_explanations: One-sentence rationale for each scoring dimension (market_potential, competition, monetization, execution)
 
-Do NOT use markdown formatting. Do NOT wrap your response in triple backticks. Return raw JSON only. Focus on actionable, founder-grade insight.`; 
+Return ONLY valid JSON with these top-level keys: "grading", "userArchetype", "risks", "checklist", "similar_products", "monetization_models", "gtm_channels", and "score_explanations".
+
+Do NOT use markdown formatting. Do NOT wrap your response in triple backticks. Return raw JSON only. Focus on actionable, founder-grade insight. Use real-world examples when identifying similar products.`; 
 
 // Verify Firebase ID token
 const verifyFirebaseIdToken = async (idToken: string) => {
@@ -131,6 +154,23 @@ const callOpenAI = async (ideaText: string): Promise<OpenAIResponse> => {
     // Validate response structure
     if (!parsed.grading || !parsed.checklist) {
       throw new Error('Invalid OpenAI response structure');
+    }
+    
+    // Validate new required fields
+    if (!parsed.similar_products || !Array.isArray(parsed.similar_products)) {
+      throw new Error('Missing or invalid similar_products field');
+    }
+    
+    if (!parsed.monetization_models || !Array.isArray(parsed.monetization_models)) {
+      throw new Error('Missing or invalid monetization_models field');
+    }
+    
+    if (!parsed.gtm_channels || !Array.isArray(parsed.gtm_channels)) {
+      throw new Error('Missing or invalid gtm_channels field');
+    }
+    
+    if (!parsed.score_explanations || typeof parsed.score_explanations !== 'object') {
+      throw new Error('Missing or invalid score_explanations field');
     }
     
     return parsed as OpenAIResponse;
@@ -239,7 +279,12 @@ export async function POST(request: NextRequest) {
         execution: analysis.grading.execution,
         growth: analysis.grading.market_potential, // Using market potential as growth proxy
         overall: analysis.grading.overall_score
-      }
+      },
+      // Store new structured data
+      similar_products: analysis.similar_products,
+      monetization_models: analysis.monetization_models,
+      gtm_channels: analysis.gtm_channels,
+      score_explanations: analysis.score_explanations
     });
     console.log('Idea stored in Firestore:', { ideaId, uid });
 
