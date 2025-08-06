@@ -46,7 +46,11 @@ interface ChecklistData {
 
 interface OpenAIResponse {
   grading: GradingData;
-  userArchetype?: string; // Target user demographics and behavior
+  userArchetype?: string | {
+    demographics?: string;
+    behavior?: string;
+    pain_points?: string;
+  }; // Target user demographics and behavior - can be string or object
   risks: string[]; // MUST always be defined as array — key risks and blind spots
   checklist: ChecklistData;
   similar_products: SimilarProduct[];

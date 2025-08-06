@@ -51,7 +51,11 @@ interface Idea {
   tokensUsed: number;
   public?: boolean;
   summary_analysis?: string; // AI Analysis summary
-  userArchetype?: string; // Target user demographics and behavior
+  userArchetype?: string | {
+    demographics?: string;
+    behavior?: string;
+    pain_points?: string;
+  }; // Target user demographics and behavior - can be string or object
   risks?: string[]; // MUST always be defined as array — key risks and blind spots
   // New structured fields from backend
   similar_products?: Array<{
@@ -504,7 +508,9 @@ export function IdeaDetailModal({ idea, isOpen, onClose, onScoreUpdate }: IdeaDe
                   {idea.risks.map((risk, index) => (
                     <li key={index} className="flex items-start gap-3">
                       <div className="w-2 h-2 bg-orange-500 rounded-full mt-2 flex-shrink-0"></div>
-                      <p className="text-foreground leading-relaxed">{risk}</p>
+                      <p className="text-foreground leading-relaxed">
+                        {typeof risk === 'string' ? risk : JSON.stringify(risk)}
+                      </p>
                     </li>
                   ))}
                 </ul>
@@ -520,7 +526,30 @@ export function IdeaDetailModal({ idea, isOpen, onClose, onScoreUpdate }: IdeaDe
                 <h3 className="text-lg font-semibold text-foreground">Target User Archetype</h3>
               </div>
               <Card className="p-4">
-                <p className="text-foreground leading-relaxed">{idea.userArchetype}</p>
+                {typeof idea.userArchetype === 'string' ? (
+                  <p className="text-foreground leading-relaxed">{idea.userArchetype}</p>
+                ) : (
+                  <div className="space-y-3">
+                    {idea.userArchetype.demographics && (
+                      <div>
+                        <h4 className="font-medium text-foreground mb-1">Demographics</h4>
+                        <p className="text-foreground-muted leading-relaxed">{idea.userArchetype.demographics}</p>
+                      </div>
+                    )}
+                    {idea.userArchetype.behavior && (
+                      <div>
+                        <h4 className="font-medium text-foreground mb-1">Behavior</h4>
+                        <p className="text-foreground-muted leading-relaxed">{idea.userArchetype.behavior}</p>
+                      </div>
+                    )}
+                    {idea.userArchetype.pain_points && (
+                      <div>
+                        <h4 className="font-medium text-foreground mb-1">Pain Points</h4>
+                        <p className="text-foreground-muted leading-relaxed">{idea.userArchetype.pain_points}</p>
+                      </div>
+                    )}
+                  </div>
+                )}
               </Card>
             </div>
           )}
