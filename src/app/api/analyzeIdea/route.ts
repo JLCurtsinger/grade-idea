@@ -89,7 +89,17 @@ const SYSTEM_MESSAGE = `You are a veteran startup analyst advising experienced f
 
 Return ONLY valid JSON with these top-level keys: "grading", "userArchetype", "risks", "checklist", "similar_products", "monetization_models", "gtm_channels", and "score_explanations".
 
-Do NOT use markdown formatting. Do NOT wrap your response in triple backticks. Return raw JSON only. Focus on actionable, founder-grade insight. Use real-world examples when identifying similar products.`; 
+IMPORTANT: All values in the returned JSON must be valid according to strict JSON formatting. 
+- Do NOT include numeric ranges like 30-50. Instead, return them as strings (e.g., "30-50").
+- All keys and string values must be wrapped in double quotes.
+- Do not include trailing commas.
+- Do not include comments or JavaScript-style expressions.
+- Ensure all numeric values are actual numbers, not expressions.
+- Ensure all string values are properly quoted strings.
+
+Do NOT use markdown formatting. Do NOT wrap your response in triple backticks. Return raw JSON only. Focus on actionable, founder-grade insight. Use real-world examples when identifying similar products.
+
+The response must be strictly parseable by JSON.parse().`; 
 
 // Verify Firebase ID token
 const verifyFirebaseIdToken = async (idToken: string) => {
@@ -149,6 +159,8 @@ const callOpenAI = async (ideaText: string): Promise<OpenAIResponse> => {
       cleanContent = cleanContent.replace(/^```/, "").replace(/```$/, "").trim();
     }
 
+    console.log('Attempting to parse OpenAI response:', cleanContent.substring(0, 500) + '...');
+
     const parsed = JSON.parse(cleanContent);
     
     // Validate response structure
@@ -175,8 +187,9 @@ const callOpenAI = async (ideaText: string): Promise<OpenAIResponse> => {
     
     return parsed as OpenAIResponse;
   } catch (parseError) {
-    console.error('Failed to parse OpenAI response:', content);
-    throw new Error('Invalid JSON response from OpenAI');
+    console.error('Failed to parse OpenAI response. Raw content:', content);
+    console.error('Parse error details:', parseError);
+    throw new Error(`Invalid JSON response from OpenAI. Raw output logged. Error: ${parseError instanceof Error ? parseError.message : 'Unknown parsing error'}`);
   }
 };
 
