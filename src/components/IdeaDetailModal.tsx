@@ -12,6 +12,7 @@ import {
 
 import { Card } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
+import { Badge } from "@/components/ui/badge";
 import { getLetterGrade } from "@/lib/gradingScale";
 import { 
   Calendar, 
@@ -48,6 +49,20 @@ interface Idea {
   };
   tokensUsed: number;
   public?: boolean;
+  // New structured fields from backend
+  similar_products?: Array<{
+    name: string;
+    description: string;
+    url?: string;
+  }>;
+  monetization_models?: string[];
+  gtm_channels?: string[];
+  score_explanations?: {
+    market_potential: string;
+    competition: string;
+    monetization: string;
+    execution: string;
+  };
 }
 
 interface IdeaDetailModalProps {
@@ -349,6 +364,11 @@ export function IdeaDetailModal({ idea, isOpen, onClose, onScoreUpdate }: IdeaDe
                     style={{ width: `${dynamicScores ? dynamicScores.market_potential : idea.analysis.market_potential}%` }}
                   />
                 </div>
+                {idea.score_explanations?.market_potential && (
+                  <p className="text-xs text-foreground-muted mt-2 leading-relaxed">
+                    {idea.score_explanations.market_potential}
+                  </p>
+                )}
               </Card>
 
               <Card className="p-4">
@@ -373,6 +393,11 @@ export function IdeaDetailModal({ idea, isOpen, onClose, onScoreUpdate }: IdeaDe
                     style={{ width: `${dynamicScores ? dynamicScores.market_potential : idea.analysis.competition}%` }}
                   />
                 </div>
+                {idea.score_explanations?.competition && (
+                  <p className="text-xs text-foreground-muted mt-2 leading-relaxed">
+                    {idea.score_explanations.competition}
+                  </p>
+                )}
               </Card>
 
               <Card className="p-4">
@@ -397,6 +422,11 @@ export function IdeaDetailModal({ idea, isOpen, onClose, onScoreUpdate }: IdeaDe
                     style={{ width: `${dynamicScores ? dynamicScores.monetization : idea.analysis.monetization}%` }}
                   />
                 </div>
+                {idea.score_explanations?.monetization && (
+                  <p className="text-xs text-foreground-muted mt-2 leading-relaxed">
+                    {idea.score_explanations.monetization}
+                  </p>
+                )}
               </Card>
 
               <Card className="p-4">
@@ -421,6 +451,11 @@ export function IdeaDetailModal({ idea, isOpen, onClose, onScoreUpdate }: IdeaDe
                     style={{ width: `${dynamicScores ? dynamicScores.execution : idea.analysis.execution}%` }}
                   />
                 </div>
+                {idea.score_explanations?.execution && (
+                  <p className="text-xs text-foreground-muted mt-2 leading-relaxed">
+                    {idea.score_explanations.execution}
+                  </p>
+                )}
               </Card>
             </div>
           </div>
@@ -442,6 +477,73 @@ export function IdeaDetailModal({ idea, isOpen, onClose, onScoreUpdate }: IdeaDe
               </ul>
             </Card>
           </div>
+
+          {/* Similar Products */}
+          {idea.similar_products && idea.similar_products.length > 0 && (
+            <div className="space-y-3">
+              <h3 className="text-lg font-semibold text-foreground">Similar Products</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                {idea.similar_products.map((product, index) => (
+                  <Card key={index} className="p-4 hover:border-brand/30 transition-colors">
+                    <div className="space-y-2">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex-1">
+                          <h4 className="font-medium text-foreground">{product.name}</h4>
+                          <p className="text-sm text-foreground-muted mt-1">{product.description}</p>
+                        </div>
+                        {product.url && (
+                          <a
+                            href={product.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex-shrink-0"
+                          >
+                            <Globe className="w-4 h-4 text-foreground-muted hover:text-brand transition-colors" />
+                          </a>
+                        )}
+                      </div>
+                    </div>
+                  </Card>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Strategy Section */}
+          {(idea.monetization_models || idea.gtm_channels) && (
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold text-foreground">Strategy</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Monetization Models */}
+                {idea.monetization_models && idea.monetization_models.length > 0 && (
+                  <Card className="p-4">
+                    <h4 className="font-medium text-foreground mb-3">Monetization Models</h4>
+                    <div className="flex flex-wrap gap-2">
+                      {idea.monetization_models.map((model, index) => (
+                        <Badge key={index} variant="secondary" className="bg-brand/10 text-brand border-brand/20">
+                          {model}
+                        </Badge>
+                      ))}
+                    </div>
+                  </Card>
+                )}
+
+                {/* GTM Channels */}
+                {idea.gtm_channels && idea.gtm_channels.length > 0 && (
+                  <Card className="p-4">
+                    <h4 className="font-medium text-foreground mb-3">Go-To-Market Channels</h4>
+                    <div className="flex flex-wrap gap-2">
+                      {idea.gtm_channels.map((channel, index) => (
+                        <Badge key={index} variant="secondary" className="bg-surface-elevated">
+                          {channel}
+                        </Badge>
+                      ))}
+                    </div>
+                  </Card>
+                )}
+              </div>
+            </div>
+          )}
 
           {/* Action Items Checklist */}
           <div className="space-y-3">

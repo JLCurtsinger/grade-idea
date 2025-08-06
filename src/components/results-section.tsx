@@ -30,6 +30,20 @@ interface ResultsSectionProps {
     execution: number;
     recommendation: string;
     insights: string[];
+    // New structured fields from backend
+    similar_products?: Array<{
+      name: string;
+      description: string;
+      url?: string;
+    }>;
+    monetization_models?: string[];
+    gtm_channels?: string[];
+    score_explanations?: {
+      market_potential: string;
+      competition: string;
+      monetization: string;
+      execution: string;
+    };
   };
 }
 
@@ -62,14 +76,14 @@ export const ResultsSection = ({ idea, analysis: apiAnalysis }: ResultsSectionPr
     recommendation: analysisData.recommendation,
     recommendationColor: analysisData.recommendation === "Worth Building" ? "success" as "success" | "warning" | "danger" : "warning" as "success" | "warning" | "danger",
     summary: `Analysis of "${idea}": ${analysisData.insights.join('. ')}`,
-    similarProducts: [
-      { name: "Competitor A", logo: "🏢" },
-      { name: "Competitor B", logo: "💼" },
-      { name: "Competitor C", logo: "📈" },
-      { name: "Competitor D", logo: "🎯" }
+    similarProducts: analysisData.similar_products || [
+      { name: "Competitor A", description: "Example competitor", logo: "🏢" },
+      { name: "Competitor B", description: "Example competitor", logo: "💼" },
+      { name: "Competitor C", description: "Example competitor", logo: "📈" },
+      { name: "Competitor D", description: "Example competitor", logo: "🎯" }
     ],
-    monetization: ["Subscription", "Marketplace", "Premium Features"],
-    gtmChannels: ["Content Marketing", "Community", "Partnerships"],
+    monetization: analysisData.monetization_models || ["Subscription", "Marketplace", "Premium Features"],
+    gtmChannels: analysisData.gtm_channels || ["Content Marketing", "Community", "Partnerships"],
     scores: [
       {
         id: "market",
@@ -77,7 +91,7 @@ export const ResultsSection = ({ idea, analysis: apiAnalysis }: ResultsSectionPr
         score: analysisData.market_potential,
         icon: TrendingUp,
         color: "success" as const,
-        justification: analysisData.insights[0] || "Market analysis based on current trends"
+        justification: analysisData.score_explanations?.market_potential || analysisData.insights[0] || "Market analysis based on current trends"
       },
       {
         id: "competition",
@@ -85,7 +99,7 @@ export const ResultsSection = ({ idea, analysis: apiAnalysis }: ResultsSectionPr
         score: analysisData.competition,
         icon: Target,
         color: "brand" as const,
-        justification: analysisData.insights[1] || "Competitive landscape analysis"
+        justification: analysisData.score_explanations?.competition || analysisData.insights[1] || "Competitive landscape analysis"
       },
       {
         id: "monetization",
@@ -93,7 +107,7 @@ export const ResultsSection = ({ idea, analysis: apiAnalysis }: ResultsSectionPr
         score: analysisData.monetization,
         icon: DollarSign,
         color: "success" as const,
-        justification: analysisData.insights[2] || "Revenue model assessment"
+        justification: analysisData.score_explanations?.monetization || analysisData.insights[2] || "Revenue model assessment"
       },
       {
         id: "execution",
@@ -101,7 +115,7 @@ export const ResultsSection = ({ idea, analysis: apiAnalysis }: ResultsSectionPr
         score: analysisData.execution,
         icon: Zap,
         color: "warning" as const,
-        justification: analysisData.insights[3] || "Implementation complexity evaluation"
+        justification: analysisData.score_explanations?.execution || analysisData.insights[3] || "Implementation complexity evaluation"
       },
       {
         id: "overall",
@@ -183,17 +197,32 @@ export const ResultsSection = ({ idea, analysis: apiAnalysis }: ResultsSectionPr
                 {/* Similar Products */}
                 <div>
                   <h4 className="font-semibold mb-3">Similar Products</h4>
-                  <div className="grid grid-cols-2 gap-3">
-                    {analysis.similarProducts.map((product) => (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    {analysis.similarProducts.map((product, index) => (
                       <div
-                        key={product.name}
-                        className="flex items-center gap-3 p-3 bg-surface border border-border rounded-lg hover:border-brand/30 transition-colors group cursor-pointer"
+                        key={product.name || index}
+                        className="p-3 bg-surface border border-border rounded-lg hover:border-brand/30 transition-colors group cursor-pointer"
                       >
-                        <div className="text-2xl">{product.logo}</div>
-                        <div className="flex-1">
-                          <div className="font-medium text-sm">{product.name}</div>
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="flex-1">
+                            <div className="font-medium text-sm text-foreground mb-1">
+                              {product.name}
+                            </div>
+                            <div className="text-xs text-foreground-muted leading-relaxed">
+                              {product.description}
+                            </div>
+                          </div>
+                          {product.url && (
+                            <a
+                              href={product.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="flex-shrink-0"
+                            >
+                              <ExternalLink className="w-4 h-4 text-foreground-subtle group-hover:text-brand transition-colors" />
+                            </a>
+                          )}
                         </div>
-                        <ExternalLink className="w-4 h-4 text-foreground-subtle group-hover:text-brand transition-colors" />
                       </div>
                     ))}
                   </div>
@@ -202,7 +231,7 @@ export const ResultsSection = ({ idea, analysis: apiAnalysis }: ResultsSectionPr
                 {/* Strategy Pills */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
-                    <h4 className="font-semibold mb-3">Monetization</h4>
+                    <h4 className="font-semibold mb-3">Monetization Models</h4>
                     <div className="flex flex-wrap gap-2">
                       {analysis.monetization.map((model) => (
                         <Badge key={model} variant="secondary" className="bg-brand/10 text-brand border-brand/20">
@@ -212,7 +241,7 @@ export const ResultsSection = ({ idea, analysis: apiAnalysis }: ResultsSectionPr
                     </div>
                   </div>
                   <div>
-                    <h4 className="font-semibold mb-3">GTM Channels</h4>
+                    <h4 className="font-semibold mb-3">Go-To-Market Channels</h4>
                     <div className="flex flex-wrap gap-2">
                       {analysis.gtmChannels.map((channel) => (
                         <Badge key={channel} variant="secondary" className="bg-surface-elevated">
