@@ -146,13 +146,23 @@ const parseOpenAIResponse = (content: string, expectedKey: string): any => {
     clean = clean.replace(/^```/, "").replace(/```$/, "").trim();
   }
 
-  const parsed = JSON.parse(clean);
+  try {
+    const parsed = JSON.parse(clean);
 
-  if (!parsed[expectedKey] && !(expectedKey === "insights" && parsed["risks"])) {
-    throw new Error(`Missing expected key: ${expectedKey}`);
+    // Check if the expected key exists (allow extra keys)
+    if (!parsed[expectedKey] && !(expectedKey === "insights" && parsed["risks"])) {
+      throw new Error(`Missing expected key: ${expectedKey}`);
+    }
+
+    return parsed;
+  } catch (parseError) {
+    console.error('Failed to parse OpenAI response:', {
+      content: content,
+      expectedKey: expectedKey,
+      error: parseError instanceof Error ? parseError.message : 'Unknown parsing error'
+    });
+    throw new Error(`Invalid JSON response from OpenAI: ${parseError instanceof Error ? parseError.message : 'Unknown error'}`);
   }
-
-  return parsed;
 };
 
 // Chained OpenAI analysis function
