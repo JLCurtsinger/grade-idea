@@ -15,7 +15,9 @@ import {
   RefreshCw,
   AlertTriangle,
   Sparkles,
-  Coins
+  Coins,
+  ChevronDown,
+  ChevronUp
 } from "lucide-react";
 import { useChecklist } from "@/hooks/useChecklist";
 import { useTokenBalance } from "@/hooks/use-token-balance";
@@ -55,6 +57,9 @@ export function IdeaChecklist({ ideaId, ideaText, baseScore, onScoreUpdate }: Id
   // State for plan generation
   const [isGeneratingPlan, setIsGeneratingPlan] = useState<string | null>(null); // stores the checklist item ID being processed
   const [isBuyTokensModalOpen, setIsBuyTokensModalOpen] = useState(false);
+  
+  // State for plan expansion
+  const [expandedPlanId, setExpandedPlanId] = useState<string | null>(null);
 
   const handleToggleSuggestion = async (sectionKey: keyof ChecklistData, suggestionId: string) => {
     // Prevent updates while loading or if data is invalid
@@ -185,6 +190,10 @@ export function IdeaChecklist({ ideaId, ideaText, baseScore, onScoreUpdate }: Id
     setIsBuyTokensModalOpen(false);
     // Refresh token balance after modal closes
     forceRefreshFromFirestore();
+  };
+
+  const togglePlanExpansion = (planId: string) => {
+    setExpandedPlanId(expandedPlanId === planId ? null : planId);
   };
 
   const getSectionIcon = (sectionKey: string) => {
@@ -343,6 +352,47 @@ export function IdeaChecklist({ ideaId, ideaText, baseScore, onScoreUpdate }: Id
                   >
                     {suggestion.text}
                   </label>
+                  
+                  {/* AI Plan Section */}
+                  {suggestion.plan && (
+                    <div className="mt-3 space-y-2">
+                      {/* Plan Toggle */}
+                      <button
+                        onClick={() => togglePlanExpansion(suggestion.id)}
+                        className="flex items-center gap-1 text-xs text-brand hover:text-brand/80 transition-colors group"
+                        role="button"
+                        tabIndex={0}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault();
+                            togglePlanExpansion(suggestion.id);
+                          }
+                        }}
+                      >
+                        {expandedPlanId === suggestion.id ? (
+                          <>
+                            <ChevronUp className="w-3 h-3" />
+                            <span className="group-hover:underline">Hide plan</span>
+                          </>
+                        ) : (
+                          <>
+                            <ChevronDown className="w-3 h-3" />
+                            <span className="group-hover:underline">Show plan</span>
+                          </>
+                        )}
+                      </button>
+                      
+                      {/* Plan Content */}
+                      {expandedPlanId === suggestion.id && (
+                        <div className="mt-2 p-3 bg-muted/40 rounded-lg border border-border/50 transition-all duration-200 ease-in-out">
+                          <div className="text-sm text-foreground-muted leading-relaxed whitespace-pre-wrap">
+                            {suggestion.plan}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                  
                   {/* Plan with AI link - only show if no plan exists */}
                   {!suggestion.plan && (
                     <button
