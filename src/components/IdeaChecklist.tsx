@@ -411,7 +411,35 @@ export function IdeaChecklist({ ideaId, ideaText, baseScore, onScoreUpdate }: Id
                       {expandedPlanId === suggestion.id && (
                         <div className="mt-2 p-4 rounded-md bg-muted border border-border transition-all duration-200 ease-in-out">
                           <div className="prose prose-sm leading-relaxed text-foreground-muted max-w-none">
-                            <ReactMarkdown>
+                            <ReactMarkdown
+                              components={{
+                                p: ({ children, ...props }) => (
+                                  <p {...props} className="mb-4 last:mb-0">
+                                    {children}
+                                  </p>
+                                ),
+                                li: ({ children, ...props }) => (
+                                  <li {...props} className="mb-2 last:mb-0">
+                                    {children}
+                                  </li>
+                                ),
+                                ul: ({ children, ...props }) => (
+                                  <ul {...props} className="mb-4 last:mb-0">
+                                    {children}
+                                  </ul>
+                                ),
+                                ol: ({ children, ...props }) => (
+                                  <ol {...props} className="mb-4 last:mb-0">
+                                    {children}
+                                  </ol>
+                                ),
+                                strong: ({ children, ...props }) => (
+                                  <strong {...props} className="font-semibold text-foreground">
+                                    {children}
+                                  </strong>
+                                )
+                              }}
+                            >
                               {suggestion.plan}
                             </ReactMarkdown>
                           </div>
