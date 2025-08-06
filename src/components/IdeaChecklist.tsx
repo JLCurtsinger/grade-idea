@@ -28,6 +28,7 @@ import { calculateDynamicScoresFromClient } from "@/lib/scoring";
 
 interface IdeaChecklistProps {
   ideaId: string;
+  ideaText?: string; // Add idea text prop
   baseScore?: number;
   onScoreUpdate?: (scores: {
     market_potential: number;
@@ -38,7 +39,7 @@ interface IdeaChecklistProps {
   }) => void;
 }
 
-export function IdeaChecklist({ ideaId, baseScore, onScoreUpdate }: IdeaChecklistProps) {
+export function IdeaChecklist({ ideaId, ideaText, baseScore, onScoreUpdate }: IdeaChecklistProps) {
   const { 
     checklistData, 
     loading, 
@@ -133,34 +134,46 @@ export function IdeaChecklist({ ideaId, baseScore, onScoreUpdate }: IdeaChecklis
     setIsGeneratingPlan(checklistItem.id);
     
     try {
-      // TODO: Call backend endpoint /api/generate-plan
-      // For now, just simulate the API call
-      console.log('Plan with AI requested for:', checklistItem);
+      if (!ideaText) {
+        throw new Error('Idea text is required to generate a plan');
+      }
       
-      // Simulate API call delay
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      // TODO: Implement actual plan generation logic
-      // const response = await fetch('/api/generate-plan', {
-      //   method: 'POST',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify({
-      //     checklistItem,
-      //     ideaId,
-      //     idToken: await user.getIdToken()
-      //   })
-      // });
-      
-      toast({
-        title: "Plan Generation",
-        description: "AI plan generation feature coming soon!",
+      const idToken = await user.getIdToken();
+      const response = await fetch('/api/generate-plan', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ideaId,
+          checklistItemId: checklistItem.id,
+          checklistItemText: checklistItem.text,
+          ideaDescription: ideaText,
+          idToken
+        })
       });
+
+      const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to generate plan');
+      }
+
+      if (data.success) {
+        toast({
+          title: "Plan Generated",
+          description: "Your AI plan has been generated and saved!",
+        });
+        
+        // Refresh the checklist to show the new plan
+        await refreshChecklist();
+      } else {
+        throw new Error(data.error || 'Plan generation failed');
+      }
       
     } catch (error) {
       console.error('Error generating plan:', error);
       toast({
         title: "Error",
-        description: "Failed to generate plan. Please try again.",
+        description: error instanceof Error ? error.message : "Failed to generate plan. Please try again.",
         variant: "destructive",
       });
     } finally {

@@ -623,7 +623,7 @@ export function IdeaDetailModal({ idea, isOpen, onClose, onScoreUpdate }: IdeaDe
 
           {/* Action Items Checklist */}
           <div className="space-y-3">
-            <IdeaChecklist ideaId={idea.id} baseScore={baseScore} onScoreUpdate={handleScoreUpdate} />
+            <IdeaChecklist ideaId={idea.id} ideaText={idea.ideaText} baseScore={baseScore} onScoreUpdate={handleScoreUpdate} />
           </div>
         </div>
       </DialogContent>
