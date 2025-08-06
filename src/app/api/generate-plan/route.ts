@@ -80,7 +80,7 @@ const updateChecklistItemWithPlan = async (userId: string, ideaId: string, check
     // First, find the checklist document
     const checklistsRef = adminDb.collection("checklists");
     const q = checklistsRef.where("idea_id", "==", ideaId).where("user_id", "==", userId);
-    const querySnapshot = await checklistsRef.get();
+    const querySnapshot = await q.get();
     
     if (querySnapshot.empty) {
       throw new Error('Checklist not found');
@@ -88,6 +88,9 @@ const updateChecklistItemWithPlan = async (userId: string, ideaId: string, check
 
     const checklistDoc = querySnapshot.docs[0];
     const checklistData = checklistDoc.data();
+    
+    // Log the checklist document ID that is found
+    console.log('Found checklist document ID:', checklistDoc.id);
     
     // Find and update the specific checklist item
     let updated = false;
@@ -99,6 +102,12 @@ const updateChecklistItemWithPlan = async (userId: string, ideaId: string, check
       const updatedSuggestions = suggestions.map((item: any) => {
         if (item.id === checklistItemId) {
           updated = true;
+          // Log the checklist item being updated
+          console.log('Updating checklist item:', { 
+            id: item.id, 
+            text: item.text || 'No text',
+            sectionKey 
+          });
           return { ...item, plan };
         }
         return item;
@@ -122,7 +131,12 @@ const updateChecklistItemWithPlan = async (userId: string, ideaId: string, check
       updated_at: Timestamp.now()
     });
     
-    console.log('Checklist item updated with plan:', { ideaId, checklistItemId });
+    // Log confirmation after the Firestore update is committed
+    console.log('Firestore update committed successfully:', { 
+      checklistDocId: checklistDoc.id,
+      ideaId, 
+      checklistItemId 
+    });
     
   } catch (error) {
     console.error('Error updating checklist item with plan:', error);
@@ -196,6 +210,10 @@ export async function POST(request: NextRequest) {
     console.log('Calling OpenAI API for plan generation...');
     const plan = await callOpenAIForPlan(ideaDescription, checklistItemText);
     console.log('OpenAI plan generation completed successfully');
+    
+    // Log a preview (first 100 chars) of the plan returned from OpenAI
+    const planPreview = plan.length > 100 ? plan.substring(0, 100) + '...' : plan;
+    console.log('Plan preview (first 100 chars):', planPreview);
 
     // Store plan in Firestore
     console.log('Storing plan in Firestore...');
