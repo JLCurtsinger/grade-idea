@@ -408,9 +408,18 @@ export function IdeaChecklist({ ideaId, ideaText, baseScore, onScoreUpdate }: Id
                       
                       {/* Plan Content */}
                       {expandedPlanId === suggestion.id && (
-                        <div className="mt-2 p-3 bg-muted/40 rounded-lg border border-border/50 transition-all duration-200 ease-in-out">
-                          <div className="text-sm text-foreground-muted leading-relaxed whitespace-pre-wrap">
-                            {suggestion.plan}
+                        <div className="mt-2 p-4 bg-muted/40 rounded-lg border border-border/50 transition-all duration-200 ease-in-out">
+                          <div className="prose prose-sm max-w-none text-foreground-muted">
+                            {suggestion.plan.split('\n\n').map((paragraph, index) => (
+                              <p key={index} className="mb-3 last:mb-0 leading-relaxed">
+                                {paragraph.split('\n').map((line, lineIndex) => (
+                                  <span key={lineIndex}>
+                                    {line}
+                                    {lineIndex < paragraph.split('\n').length - 1 && <br />}
+                                  </span>
+                                ))}
+                              </p>
+                            ))}
                           </div>
                         </div>
                       )}
