@@ -12,7 +12,8 @@ import {
   AlertCircle,
   XCircle,
   RefreshCw,
-  AlertTriangle
+  AlertTriangle,
+  Sparkles
 } from "lucide-react";
 import { useChecklist } from "@/hooks/useChecklist";
 import { ChecklistData } from "@/lib/checklist";
@@ -78,7 +79,11 @@ export function IdeaChecklist({ ideaId, baseScore, onScoreUpdate }: IdeaChecklis
     }
   };
 
-
+  const handlePlanRequest = (checklistItem: any) => {
+    // Placeholder function for AI plan generation
+    console.log('Plan with AI requested for:', checklistItem);
+    // TODO: Implement AI plan generation logic
+  };
 
   const getSectionIcon = (sectionKey: string) => {
     switch (sectionKey) {
@@ -225,16 +230,28 @@ export function IdeaChecklist({ ideaId, baseScore, onScoreUpdate }: IdeaChecklis
                   onCheckedChange={() => handleToggleSuggestion(sectionKey as keyof ChecklistData, suggestion.id)}
                   className="mt-0.5 flex-shrink-0"
                 />
-                <label
-                  htmlFor={suggestion.id}
-                  className={`flex-1 cursor-pointer select-none transition-all duration-200 ${
-                    suggestion.completed
-                      ? "text-foreground/60 line-through"
-                      : "text-foreground"
-                  }`}
-                >
-                  {suggestion.text}
-                </label>
+                <div className="flex-1 min-w-0">
+                  <label
+                    htmlFor={suggestion.id}
+                    className={`block cursor-pointer select-none transition-all duration-200 ${
+                      suggestion.completed
+                        ? "text-foreground/60 line-through"
+                        : "text-foreground"
+                    }`}
+                  >
+                    {suggestion.text}
+                  </label>
+                  {/* Plan with AI link - only show if no plan exists */}
+                  {!suggestion.plan && (
+                    <button
+                      onClick={() => handlePlanRequest(suggestion)}
+                      className="mt-2 text-xs text-brand hover:text-brand/80 transition-colors flex items-center gap-1 group"
+                    >
+                      <Sparkles className="w-3 h-3" />
+                      <span className="group-hover:underline">Plan with AI (1 token)</span>
+                    </button>
+                  )}
+                </div>
                 {suggestion.completed && (
                   <CheckCircle className="w-4 h-4 text-green-600 flex-shrink-0" />
                 )}

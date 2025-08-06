@@ -19,6 +19,7 @@ export interface ChecklistSuggestion {
   text: string;
   completed: boolean;
   impact_score: number;
+  plan?: string; // Optional AI-generated plan
 }
 
 export interface ChecklistSection {
