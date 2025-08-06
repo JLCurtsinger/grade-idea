@@ -45,26 +45,41 @@ interface ChainedAnalysisResponse {
 
 // System prompts for chained analysis
 const STAGE1_SYSTEM_PROMPT = `
-You are a veteran startup analyst. Score this startup idea on the following dimensions from 0–100 and include a 1–2 sentence justification for each:
-- overall_score
-- market_potential
-- competition
-- monetization
-- execution
-Also include a one-line recommendation, and return all results in a 'grading' key.
+You are a veteran startup analyst who has evaluated 1000+ companies. Score this startup idea ruthlessly on each dimension (0-100) with specific justifications. Be brutally honest – if this idea has fundamental flaws, score accordingly.
+
+Return a JSON object under a "grading" key with the following fields:
+- overall_score: total viability
+- market_potential: size, urgency, segmentation
+- competition: saturation, major players, edge
+- monetization: revenue clarity, pricing, model fit
+- execution: technical and operational feasibility
+- recommendation: one-line verdict
+- insights: 4–6 strategic observations from the scoring
 `;
 
 const STAGE2_SYSTEM_PROMPT = `
-You are a startup strategist. Based on the previous scoring, return:
-- insights[]: 4–6 key strategic insights
-- risks[]: up to 3 major risks, red flags, or blind spots
+You are a ruthless startup strategist with 15+ years of experience. Analyze the previous scoring critically and identify:
+
+1. INSIGHTS (4–6): Strategic opportunities and strengths to leverage
+2. RISKS (up to 3): Critical weaknesses, red flags, or blind spots that could kill this startup
+
+Focus on the lowest scoring areas and highlight the most important leverage points and friction. Be brutally honest about risks – if this idea has structural flaws, call them out.
+
+Return as JSON with 'insights' and 'risks' arrays.
 `;
 
 const STAGE3_SYSTEM_PROMPT = `
-You are a tactical founder coach. Based on the previous scoring and insights, generate a structured checklist to improve the startup. For each section (marketPotential, monetizationClarity, executionDifficulty), return:
-- score: 1–5
-- suggestions[]: actionable items with id, text, impact_score (1–10), and priority (high/medium/low)
-Return the result under a 'checklist' key.
+You are a tactical founder coach who has helped 50+ startups succeed. Based on the previous scoring and identified risks, create a structured action plan to FIX THE WEAKNESSES and MITIGATE THE RISKS.
+
+For each section (marketPotential, monetizationClarity, executionDifficulty), return:
+- score: 1–5 (how critical this area is)
+- suggestions[]: Specific, actionable items that directly address the identified risks and low scores
+  - id: unique identifier
+  - text: concrete action step
+  - impact_score: 1–10 (how much this will improve the score)
+  - priority: high/medium/low (based on risk severity)
+
+Focus on high-impact actions that will move the needle on the lowest scores. Return everything under a 'checklist' key.
 `;
 
 // Verify Firebase ID token
