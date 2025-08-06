@@ -59,9 +59,9 @@ const getMockAnalysis = (ideaText: string): MockAnalysisResponse => {
       competition: 65,
       monetization: 75,
       execution: 70,
-      recommendation: "Worth Building"
+      recommendation: "Worth Building",
     },
-    insights: [
+    insights: [ // MUST always be defined as array — frontend uses .join()
       "Market size appears substantial with clear demand signals",
       "Competition is moderate but differentiation opportunities exist", 
       "Monetization path is clear with multiple revenue streams possible",
@@ -69,7 +69,7 @@ const getMockAnalysis = (ideaText: string): MockAnalysisResponse => {
       "Strong product-market fit potential in target segment",
       "Scalability considerations are well-addressed"
     ],
-    risks: [
+    risks: [ // MUST always be defined as array — frontend uses .join()
       "Market timing risk - ensure demand is current, not historical",
       "Customer acquisition cost may be higher than expected", 
       "Technical debt could accumulate without proper architecture planning"
@@ -77,7 +77,7 @@ const getMockAnalysis = (ideaText: string): MockAnalysisResponse => {
     checklist: {
       marketPotential: {
         score: 4,
-        suggestions: [
+        suggestions: [ // MUST always be defined as array
           {
             id: "mp-1",
             text: "Conduct 20 customer interviews to validate demand",
@@ -100,7 +100,7 @@ const getMockAnalysis = (ideaText: string): MockAnalysisResponse => {
       },
       monetizationClarity: {
         score: 3,
-        suggestions: [
+        suggestions: [ // MUST always be defined as array
           {
             id: "mc-1",
             text: "Test pricing with 10 potential customers",
@@ -123,7 +123,7 @@ const getMockAnalysis = (ideaText: string): MockAnalysisResponse => {
       },
       executionDifficulty: {
         score: 4,
-        suggestions: [
+        suggestions: [ // MUST always be defined as array
           {
             id: "ed-1",
             text: "Build a no-code MVP in 2 weeks",
@@ -146,7 +146,7 @@ const getMockAnalysis = (ideaText: string): MockAnalysisResponse => {
       }
     },
     summary_analysis: `Analysis of "${ideaText}": This startup idea shows strong potential with a clear market opportunity and viable monetization path. The competitive landscape is manageable, and execution complexity is reasonable for a small team. Key strengths include substantial market size and clear demand signals, while main risks involve market timing and customer acquisition costs. Overall, this idea is worth pursuing with proper validation and execution planning.`,
-    similar_products: [
+    similar_products: [ // MUST always be defined as array — frontend uses .map()
       {
         name: "Competitor A",
         description: "Established platform in similar space with strong market presence",
@@ -166,9 +166,17 @@ const getMockAnalysis = (ideaText: string): MockAnalysisResponse => {
         description: "Adjacent market player with potential for expansion"
       }
     ],
-    monetization_models: ["Subscription", "Freemium", "Marketplace"],
-    gtm_channels: ["Content Marketing", "Community", "Partnerships"],
-    score_explanations: {
+    monetization_models: [ // MUST always be defined as array — frontend uses .map()
+      "Subscription", 
+      "Freemium", 
+      "Marketplace"
+    ],
+    gtm_channels: [ // MUST always be defined as array — frontend uses .map()
+      "Content Marketing", 
+      "Community", 
+      "Partnerships"
+    ],
+    score_explanations: { // MUST always be complete object
       market_potential: "Large addressable market with clear demand signals and growth potential.",
       competition: "Moderate competition with opportunities for differentiation and market positioning.",
       monetization: "Clear revenue model with multiple pricing tiers and value-based pricing potential.",
@@ -213,14 +221,23 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: true,
       analysis: mockAnalysis.grading,
-      insights: mockAnalysis.insights,
-      risks: mockAnalysis.risks,
-      checklist: mockAnalysis.checklist,
-      summary_analysis: mockAnalysis.summary_analysis,
-      similar_products: mockAnalysis.similar_products,
-      monetization_models: mockAnalysis.monetization_models,
-      gtm_channels: mockAnalysis.gtm_channels,
-      score_explanations: mockAnalysis.score_explanations
+      insights: mockAnalysis.insights || [], // MUST always be defined as array — frontend uses .join()
+      risks: mockAnalysis.risks || [], // MUST always be defined as array — frontend uses .join()
+      checklist: mockAnalysis.checklist || {
+        marketPotential: { score: 3, suggestions: [] },
+        monetizationClarity: { score: 3, suggestions: [] },
+        executionDifficulty: { score: 3, suggestions: [] }
+      },
+      summary_analysis: mockAnalysis.summary_analysis || "",
+      similar_products: mockAnalysis.similar_products || [], // MUST always be defined as array — frontend uses .map()
+      monetization_models: mockAnalysis.monetization_models || [], // MUST always be defined as array — frontend uses .map()
+      gtm_channels: mockAnalysis.gtm_channels || [], // MUST always be defined as array — frontend uses .map()
+      score_explanations: mockAnalysis.score_explanations || {
+        market_potential: "",
+        competition: "",
+        monetization: "",
+        execution: ""
+      }
     });
 
   } catch (error) {
