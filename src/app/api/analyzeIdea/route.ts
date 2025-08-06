@@ -57,6 +57,7 @@ interface OpenAIResponse {
   monetization_models: string[];
   gtm_channels: string[];
   score_explanations: ScoreExplanation;
+  summary_analysis?: string; // AI Analysis summary
 }
 
 // System prompt for OpenAI
@@ -93,7 +94,13 @@ const SYSTEM_MESSAGE = `You are a veteran startup analyst advising experienced f
    - gtm_channels: Array of 2–3 go-to-market strategies (e.g., "Content Marketing", "Partnerships", "Community")
    - score_explanations: One-sentence rationale for each scoring dimension (market_potential, competition, monetization, execution)
 
-Return ONLY valid JSON with these top-level keys: "grading", "userArchetype", "risks", "checklist", "similar_products", "monetization_models", "gtm_channels", and "score_explanations".
+6. Summary Analysis (Optional, but highly recommended):
+   - Provide a concise, one-paragraph summary of the overall analysis, highlighting key strengths and potential concerns.
+   - This will help the user quickly understand the idea's viability.
+
+Return ONLY valid JSON with these top-level keys: "grading", "userArchetype", "risks", "checklist", "similar_products", "monetization_models", "gtm_channels", "score_explanations", and "summary_analysis".
+
+Also include a "summary_analysis" field: write a short, founder-grade paragraph summarizing the overall evaluation and recommendation. It should synthesize the scores, risks, and opportunities into 3–5 sentences of strategic insight.
 
 IMPORTANT: All values in the returned JSON must be valid according to strict JSON formatting. 
 - Do NOT include numeric ranges like 30-50. Instead, return them as strings (e.g., "30-50").
@@ -189,6 +196,11 @@ const callOpenAI = async (ideaText: string): Promise<OpenAIResponse> => {
     
     if (!parsed.score_explanations || typeof parsed.score_explanations !== 'object') {
       throw new Error('Missing or invalid score_explanations field');
+    }
+    
+    // Validate summary_analysis field (optional but recommended)
+    if (parsed.summary_analysis && typeof parsed.summary_analysis !== 'string') {
+      throw new Error('Invalid summary_analysis field - must be a string');
     }
     
     return parsed as OpenAIResponse;
@@ -305,7 +317,8 @@ export async function POST(request: NextRequest) {
       gtm_channels: analysis.gtm_channels,
       score_explanations: analysis.score_explanations,
       userArchetype: analysis.userArchetype,
-      risks: analysis.risks || [] // MUST always be defined as array — frontend uses .join()
+      risks: analysis.risks || [], // MUST always be defined as array — frontend uses .join()
+      summary_analysis: analysis.summary_analysis // AI Analysis summary
     });
     console.log('Idea stored in Firestore:', { ideaId, uid });
 
