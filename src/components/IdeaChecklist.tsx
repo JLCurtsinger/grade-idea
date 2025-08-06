@@ -334,8 +334,12 @@ export function IdeaChecklist({ ideaId, ideaText, baseScore, onScoreUpdate }: Id
                 id: suggestion.id,
                 text: suggestion.text,
                 hasPlan: !!suggestion.plan,
+                planIsTruthy: Boolean(suggestion.plan),
+                planType: typeof suggestion.plan,
                 planLength: suggestion.plan?.length || 0,
-                planPreview: suggestion.plan?.substring(0, 50) + '...'
+                planPreview: suggestion.plan?.substring(0, 50) + '...',
+                planTrimmed: suggestion.plan?.trim(),
+                planTrimmedLength: suggestion.plan?.trim().length || 0
               });
               
               return (
@@ -366,8 +370,16 @@ export function IdeaChecklist({ ideaId, ideaText, baseScore, onScoreUpdate }: Id
                   </label>
                   
                   {/* AI Plan Section */}
-                  {suggestion.plan && (
+                  {suggestion.plan && suggestion.plan.trim() && (
                     <div className="mt-3 space-y-2">
+                      {(() => {
+                        console.log('Rendering plan section for item:', suggestion.id, {
+                          hasPlan: !!suggestion.plan,
+                          planContent: suggestion.plan,
+                          willRenderPlan: Boolean(suggestion.plan)
+                        });
+                        return null;
+                      })()}
                       {/* Plan Toggle */}
                       <button
                         onClick={() => togglePlanExpansion(suggestion.id)}
@@ -406,8 +418,14 @@ export function IdeaChecklist({ ideaId, ideaText, baseScore, onScoreUpdate }: Id
                   )}
                   
                   {/* Plan with AI link - only show if no plan exists */}
-                  {!suggestion.plan && (
-                    <button
+                  {(() => {
+                    console.log('Checking Plan with AI button for item:', suggestion.id, {
+                      hasPlan: !!suggestion.plan,
+                      planTrimmed: suggestion.plan?.trim(),
+                      willShowPlanWithAI: !suggestion.plan || !suggestion.plan.trim()
+                    });
+                    return (!suggestion.plan || !suggestion.plan.trim()) && (
+                      <button
                       onClick={() => handlePlanRequest(suggestion)}
                       disabled={isGeneratingPlan === suggestion.id}
                       className="mt-2 text-xs text-brand hover:text-brand/80 transition-colors flex items-center gap-1 group disabled:opacity-50 disabled:cursor-not-allowed"
@@ -424,7 +442,8 @@ export function IdeaChecklist({ ideaId, ideaText, baseScore, onScoreUpdate }: Id
                         </>
                       )}
                     </button>
-                  )}
+                  );
+                  })()}
                 </div>
                 {suggestion.completed && (
                   <CheckCircle className="w-4 h-4 text-green-600 flex-shrink-0" />
