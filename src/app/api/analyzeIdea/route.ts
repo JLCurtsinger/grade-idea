@@ -2,15 +2,15 @@ import { NextRequest, NextResponse } from 'next/server';
 import { adminAuth, adminDb } from '@/lib/firebase-admin';
 import { Timestamp } from 'firebase-admin/firestore';
 
-// Types for OpenAI response
+// Types for AI analysis response - ALL fields below are expected in LLM responses
 interface GradingData {
   overall_score: number;
   market_potential: number;
   competition: number;
   monetization: number;
   execution: number;
-  recommendation: string;
-  insights: string[];
+  recommendation: string; // Full paragraph recommendation, not one-liner
+  insights: string[]; // MUST always be defined as array — frontend uses .join()
 }
 
 interface SimilarProduct {
@@ -46,6 +46,8 @@ interface ChecklistData {
 
 interface OpenAIResponse {
   grading: GradingData;
+  userArchetype?: string; // Target user demographics and behavior
+  risks: string[]; // MUST always be defined as array — key risks and blind spots
   checklist: ChecklistData;
   similar_products: SimilarProduct[];
   monetization_models: string[];
@@ -283,7 +285,7 @@ export async function POST(request: NextRequest) {
       ideaText,
       createdAt: Timestamp.now(),
       tokensUsed: 1,
-      analysis: analysis.grading,
+      analysis: analysis.grading, // Includes insights array and full recommendation
       public: false, // Default to private
       initial_scores: {
         market: analysis.grading.market_potential,
@@ -293,11 +295,13 @@ export async function POST(request: NextRequest) {
         growth: analysis.grading.market_potential, // Using market potential as growth proxy
         overall: analysis.grading.overall_score
       },
-      // Store new structured data
+      // Store rich structured data for enhanced UI
       similar_products: analysis.similar_products,
       monetization_models: analysis.monetization_models,
       gtm_channels: analysis.gtm_channels,
-      score_explanations: analysis.score_explanations
+      score_explanations: analysis.score_explanations,
+      userArchetype: analysis.userArchetype,
+      risks: analysis.risks || [] // MUST always be defined as array — frontend uses .join()
     });
     console.log('Idea stored in Firestore:', { ideaId, uid });
 

@@ -26,7 +26,8 @@ import {
   AlertCircle,
   XCircle,
   Globe,
-  Lock
+  Lock,
+  Users
 } from "lucide-react";
 import { IdeaChecklist } from "./IdeaChecklist";
 import { calculateDynamicScores } from "@/lib/scoring";
@@ -40,8 +41,8 @@ interface Idea {
     competition: number;
     monetization: number;
     execution: number;
-    recommendation: string;
-    insights: string[];
+    recommendation: string; // Full paragraph recommendation
+    insights: string[]; // MUST always be defined as array — frontend uses .join()
   };
   createdAt: {
     seconds: number;
@@ -50,6 +51,8 @@ interface Idea {
   tokensUsed: number;
   public?: boolean;
   summary_analysis?: string; // AI Analysis summary
+  userArchetype?: string; // Target user demographics and behavior
+  risks?: string[]; // MUST always be defined as array — key risks and blind spots
   // New structured fields from backend
   similar_products?: Array<{
     name: string;
@@ -488,6 +491,39 @@ export function IdeaDetailModal({ idea, isOpen, onClose, onScoreUpdate }: IdeaDe
               </ul>
             </Card>
           </div>
+
+          {/* Risks */}
+          {idea.risks && idea.risks.length > 0 && (
+            <div className="space-y-3">
+              <div className="flex items-center gap-2">
+                <AlertCircle className="w-5 h-5 text-orange-600" />
+                <h3 className="text-lg font-semibold text-foreground">Key Risks & Blind Spots</h3>
+              </div>
+              <Card className="p-4">
+                <ul className="space-y-3">
+                  {idea.risks.map((risk, index) => (
+                    <li key={index} className="flex items-start gap-3">
+                      <div className="w-2 h-2 bg-orange-500 rounded-full mt-2 flex-shrink-0"></div>
+                      <p className="text-foreground leading-relaxed">{risk}</p>
+                    </li>
+                  ))}
+                </ul>
+              </Card>
+            </div>
+          )}
+
+          {/* User Archetype */}
+          {idea.userArchetype && (
+            <div className="space-y-3">
+              <div className="flex items-center gap-2">
+                <Users className="w-5 h-5 text-blue-600" />
+                <h3 className="text-lg font-semibold text-foreground">Target User Archetype</h3>
+              </div>
+              <Card className="p-4">
+                <p className="text-foreground leading-relaxed">{idea.userArchetype}</p>
+              </Card>
+            </div>
+          )}
 
           {/* Similar Products */}
           {idea.similar_products && idea.similar_products.length > 0 && (
