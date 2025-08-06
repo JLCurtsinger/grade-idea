@@ -30,6 +30,15 @@ export function useChecklist(ideaId: string): UseChecklistReturn {
       setLoading(true);
       setError(null);
       const data = await getOrCreateChecklist(ideaId, user.uid);
+      console.log('Checklist data loaded:', {
+        ideaId,
+        userId: user.uid,
+        sections: Object.keys(data),
+        totalSuggestions: Object.values(data).reduce((acc, section) => acc + section.suggestions.length, 0),
+        suggestionsWithPlans: Object.values(data).reduce((acc, section) => 
+          acc + section.suggestions.filter(s => s.plan).length, 0
+        )
+      });
       setChecklistData(data);
     } catch (err) {
       console.error("Error loading checklist:", err);

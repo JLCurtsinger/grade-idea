@@ -168,8 +168,10 @@ export function IdeaChecklist({ ideaId, ideaText, baseScore, onScoreUpdate }: Id
           description: "Your AI plan has been generated and saved!",
         });
         
+        console.log('Plan generation successful, refreshing checklist...');
         // Refresh the checklist to show the new plan
         await refreshChecklist();
+        console.log('Checklist refreshed after plan generation');
       } else {
         throw new Error(data.error || 'Plan generation failed');
       }
@@ -326,15 +328,25 @@ export function IdeaChecklist({ ideaId, ideaText, baseScore, onScoreUpdate }: Id
           </div>
 
           <div className="space-y-3">
-            {section.suggestions.map((suggestion) => (
-              <div
-                key={suggestion.id}
-                className={`flex items-start gap-3 p-3 rounded-lg transition-all duration-200 ${
-                  suggestion.completed
-                    ? "bg-green-50/10 border border-green-200/20"
-                    : "hover:bg-surface-elevated/50 border border-transparent"
-                }`}
-              >
+            {section.suggestions.map((suggestion) => {
+              // Temporary console.log to debug plan field
+              console.log('Checklist item plan field:', {
+                id: suggestion.id,
+                text: suggestion.text,
+                hasPlan: !!suggestion.plan,
+                planLength: suggestion.plan?.length || 0,
+                planPreview: suggestion.plan?.substring(0, 50) + '...'
+              });
+              
+              return (
+                <div
+                  key={suggestion.id}
+                  className={`flex items-start gap-3 p-3 rounded-lg transition-all duration-200 ${
+                    suggestion.completed
+                      ? "bg-green-50/10 border border-green-200/20"
+                      : "hover:bg-surface-elevated/50 border border-transparent"
+                  }`}
+                >
                 <Checkbox
                   id={suggestion.id}
                   checked={suggestion.completed}
@@ -418,7 +430,8 @@ export function IdeaChecklist({ ideaId, ideaText, baseScore, onScoreUpdate }: Id
                   <CheckCircle className="w-4 h-4 text-green-600 flex-shrink-0" />
                 )}
               </div>
-            ))}
+            );
+            })}
           </div>
         </Card>
       ))}
