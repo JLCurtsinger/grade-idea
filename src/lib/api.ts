@@ -21,7 +21,37 @@ export interface MockAnalysisResponse {
     monetization: number;
     execution: number;
     recommendation: string;
-    insights: string[];
+  };
+  insights: string[];
+  risks: string[];
+  checklist: {
+    marketPotential: {
+      score: number;
+      suggestions: Array<{
+        id: string;
+        text: string;
+        impact_score: number;
+        priority: 'high' | 'medium' | 'low';
+      }>;
+    };
+    monetizationClarity: {
+      score: number;
+      suggestions: Array<{
+        id: string;
+        text: string;
+        impact_score: number;
+        priority: 'high' | 'medium' | 'low';
+      }>;
+    };
+    executionDifficulty: {
+      score: number;
+      suggestions: Array<{
+        id: string;
+        text: string;
+        impact_score: number;
+        priority: 'high' | 'medium' | 'low';
+      }>;
+    };
   };
 }
 
@@ -144,7 +174,14 @@ export async function submitIdeaForMockAnalysis(
       
       return {
         success: true,
-        analysis: data.analysis
+        analysis: data.analysis,
+        insights: data.insights || [],
+        risks: data.risks || [],
+        checklist: data.checklist || {
+          marketPotential: { score: 3, suggestions: [] },
+          monetizationClarity: { score: 3, suggestions: [] },
+          executionDifficulty: { score: 3, suggestions: [] }
+        }
       };
     } else {
       console.error('Invalid response from gradeIdea API:', data);
