@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
@@ -13,9 +14,14 @@ import {
   XCircle,
   RefreshCw,
   AlertTriangle,
-  Sparkles
+  Sparkles,
+  Coins
 } from "lucide-react";
 import { useChecklist } from "@/hooks/useChecklist";
+import { useTokenBalance } from "@/hooks/use-token-balance";
+import { useAuth } from "@/context/AuthContext";
+import { BuyTokensModal } from "@/components/buy-tokens-modal";
+import { useToast } from "@/hooks/use-toast";
 import { ChecklistData } from "@/lib/checklist";
 import { calculateDynamicScoresFromClient } from "@/lib/scoring";
 
@@ -40,6 +46,14 @@ export function IdeaChecklist({ ideaId, baseScore, onScoreUpdate }: IdeaChecklis
     updateChecklistItem, 
     refreshChecklist 
   } = useChecklist(ideaId);
+  
+  const { user } = useAuth();
+  const { tokenBalance, forceRefreshFromFirestore } = useTokenBalance();
+  const { toast } = useToast();
+  
+  // State for plan generation
+  const [isGeneratingPlan, setIsGeneratingPlan] = useState<string | null>(null); // stores the checklist item ID being processed
+  const [isBuyTokensModalOpen, setIsBuyTokensModalOpen] = useState(false);
 
   const handleToggleSuggestion = async (sectionKey: keyof ChecklistData, suggestionId: string) => {
     // Prevent updates while loading or if data is invalid
@@ -79,10 +93,85 @@ export function IdeaChecklist({ ideaId, baseScore, onScoreUpdate }: IdeaChecklis
     }
   };
 
-  const handlePlanRequest = (checklistItem: any) => {
-    // Placeholder function for AI plan generation
-    console.log('Plan with AI requested for:', checklistItem);
-    // TODO: Implement AI plan generation logic
+  const handlePlanRequest = async (checklistItem: any) => {
+    if (!user) {
+      toast({
+        title: "Authentication Required",
+        description: "Please sign in to generate AI plans.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Check token balance
+    if (tokenBalance === null) {
+      // Force refresh token balance
+      await forceRefreshFromFirestore();
+      return;
+    }
+
+    if (tokenBalance < 1) {
+      toast({
+        title: "Not enough tokens",
+        description: (
+          <div className="flex items-center gap-2">
+            <span>You need at least 1 token to generate a plan.</span>
+            <button
+              onClick={() => setIsBuyTokensModalOpen(true)}
+              className="text-brand hover:text-brand/80 underline text-sm font-medium"
+            >
+              Buy More
+            </button>
+          </div>
+        ),
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Start plan generation
+    setIsGeneratingPlan(checklistItem.id);
+    
+    try {
+      // TODO: Call backend endpoint /api/generate-plan
+      // For now, just simulate the API call
+      console.log('Plan with AI requested for:', checklistItem);
+      
+      // Simulate API call delay
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      // TODO: Implement actual plan generation logic
+      // const response = await fetch('/api/generate-plan', {
+      //   method: 'POST',
+      //   headers: { 'Content-Type': 'application/json' },
+      //   body: JSON.stringify({
+      //     checklistItem,
+      //     ideaId,
+      //     idToken: await user.getIdToken()
+      //   })
+      // });
+      
+      toast({
+        title: "Plan Generation",
+        description: "AI plan generation feature coming soon!",
+      });
+      
+    } catch (error) {
+      console.error('Error generating plan:', error);
+      toast({
+        title: "Error",
+        description: "Failed to generate plan. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsGeneratingPlan(null);
+    }
+  };
+
+  const handleBuyTokensModalClose = () => {
+    setIsBuyTokensModalOpen(false);
+    // Refresh token balance after modal closes
+    forceRefreshFromFirestore();
   };
 
   const getSectionIcon = (sectionKey: string) => {
@@ -245,10 +334,20 @@ export function IdeaChecklist({ ideaId, baseScore, onScoreUpdate }: IdeaChecklis
                   {!suggestion.plan && (
                     <button
                       onClick={() => handlePlanRequest(suggestion)}
-                      className="mt-2 text-xs text-brand hover:text-brand/80 transition-colors flex items-center gap-1 group"
+                      disabled={isGeneratingPlan === suggestion.id}
+                      className="mt-2 text-xs text-brand hover:text-brand/80 transition-colors flex items-center gap-1 group disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      <Sparkles className="w-3 h-3" />
-                      <span className="group-hover:underline">Plan with AI (1 token)</span>
+                      {isGeneratingPlan === suggestion.id ? (
+                        <>
+                          <RefreshCw className="w-3 h-3 animate-spin" />
+                          <span>Generating plan...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Sparkles className="w-3 h-3" />
+                          <span className="group-hover:underline">Plan with AI (1 token)</span>
+                        </>
+                      )}
                     </button>
                   )}
                 </div>
@@ -260,6 +359,12 @@ export function IdeaChecklist({ ideaId, baseScore, onScoreUpdate }: IdeaChecklis
           </div>
         </Card>
       ))}
+
+      {/* Buy Tokens Modal */}
+      <BuyTokensModal 
+        isOpen={isBuyTokensModalOpen} 
+        onClose={handleBuyTokensModalClose} 
+      />
     </div>
   );
 } 
