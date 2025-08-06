@@ -243,6 +243,10 @@ export default function DashboardPage() {
     return date.toLocaleDateString();
   };
 
+  const handleNewIdea = () => {
+    router.push('/');
+  };
+
   const handleBuyTokens = () => {
     setIsBuyTokensModalOpen(true);
   };
@@ -403,10 +407,17 @@ export default function DashboardPage() {
           
           <div className="flex items-center gap-4">
             <Button 
-              onClick={handleBuyTokens}
+              onClick={handleNewIdea}
               className="btn-primary"
             >
               <Plus className="w-4 h-4 mr-2" />
+              + New Idea
+            </Button>
+            <Button 
+              onClick={handleBuyTokens}
+              className="btn-primary"
+            >
+              <Coins className="w-4 h-4 mr-2" />
               Buy Tokens
             </Button>
           </div>
