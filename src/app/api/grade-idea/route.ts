@@ -93,164 +93,100 @@ const verifyFirebaseIdToken = async (idToken: string) => {
   }
 };
 
-// Chained OpenAI analysis function
-const performChainedAnalysis = async (ideaText: string): Promise<ChainedAnalysisResponse> => {
+// Helper function for OpenAI calls with retry logic
+const callOpenAIWithRetry = async (messages: any[], maxRetries = 2): Promise<string> => {
   const openaiApiKey = process.env.OPENAI_API_KEY;
   
   if (!openaiApiKey) {
     throw new Error('OpenAI API key not configured');
   }
 
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      const response = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${openaiApiKey}`,
+        },
+        body: JSON.stringify({
+          model: 'gpt-4o-mini',
+          messages,
+          temperature: 0.4,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${await response.text()}`);
+      }
+
+      const data = await response.json();
+      const content = data.choices?.[0]?.message?.content;
+
+      if (!content) {
+        throw new Error('No content returned by OpenAI');
+      }
+
+      return content;
+    } catch (err) {
+      console.error(`Attempt ${attempt} failed:`, err);
+      if (attempt === maxRetries) throw err;
+      await new Promise((resolve) => setTimeout(resolve, 1000 * attempt));
+    }
+  }
+  throw new Error('Retries exhausted');
+};
+
+// Helper function for parsing OpenAI responses
+const parseOpenAIResponse = (content: string, expectedKey: string): any => {
+  let clean = content.trim();
+  if (clean.startsWith("```json")) {
+    clean = clean.replace(/^```json/, "").replace(/```$/, "").trim();
+  } else if (clean.startsWith("```")) {
+    clean = clean.replace(/^```/, "").replace(/```$/, "").trim();
+  }
+
+  const parsed = JSON.parse(clean);
+
+  if (!parsed[expectedKey] && !(expectedKey === "insights" && parsed["risks"])) {
+    throw new Error(`Missing expected key: ${expectedKey}`);
+  }
+
+  return parsed;
+};
+
+// Chained OpenAI analysis function
+const performChainedAnalysis = async (ideaText: string): Promise<ChainedAnalysisResponse> => {
   // TODO: Consider parallelizing scoring + insights
   // TODO: Consider caching intermediate results to Firestore
   // TODO: Consider retry logic if a step fails
 
   // Step 1: Score the idea
   console.log('Step 1: Scoring idea...');
-  const stage1Response = await fetch('https://api.openai.com/v1/chat/completions', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${openaiApiKey}`,
-    },
-    body: JSON.stringify({
-      model: 'gpt-4o-mini',
-      messages: [
-        { role: 'system', content: STAGE1_SYSTEM_PROMPT },
-        { role: 'user', content: `Startup Idea: ${ideaText}\n\nPlease analyze this startup idea and return the JSON response with "grading" key.` }
-      ],
-      temperature: 0.4,
-    }),
-  });
+  const stage1Content = await callOpenAIWithRetry([
+    { role: 'system', content: STAGE1_SYSTEM_PROMPT },
+    { role: 'user', content: `Startup Idea: ${ideaText}\n\nPlease analyze this startup idea and return the JSON response with "grading" key.` }
+  ]);
 
-  if (!stage1Response.ok) {
-    const errorText = await stage1Response.text();
-    console.error('Stage 1 OpenAI API error:', stage1Response.status, errorText);
-    throw new Error(`Stage 1 OpenAI API error: ${stage1Response.status}`);
-  }
-
-  const stage1Data = await stage1Response.json();
-  const stage1Content = stage1Data.choices[0]?.message?.content;
-  
-  if (!stage1Content) {
-    throw new Error('No content received from Stage 1 OpenAI call');
-  }
-
-  let stage1Parsed;
-  try {
-    let cleanContent = stage1Content.trim();
-    if (cleanContent.startsWith("```json")) {
-      cleanContent = cleanContent.replace(/^```json/, "").replace(/```$/, "").trim();
-    } else if (cleanContent.startsWith("```")) {
-      cleanContent = cleanContent.replace(/^```/, "").replace(/```$/, "").trim();
-    }
-    stage1Parsed = JSON.parse(cleanContent);
-    
-    if (!stage1Parsed.grading) {
-      throw new Error('Invalid Stage 1 response structure');
-    }
-  } catch (parseError) {
-    console.error('Failed to parse Stage 1 response:', stage1Content);
-    throw new Error('Invalid JSON response from Stage 1');
-  }
+  const stage1Parsed = parseOpenAIResponse(stage1Content, 'grading');
 
   // Step 2: Generate insights and risks
   console.log('Step 2: Generating insights and risks...');
-  const stage2Response = await fetch('https://api.openai.com/v1/chat/completions', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${openaiApiKey}`,
-    },
-    body: JSON.stringify({
-      model: 'gpt-4o-mini',
-      messages: [
-        { role: 'system', content: STAGE2_SYSTEM_PROMPT },
-        { role: 'user', content: `Previous scoring: ${JSON.stringify(stage1Parsed.grading)}\n\nStartup Idea: ${ideaText}\n\nPlease generate insights and risks based on the scoring.` }
-      ],
-      temperature: 0.4,
-    }),
-  });
+  const stage2Content = await callOpenAIWithRetry([
+    { role: 'system', content: STAGE2_SYSTEM_PROMPT },
+    { role: 'user', content: `Previous scoring: ${JSON.stringify(stage1Parsed.grading)}\n\nStartup Idea: ${ideaText}\n\nPlease generate insights and risks based on the scoring.` }
+  ]);
 
-  if (!stage2Response.ok) {
-    const errorText = await stage2Response.text();
-    console.error('Stage 2 OpenAI API error:', stage2Response.status, errorText);
-    throw new Error(`Stage 2 OpenAI API error: ${stage2Response.status}`);
-  }
-
-  const stage2Data = await stage2Response.json();
-  const stage2Content = stage2Data.choices[0]?.message?.content;
-  
-  if (!stage2Content) {
-    throw new Error('No content received from Stage 2 OpenAI call');
-  }
-
-  let stage2Parsed;
-  try {
-    let cleanContent = stage2Content.trim();
-    if (cleanContent.startsWith("```json")) {
-      cleanContent = cleanContent.replace(/^```json/, "").replace(/```$/, "").trim();
-    } else if (cleanContent.startsWith("```")) {
-      cleanContent = cleanContent.replace(/^```/, "").replace(/```$/, "").trim();
-    }
-    stage2Parsed = JSON.parse(cleanContent);
-    
-    if (!stage2Parsed.insights || !stage2Parsed.risks) {
-      throw new Error('Invalid Stage 2 response structure');
-    }
-  } catch (parseError) {
-    console.error('Failed to parse Stage 2 response:', stage2Content);
-    throw new Error('Invalid JSON response from Stage 2');
-  }
+  const stage2Parsed = parseOpenAIResponse(stage2Content, 'insights');
 
   // Step 3: Generate checklist
   console.log('Step 3: Generating checklist...');
-  const stage3Response = await fetch('https://api.openai.com/v1/chat/completions', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${openaiApiKey}`,
-    },
-    body: JSON.stringify({
-      model: 'gpt-4o-mini',
-      messages: [
-        { role: 'system', content: STAGE3_SYSTEM_PROMPT },
-        { role: 'user', content: `Previous scoring: ${JSON.stringify(stage1Parsed.grading)}\n\nPrevious insights: ${JSON.stringify(stage2Parsed)}\n\nStartup Idea: ${ideaText}\n\nPlease generate a structured checklist based on the scoring and insights.` }
-      ],
-      temperature: 0.4,
-    }),
-  });
+  const stage3Content = await callOpenAIWithRetry([
+    { role: 'system', content: STAGE3_SYSTEM_PROMPT },
+    { role: 'user', content: `Previous scoring: ${JSON.stringify(stage1Parsed.grading)}\n\nPrevious insights: ${JSON.stringify(stage2Parsed)}\n\nStartup Idea: ${ideaText}\n\nPlease generate a structured checklist based on the scoring and insights.` }
+  ]);
 
-  if (!stage3Response.ok) {
-    const errorText = await stage3Response.text();
-    console.error('Stage 3 OpenAI API error:', stage3Response.status, errorText);
-    throw new Error(`Stage 3 OpenAI API error: ${stage3Response.status}`);
-  }
-
-  const stage3Data = await stage3Response.json();
-  const stage3Content = stage3Data.choices[0]?.message?.content;
-  
-  if (!stage3Content) {
-    throw new Error('No content received from Stage 3 OpenAI call');
-  }
-
-  let stage3Parsed;
-  try {
-    let cleanContent = stage3Content.trim();
-    if (cleanContent.startsWith("```json")) {
-      cleanContent = cleanContent.replace(/^```json/, "").replace(/```$/, "").trim();
-    } else if (cleanContent.startsWith("```")) {
-      cleanContent = cleanContent.replace(/^```/, "").replace(/```$/, "").trim();
-    }
-    stage3Parsed = JSON.parse(cleanContent);
-    
-    if (!stage3Parsed.checklist) {
-      throw new Error('Invalid Stage 3 response structure');
-    }
-  } catch (parseError) {
-    console.error('Failed to parse Stage 3 response:', stage3Content);
-    throw new Error('Invalid JSON response from Stage 3');
-  }
+  const stage3Parsed = parseOpenAIResponse(stage3Content, 'checklist');
 
   // Combine all results
   return {
