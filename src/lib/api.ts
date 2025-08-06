@@ -21,9 +21,10 @@ export interface MockAnalysisResponse {
     monetization: number;
     execution: number;
     recommendation: string;
+    insights: string[]; // MUST always be defined as array — frontend uses .join()
   };
-  insights: string[];
-  risks: string[];
+  insights: string[]; // MUST always be defined as array — frontend uses .join()
+  risks: string[]; // MUST always be defined as array — frontend uses .join()
   checklist: {
     marketPotential: {
       score: number;
