@@ -35,6 +35,7 @@ interface PublicIdea {
     seconds: number;
     nanoseconds: number;
   };
+  recommendation?: string | null;
 }
 
 interface TopIdeaModalProps {
@@ -47,6 +48,9 @@ export function TopIdeaModal({ idea, isOpen, onClose }: TopIdeaModalProps) {
   if (!idea) return null;
 
   const formatDate = (timestamp: { seconds: number; nanoseconds: number }) => {
+    if (!timestamp || !timestamp.seconds) {
+      return "Unknown Date";
+    }
     const date = new Date(timestamp.seconds * 1000);
     return date.toLocaleDateString('en-US', {
       year: 'numeric',
@@ -61,8 +65,13 @@ export function TopIdeaModal({ idea, isOpen, onClose }: TopIdeaModalProps) {
     return "text-red-600";
   };
 
-  const generateIdeaSummary = (ideaText: string) => {
-    // Extract key elements from the idea text for a brief summary
+  const generateIdeaSummary = (ideaText: string, recommendation?: string | null) => {
+    // Use the actual AI recommendation if available
+    if (recommendation) {
+      return recommendation;
+    }
+    
+    // Fallback to generic summary if no recommendation available
     const words = ideaText.toLowerCase().split(' ');
     const keyTerms = words.filter(word => 
       ['saas', 'app', 'platform', 'service', 'tool', 'system', 'solution'].includes(word)
@@ -78,7 +87,7 @@ export function TopIdeaModal({ idea, isOpen, onClose }: TopIdeaModalProps) {
   const generateEvaluationSummary = (scores: PublicIdea['baseScores']) => {
     const { letter } = getLetterGrade(scores.overall);
     
-    return `The AI evaluation gave this idea an overall grade of ${letter} (${scores.overall}%). The idea shows ${scores.market >= 70 ? 'strong' : scores.market >= 50 ? 'moderate' : 'limited'} market potential, ${scores.monetization >= 70 ? 'clear' : scores.monetization >= 50 ? 'some' : 'unclear'} monetization pathways, ${scores.differentiation >= 70 ? 'strong' : scores.differentiation >= 50 ? 'moderate' : 'limited'} competitive differentiation, and ${scores.execution >= 70 ? 'feasible' : scores.execution >= 50 ? 'moderately complex' : 'challenging'} execution requirements.`;
+    return `The AI evaluation gave this idea an overall grade of ${letter} (${scores.overall}%). The idea shows ${scores.market >= 70 ? 'strong' : scores.market >= 50 ? 'moderate' : 'limited'} market potential, ${scores.monetization >= 70 ? 'clear' : scores.monetization >= 50 ? 'some' : 'unclear'} monetization pathways, ${scores.differentiation >= 70 ? 'strong' : scores.differentiation >= 50 ? 'moderate' : 'limited'} competitive positioning, and ${scores.execution >= 70 ? 'feasible' : scores.execution >= 50 ? 'moderately complex' : 'challenging'} execution requirements.`;
   };
 
   return (
@@ -109,7 +118,7 @@ export function TopIdeaModal({ idea, isOpen, onClose }: TopIdeaModalProps) {
           <div className="space-y-3">
             <h3 className="text-lg font-semibold text-foreground">Summary</h3>
             <p className="text-foreground-muted leading-relaxed">
-              {generateIdeaSummary(idea.ideaText)}
+              {generateIdeaSummary(idea.ideaText, idea.recommendation)}
             </p>
           </div>
 
@@ -140,7 +149,7 @@ export function TopIdeaModal({ idea, isOpen, onClose }: TopIdeaModalProps) {
               <Card className="p-4">
                 <div className="flex items-center gap-3 mb-3">
                   <Target className="w-5 h-5 text-purple-600" />
-                  <h4 className="font-medium text-foreground">Differentiation</h4>
+                  <h4 className="font-medium text-foreground">Competition</h4>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className={`text-2xl font-bold ${getScoreColor(idea.baseScores.differentiation)}`}>

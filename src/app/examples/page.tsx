@@ -33,6 +33,7 @@ interface PublicIdea {
     seconds: number;
     nanoseconds: number;
   };
+  recommendation?: string | null;
 }
 
 const examplePrompts = [

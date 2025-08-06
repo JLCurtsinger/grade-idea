@@ -47,7 +47,8 @@ export async function GET(request: NextRequest) {
           id: doc.id,
           ideaText: data.ideaText,
           baseScores: baseScores,
-          createdAt: data.createdAt
+          createdAt: data.createdAt,
+          recommendation: data.analysis?.recommendation || data.grading?.recommendation || null
         });
       }
     }
