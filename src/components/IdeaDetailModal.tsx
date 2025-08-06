@@ -49,6 +49,7 @@ interface Idea {
   };
   tokensUsed: number;
   public?: boolean;
+  summary_analysis?: string; // AI Analysis summary
   // New structured fields from backend
   similar_products?: Array<{
     name: string;
@@ -242,6 +243,16 @@ export function IdeaDetailModal({ idea, isOpen, onClose, onScoreUpdate }: IdeaDe
               <p className="text-foreground leading-relaxed">{idea.ideaText}</p>
             </Card>
           </div>
+
+          {/* AI Analysis */}
+          {idea.summary_analysis && (
+            <div className="space-y-3">
+              <h3 className="text-lg font-semibold text-foreground">AI Analysis</h3>
+              <Card className="p-4 bg-surface">
+                <p className="text-foreground-muted leading-relaxed">{idea.summary_analysis}</p>
+              </Card>
+            </div>
+          )}
 
           {/* Metadata */}
           <div className="flex flex-wrap gap-4 text-sm text-foreground-muted">

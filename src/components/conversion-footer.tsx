@@ -56,7 +56,7 @@ export const ConversionFooter = ({ scansRemaining, onTryAnother }: ConversionFoo
                 </p>
               </div>
               <Button className="btn-primary text-lg px-8 py-4">
-                Generate MVP Plan - $29
+                Coming Soon!
               </Button>
             </div>
           </Card>
