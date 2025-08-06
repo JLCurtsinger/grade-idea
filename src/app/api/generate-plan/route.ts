@@ -41,37 +41,115 @@ Help them complete this action item: ${checklistItemText}
 
 Return a step-by-step plan in paragraph or list format that is practical and actionable. Focus on concrete steps that a founder can take immediately.`;
 
-  const response = await fetch('https://api.openai.com/v1/chat/completions', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${openaiApiKey}`,
-    },
-    body: JSON.stringify({
-      model: 'gpt-4o-mini',
-      messages: [
-        { role: 'system', content: 'You are a startup advisor helping founders execute on their ideas. Provide practical, actionable advice.' },
-        { role: 'user', content: prompt }
-      ],
-      temperature: 0.7,
-      max_tokens: 500,
-    }),
-  });
+  // Log the full prompt string before calling OpenAI
+  console.log('=== OPENAI PROMPT ===');
+  console.log('Full prompt:', prompt);
+  console.log('Prompt length:', prompt.length, 'characters');
 
-  if (!response.ok) {
-    const errorText = await response.text();
-    console.error('OpenAI API error:', response.status, errorText);
-    throw new Error(`OpenAI API error: ${response.status}`);
+  const requestBody = {
+    model: 'gpt-4o-mini',
+    messages: [
+      { role: 'system', content: 'You are a startup advisor helping founders execute on their ideas. Provide practical, actionable advice.' },
+      { role: 'user', content: prompt }
+    ],
+    temperature: 0.7,
+    max_tokens: 500,
+  };
+
+  console.log('=== OPENAI REQUEST ===');
+  console.log('Request body:', JSON.stringify(requestBody, null, 2));
+
+  try {
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${openaiApiKey}`,
+      },
+      body: JSON.stringify(requestBody),
+    });
+
+    console.log('=== OPENAI RESPONSE STATUS ===');
+    console.log('Response status:', response.status);
+    console.log('Response headers:', Object.fromEntries(response.headers.entries()));
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('=== OPENAI API ERROR ===');
+      console.error('Error status:', response.status);
+      console.error('Error text:', errorText);
+      throw new Error(`OpenAI API error: ${response.status} - ${errorText}`);
+    }
+
+    const data = await response.json();
+    
+    // Log the full raw response object (sanitized to avoid long token dumps)
+    console.log('=== OPENAI RESPONSE DATA ===');
+    console.log('Response structure:', {
+      id: data.id,
+      object: data.object,
+      created: data.created,
+      model: data.model,
+      choices: data.choices ? {
+        length: data.choices.length,
+        firstChoice: data.choices[0] ? {
+          index: data.choices[0].index,
+          finishReason: data.choices[0].finish_reason,
+          message: data.choices[0].message ? {
+            role: data.choices[0].message.role,
+            contentLength: data.choices[0].message.content?.length || 0,
+            contentPreview: data.choices[0].message.content?.substring(0, 100) + '...'
+          } : 'No message'
+        } : 'No choice'
+      } : 'No choices',
+      usage: data.usage ? {
+        promptTokens: data.usage.prompt_tokens,
+        completionTokens: data.usage.completion_tokens,
+        totalTokens: data.usage.total_tokens
+      } : 'No usage data'
+    });
+
+    // Validate the structure of the OpenAI response
+    if (!data.choices || !Array.isArray(data.choices) || data.choices.length === 0) {
+      console.error('=== OPENAI RESPONSE VALIDATION ERROR ===');
+      console.error('Invalid response structure - no choices array:', data);
+      throw new Error('Invalid OpenAI response structure: no choices array');
+    }
+
+    const firstChoice = data.choices[0];
+    if (!firstChoice.message || !firstChoice.message.content) {
+      console.error('=== OPENAI RESPONSE VALIDATION ERROR ===');
+      console.error('Invalid choice structure - no message content:', firstChoice);
+      throw new Error('Invalid OpenAI response structure: no message content');
+    }
+
+    const content = firstChoice.message.content;
+    
+    console.log('=== OPENAI CONTENT EXTRACTION ===');
+    console.log('Extracted content length:', content.length, 'characters');
+    console.log('Content preview (first 200 chars):', content.substring(0, 200) + (content.length > 200 ? '...' : ''));
+
+    if (!content || content.trim().length === 0) {
+      console.error('=== OPENAI CONTENT VALIDATION ERROR ===');
+      console.error('Empty or whitespace-only content received');
+      throw new Error('No content received from OpenAI');
+    }
+
+    const trimmedContent = content.trim();
+    console.log('=== OPENAI FINAL RESULT ===');
+    console.log('Final trimmed content length:', trimmedContent.length, 'characters');
+    
+    return trimmedContent;
+
+  } catch (error) {
+    console.error('=== OPENAI CALL ERROR ===');
+    console.error('Error calling OpenAI API:', {
+      message: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined,
+      error: error
+    });
+    throw error;
   }
-
-  const data = await response.json();
-  const content = data.choices[0]?.message?.content;
-  
-  if (!content) {
-    throw new Error('No content received from OpenAI');
-  }
-
-  return content.trim();
 };
 
 // Update checklist item with plan in Firestore
