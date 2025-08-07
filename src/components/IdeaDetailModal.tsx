@@ -27,7 +27,8 @@ import {
   XCircle,
   Globe,
   Lock,
-  Users
+  Users,
+  ChevronDown
 } from "lucide-react";
 import { IdeaChecklist } from "./IdeaChecklist";
 import { calculateDynamicScores } from "@/lib/scoring";
@@ -83,9 +84,10 @@ interface IdeaDetailModalProps {
     execution: number;
     overall_score: number;
   }) => void; // Callback to refresh dashboard with specific scores
+  googleTrendScore?: number; // Google Trends score from the API
 }
 
-export function IdeaDetailModal({ idea, isOpen, onClose, onScoreUpdate }: IdeaDetailModalProps) {
+export function IdeaDetailModal({ idea, isOpen, onClose, onScoreUpdate, googleTrendScore }: IdeaDetailModalProps) {
   const { user } = useAuth();
   const [dynamicScores, setDynamicScores] = useState<{
     market_potential: number;
@@ -96,6 +98,7 @@ export function IdeaDetailModal({ idea, isOpen, onClose, onScoreUpdate }: IdeaDe
   } | null>(null);
   const [isPublic, setIsPublic] = useState(idea?.public || false);
   const [isToggling, setIsToggling] = useState(false);
+  const [isGoogleTrendsExpanded, setIsGoogleTrendsExpanded] = useState(false);
 
   // Update isPublic when idea changes
   useEffect(() => {
@@ -387,6 +390,31 @@ export function IdeaDetailModal({ idea, isOpen, onClose, onScoreUpdate }: IdeaDe
                     {idea.score_explanations.market_potential}
                   </p>
                 )}
+                
+                {/* Google Trends Score Section */}
+                <div className="mt-3 pt-3 border-t border-border">
+                  <button
+                    onClick={() => setIsGoogleTrendsExpanded(!isGoogleTrendsExpanded)}
+                    className="flex items-center gap-2 text-sm text-foreground-muted hover:text-foreground transition-colors"
+                  >
+                    <span>Google Trends Score: {googleTrendScore || 72}</span>
+                    <ChevronDown 
+                      className={`w-4 h-4 transition-transform duration-200 ${
+                        isGoogleTrendsExpanded ? 'rotate-180' : ''
+                      }`}
+                    />
+                  </button>
+                  
+                  <div 
+                    className={`overflow-hidden transition-all duration-200 ease-in-out ${
+                      isGoogleTrendsExpanded ? 'max-h-20 opacity-100 mt-2' : 'max-h-0 opacity-0'
+                    }`}
+                  >
+                    <p className="text-xs text-foreground-muted leading-relaxed">
+                      This score reflects how often related keywords have been searched in the past 30 days. A higher number indicates increasing public interest.
+                    </p>
+                  </div>
+                </div>
               </Card>
 
               <Card className="p-4">
