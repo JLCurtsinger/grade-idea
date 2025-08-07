@@ -13,71 +13,75 @@ const verifyFirebaseIdToken = async (idToken: string) => {
 };
 
 export async function POST(request: NextRequest) {
-  console.log('=== GET CUSTOM GTM CHANNELS REQUEST START ===');
+  console.log('=== UPDATE CUSTOM CHANNELS REQUEST START ===');
+  
+  let ideaId: string | undefined;
+  let idToken: string | undefined;
+  let customChannels: string[] | undefined;
+  let uid: string | undefined;
   
   try {
     // Parse request
     const requestData = await request.json();
-    const { ideaId, idToken } = requestData;
+    ideaId = requestData.ideaId;
+    idToken = requestData.idToken;
+    customChannels = requestData.customChannels;
     
     console.log('Request parsed:', { 
       ideaId,
-      hasIdToken: !!idToken 
+      hasIdToken: !!idToken,
+      customChannels
     });
 
     // Validate input
-    if (!ideaId || !idToken) {
+    if (!ideaId || !idToken || !Array.isArray(customChannels)) {
       console.error('Missing required fields:', { 
         hasIdeaId: !!ideaId, 
-        hasIdToken: !!idToken 
+        hasIdToken: !!idToken,
+        hasCustomChannels: Array.isArray(customChannels)
       });
       return NextResponse.json({
         success: false,
-        error: 'Missing required fields: ideaId and idToken'
+        error: 'Missing required fields: ideaId, idToken, and customChannels array'
       }, { status: 400 });
     }
 
     // Authenticate user
     const decoded = await verifyFirebaseIdToken(idToken);
-    const uid = decoded.uid;
+    uid = decoded.uid;
     console.log('User authenticated:', { uid });
 
-    // Get the idea document
-    const ideaRef = adminDb
-      .collection("users")
-      .doc(uid)
-      .collection("ideas")
-      .doc(ideaId);
-
+    // Get the current idea document
+    const ideaRef = adminDb.collection("users").doc(uid).collection("ideas").doc(ideaId);
     const ideaDoc = await ideaRef.get();
     
     if (!ideaDoc.exists) {
-      console.error('Idea document not found:', { ideaId, uid });
       return NextResponse.json({
         success: false,
         error: 'Idea not found'
       }, { status: 404 });
     }
+    
+    // Remove duplicates and trim whitespace
+    const cleanedChannels = [...new Set(customChannels.map(channel => channel.trim()).filter(channel => channel.length > 0))];
 
-    // Get custom channels from the idea document
-    const ideaData = ideaDoc.data();
-    const customChannels = ideaData?.custom?.go_to_market_channels || [];
+    // Update the idea document with custom channels
+    const updateData: any = {
+      'custom.go_to_market_channels': cleanedChannels,
+      'updated_at': new Date()
+    };
+    
+    await ideaRef.update(updateData);
 
-    console.log('Custom GTM channels retrieved successfully:', { 
-      ideaId, 
-      uid, 
-      customChannelsCount: customChannels.length 
-    });
-
-    console.log('=== GET CUSTOM GTM CHANNELS REQUEST SUCCESS ===');
+    console.log('=== UPDATE CUSTOM CHANNELS REQUEST SUCCESS ===');
     
     return NextResponse.json({
       success: true,
-      customChannels
+      customChannels: cleanedChannels
     });
 
   } catch (error) {
-    console.error('=== GET CUSTOM GTM CHANNELS REQUEST ERROR ===');
+    console.error('=== UPDATE CUSTOM CHANNELS REQUEST ERROR ===');
     console.error('Error details:', {
       message: error instanceof Error ? error.message : 'Unknown error',
       stack: error instanceof Error ? error.stack : undefined,
@@ -86,7 +90,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       success: false,
-      error: 'Failed to get custom GTM channels'
+      error: 'Failed to update custom channels'
     }, { status: 500 });
   }
 }

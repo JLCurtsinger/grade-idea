@@ -50,6 +50,10 @@ interface Idea {
   tokensUsed: number;
   starred?: boolean;
   archived?: boolean;
+  // Custom fields
+  custom?: {
+    go_to_market_channels?: string[];
+  };
 }
 
 interface UserProfile {

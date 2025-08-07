@@ -4,8 +4,7 @@ import React, { createContext, useContext, useState, ReactNode } from 'react';
 
 interface CurrentIdeaContextType {
   currentIdea: string | null;
-  currentIdeaId: string | null;
-  setCurrentIdea: (idea: string | null, ideaId?: string | null) => void;
+  setCurrentIdea: (idea: string | null) => void;
 }
 
 const CurrentIdeaContext = createContext<CurrentIdeaContextType | undefined>(undefined);
@@ -23,16 +22,10 @@ interface CurrentIdeaProviderProps {
 }
 
 export const CurrentIdeaProvider: React.FC<CurrentIdeaProviderProps> = ({ children }) => {
-  const [currentIdea, setCurrentIdeaText] = useState<string | null>(null);
-  const [currentIdeaId, setCurrentIdeaId] = useState<string | null>(null);
-
-  const setCurrentIdea = (idea: string | null, ideaId?: string | null) => {
-    setCurrentIdeaText(idea);
-    setCurrentIdeaId(ideaId || null);
-  };
+  const [currentIdea, setCurrentIdea] = useState<string | null>(null);
 
   return (
-    <CurrentIdeaContext.Provider value={{ currentIdea, currentIdeaId, setCurrentIdea }}>
+    <CurrentIdeaContext.Provider value={{ currentIdea, setCurrentIdea }}>
       {children}
     </CurrentIdeaContext.Provider>
   );

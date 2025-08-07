@@ -5,11 +5,8 @@ import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { getLetterGrade } from "@/lib/gradingScale";
 import { useAuth } from "@/context/AuthContext";
-import { addCustomGtmChannel, getCustomGtmChannels } from "@/lib/api";
-import { useToast } from "@/hooks/use-toast";
 import { 
   TrendingUp, 
   Users, 
@@ -20,14 +17,11 @@ import {
   AlertTriangle,
   XCircle,
   ExternalLink,
-  Sparkles,
-  Plus,
-  X
+  Sparkles
 } from "lucide-react";
 
 interface ResultsSectionProps {
   idea: string;
-  ideaId?: string | null;
   analysis?: {
     overall_score: number;
     market_potential: number;
@@ -50,84 +44,21 @@ interface ResultsSectionProps {
       monetization: string;
       execution: string;
     };
+    // Custom fields
+    custom?: {
+      go_to_market_channels?: string[];
+    };
   };
 }
 
-export const ResultsSection = ({ idea, ideaId, analysis: apiAnalysis }: ResultsSectionProps) => {
+export const ResultsSection = ({ idea, analysis: apiAnalysis }: ResultsSectionProps) => {
   const [animateScores, setAnimateScores] = useState(false);
-  const [customChannels, setCustomChannels] = useState<string[]>([]);
-  const [isAddingChannel, setIsAddingChannel] = useState(false);
-  const [newChannel, setNewChannel] = useState("");
-  const [isLoadingChannels, setIsLoadingChannels] = useState(false);
   const { user, openModal } = useAuth();
-  const { toast } = useToast();
 
   useEffect(() => {
     const timer = setTimeout(() => setAnimateScores(true), 300);
     return () => clearTimeout(timer);
   }, []);
-
-  // Load custom channels when component mounts (only for authenticated users with ideaId)
-  useEffect(() => {
-    if (user && ideaId) {
-      loadCustomChannels();
-    }
-  }, [user, ideaId]);
-
-  const loadCustomChannels = async () => {
-    if (!user || !ideaId) return;
-    
-    setIsLoadingChannels(true);
-    try {
-      const result = await getCustomGtmChannels(ideaId, user);
-      if (result.success) {
-        setCustomChannels(result.customChannels);
-      }
-    } catch (error) {
-      console.error('Error loading custom channels:', error);
-    } finally {
-      setIsLoadingChannels(false);
-    }
-  };
-
-  const handleAddChannel = async () => {
-    if (!user || !ideaId || !newChannel.trim()) return;
-    
-    setIsAddingChannel(true);
-    try {
-      const result = await addCustomGtmChannel(ideaId, newChannel.trim(), user);
-      
-      if (result.success) {
-        setCustomChannels(result.customChannels);
-        setNewChannel("");
-        toast({
-          title: "Channel Added",
-          description: "Your custom go-to-market channel has been added.",
-        });
-      } else {
-        toast({
-          title: "Error",
-          description: 'error' in result ? result.error : "Failed to add channel",
-          variant: "destructive",
-        });
-      }
-    } catch (error) {
-      console.error('Error adding custom channel:', error);
-      toast({
-        title: "Error",
-        description: "Failed to add channel. Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsAddingChannel(false);
-    }
-  };
-
-  const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
-      handleAddChannel();
-    }
-  };
 
   // Use real analysis data if available, otherwise fall back to mock data
   const analysisData = apiAnalysis || {
@@ -315,53 +246,22 @@ export const ResultsSection = ({ idea, ideaId, analysis: apiAnalysis }: ResultsS
                   </div>
                   <div>
                     <h4 className="font-semibold mb-3">Go-To-Market Channels</h4>
-                    <div className="space-y-3">
+                    <div className="flex flex-wrap gap-2">
                       {/* AI-generated channels */}
-                      <div className="flex flex-wrap gap-2">
-                        {analysis.gtmChannels.map((channel) => (
-                          <Badge key={channel} variant="secondary" className="bg-surface-elevated">
-                            {channel}
-                          </Badge>
-                        ))}
-                      </div>
+                      {analysis.gtmChannels.map((channel) => (
+                        <Badge key={channel} variant="secondary" className="bg-surface-elevated">
+                          {channel}
+                        </Badge>
+                      ))}
                       
-                      {/* Custom channels (only for authenticated users with ideaId) */}
-                      {user && ideaId && (
+                      {/* Custom channels - only show for authenticated users */}
+                      {user && analysisData.custom?.go_to_market_channels && analysisData.custom.go_to_market_channels.length > 0 && (
                         <>
-                          {/* Custom channels */}
-                          {customChannels.length > 0 && (
-                            <div className="flex flex-wrap gap-2">
-                              {customChannels.map((channel) => (
-                                <Badge key={channel} variant="secondary" className="bg-brand/20 text-brand border-brand/30">
-                                  {channel}
-                                </Badge>
-                              ))}
-                            </div>
-                          )}
-                          
-                          {/* Add channel input */}
-                          <div className="flex items-center gap-2">
-                            <Input
-                              value={newChannel}
-                              onChange={(e) => setNewChannel(e.target.value)}
-                              onKeyPress={handleKeyPress}
-                              placeholder="Add custom channel..."
-                              className="flex-1"
-                              disabled={isAddingChannel}
-                            />
-                            <Button
-                              onClick={handleAddChannel}
-                              disabled={!newChannel.trim() || isAddingChannel}
-                              size="sm"
-                              className="btn-primary"
-                            >
-                              {isAddingChannel ? (
-                                <div className="w-4 h-4 border-2 border-brand-foreground/30 border-t-brand-foreground rounded-full animate-spin" />
-                              ) : (
-                                <Plus className="w-4 h-4" />
-                              )}
-                            </Button>
-                          </div>
+                          {analysisData.custom.go_to_market_channels.map((channel) => (
+                            <Badge key={`custom-${channel}`} variant="secondary" className="bg-brand/10 text-brand border-brand/20">
+                              {channel}
+                            </Badge>
+                          ))}
                         </>
                       )}
                     </div>

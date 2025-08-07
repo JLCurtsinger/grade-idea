@@ -13,6 +13,8 @@ import {
 import { Card } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { getLetterGrade } from "@/lib/gradingScale";
 import { 
   Calendar, 
@@ -28,7 +30,9 @@ import {
   Globe,
   Lock,
   Users,
-  ChevronDown
+  ChevronDown,
+  Plus,
+  X
 } from "lucide-react";
 import { IdeaChecklist } from "./IdeaChecklist";
 import { calculateDynamicScores } from "@/lib/scoring";
@@ -72,6 +76,10 @@ interface Idea {
     monetization: string;
     execution: string;
   };
+  // Custom fields
+  custom?: {
+    go_to_market_channels?: string[];
+  };
 }
 
 interface IdeaDetailModalProps {
@@ -99,6 +107,12 @@ export function IdeaDetailModal({ idea, isOpen, onClose, onScoreUpdate, googleTr
   const [isPublic, setIsPublic] = useState(idea?.public || false);
   const [isToggling, setIsToggling] = useState(false);
   const [isGoogleTrendsExpanded, setIsGoogleTrendsExpanded] = useState(false);
+  
+  // Custom channels state
+  const [customChannels, setCustomChannels] = useState<string[]>(idea?.custom?.go_to_market_channels || []);
+  const [newChannel, setNewChannel] = useState("");
+  const [isAddingChannel, setIsAddingChannel] = useState(false);
+  const [isSavingChannels, setIsSavingChannels] = useState(false);
 
   // Update isPublic when idea changes
   useEffect(() => {
@@ -109,6 +123,11 @@ export function IdeaDetailModal({ idea, isOpen, onClose, onScoreUpdate, googleTr
   useEffect(() => {
     setDynamicScores(null);
   }, [idea?.id]);
+
+  // Update custom channels when idea changes
+  useEffect(() => {
+    setCustomChannels(idea?.custom?.go_to_market_channels || []);
+  }, [idea?.custom?.go_to_market_channels]);
 
 
 
@@ -227,6 +246,95 @@ export function IdeaDetailModal({ idea, isOpen, onClose, onScoreUpdate, googleTr
         execution: scores.execution,
         overall_score: scores.overall_score
       });
+    }
+  };
+
+  // Custom channels functions
+  const handleAddChannel = async () => {
+    if (!newChannel.trim() || !user || !idea) return;
+    
+    const trimmedChannel = newChannel.trim();
+    
+    // Check for duplicates
+    if (customChannels.includes(trimmedChannel)) {
+      setNewChannel("");
+      return;
+    }
+    
+    setIsAddingChannel(true);
+    try {
+      const updatedChannels = [...customChannels, trimmedChannel];
+      setCustomChannels(updatedChannels);
+      setNewChannel("");
+      
+      // Save to Firestore
+      const idToken = await user.getIdToken();
+      const response = await fetch('/api/update-custom-channels', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          ideaId: idea.id,
+          idToken,
+          customChannels: updatedChannels
+        }),
+      });
+
+      if (!response.ok) {
+        console.error('Failed to save custom channels');
+        // Revert on error
+        setCustomChannels(customChannels);
+      }
+    } catch (error) {
+      console.error('Error saving custom channels:', error);
+      // Revert on error
+      setCustomChannels(customChannels);
+    } finally {
+      setIsAddingChannel(false);
+    }
+  };
+
+  const handleRemoveChannel = async (channelToRemove: string) => {
+    if (!user || !idea) return;
+    
+    setIsSavingChannels(true);
+    try {
+      const updatedChannels = customChannels.filter(channel => channel !== channelToRemove);
+      setCustomChannels(updatedChannels);
+      
+      // Save to Firestore
+      const idToken = await user.getIdToken();
+      const response = await fetch('/api/update-custom-channels', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          ideaId: idea.id,
+          idToken,
+          customChannels: updatedChannels
+        }),
+      });
+
+      if (!response.ok) {
+        console.error('Failed to save custom channels');
+        // Revert on error
+        setCustomChannels(customChannels);
+      }
+    } catch (error) {
+      console.error('Error saving custom channels:', error);
+      // Revert on error
+      setCustomChannels(customChannels);
+    } finally {
+      setIsSavingChannels(false);
+    }
+  };
+
+  const handleChannelKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      handleAddChannel();
     }
   };
 
@@ -633,18 +741,78 @@ export function IdeaDetailModal({ idea, isOpen, onClose, onScoreUpdate, googleTr
                 )}
 
                 {/* GTM Channels */}
-                {idea.gtm_channels && idea.gtm_channels.length > 0 && (
-                  <Card className="p-4">
-                    <h4 className="font-medium text-foreground mb-3">Go-To-Market Channels</h4>
-                    <div className="flex flex-wrap gap-2">
-                      {idea.gtm_channels.map((channel, index) => (
-                        <Badge key={index} variant="secondary" className="bg-surface-elevated">
-                          {channel}
-                        </Badge>
-                      ))}
+                <Card className="p-4">
+                  <h4 className="font-medium text-foreground mb-3">Go-To-Market Channels</h4>
+                  
+                  {/* AI-generated channels */}
+                  {idea.gtm_channels && idea.gtm_channels.length > 0 && (
+                    <div className="mb-4">
+                      <div className="flex flex-wrap gap-2">
+                        {idea.gtm_channels.map((channel, index) => (
+                          <Badge key={index} variant="secondary" className="bg-surface-elevated">
+                            {channel}
+                          </Badge>
+                        ))}
+                      </div>
                     </div>
-                  </Card>
-                )}
+                  )}
+                  
+                  {/* Custom channels - only show for authenticated users */}
+                  {user && (
+                    <div className="space-y-3">
+                      {/* Custom channels display */}
+                      {customChannels.length > 0 && (
+                        <div>
+                          <div className="flex items-center gap-2 mb-2">
+                            <span className="text-sm font-medium text-foreground">Your Channels:</span>
+                          </div>
+                          <div className="flex flex-wrap gap-2">
+                            {customChannels.map((channel, index) => (
+                              <Badge 
+                                key={index} 
+                                variant="secondary" 
+                                className="bg-brand/10 text-brand border-brand/20 group"
+                              >
+                                <span className="mr-1">{channel}</span>
+                                <button
+                                  onClick={() => handleRemoveChannel(channel)}
+                                  disabled={isSavingChannels}
+                                  className="ml-1 opacity-0 group-hover:opacity-100 transition-opacity hover:text-red-500"
+                                >
+                                  <X className="w-3 h-3" />
+                                </button>
+                              </Badge>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                      
+                      {/* Add new channel input */}
+                      <div className="flex gap-2">
+                        <Input
+                          value={newChannel}
+                          onChange={(e) => setNewChannel(e.target.value)}
+                          onKeyPress={handleChannelKeyPress}
+                          placeholder="Add a custom channel..."
+                          className="flex-1"
+                          disabled={isAddingChannel || isSavingChannels}
+                        />
+                        <Button
+                          onClick={handleAddChannel}
+                          disabled={!newChannel.trim() || isAddingChannel || isSavingChannels}
+                          size="sm"
+                          className="btn-primary"
+                        >
+                          {isAddingChannel ? (
+                            <div className="w-4 h-4 border-2 border-brand-foreground/30 border-t-brand-foreground rounded-full animate-spin" />
+                          ) : (
+                            <Plus className="w-4 h-4" />
+                          )}
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                </Card>
               </div>
             </div>
           )}

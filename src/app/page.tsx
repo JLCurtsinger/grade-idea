@@ -16,7 +16,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useRouter } from "next/navigation";
 
 export default function HomePage() {
-  const { currentIdea, currentIdeaId, setCurrentIdea } = useCurrentIdea();
+  const { currentIdea, setCurrentIdea } = useCurrentIdea();
   const { user } = useAuth();
   const { tokenBalance, updateBalanceOptimistically, revertBalance, forceRefreshFromFirestore } = useTokenBalance();
   const [scansRemaining, setScansRemaining] = useState(2);
@@ -80,8 +80,8 @@ export default function HomePage() {
           throw new Error('error' in result ? result.error : 'Failed to analyze idea');
         }
 
-        // Success - show mock data (no idea ID for guest users)
-        setCurrentIdea(idea, null);
+        // Success - show mock data
+        setCurrentIdea(idea);
         setAnalysisResult(result.analysis);
         setScansRemaining(prev => Math.max(0, prev - 1));
         setIsGrading(false);
@@ -184,7 +184,7 @@ export default function HomePage() {
   };
 
   const handleTryAnother = () => {
-    setCurrentIdea(null, null);
+    setCurrentIdea(null);
   };
 
   return (
@@ -197,7 +197,7 @@ export default function HomePage() {
         </>
       ) : (
         <>
-          <ResultsSection idea={currentIdea} ideaId={currentIdeaId} analysis={analysisResult} />
+          <ResultsSection idea={currentIdea} analysis={analysisResult} />
           <ConversionFooter 
             scansRemaining={scansRemaining}
             onTryAnother={handleTryAnother}
