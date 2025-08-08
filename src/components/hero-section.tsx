@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { ArrowRight, Sparkles } from "lucide-react";
 
 interface HeroSectionProps {
@@ -34,6 +33,21 @@ export const HeroSection = ({ onSubmit, tokenBalance, exampleIdea, isGrading = f
       setIdea(exampleIdea);
     }
   }, [exampleIdea]);
+
+  // Auto-grow effect for textarea
+  useEffect(() => {
+    const el = inputRef?.current as HTMLTextAreaElement | null;
+    if (!el) return;
+    const fit = () => {
+      el.style.height = "auto";
+      el.style.height = `${el.scrollHeight}px`;
+    };
+    fit();
+
+    const onResize = () => fit();
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, [idea]);
 
   // Dynamic padding calculation effect
   useEffect(() => {
@@ -102,16 +116,34 @@ export const HeroSection = ({ onSubmit, tokenBalance, exampleIdea, isGrading = f
             {/* Input Form */}
             <form onSubmit={handleSubmit} className="space-y-4">
               <div ref={containerRef} className="relative">
-                <Input
+                <textarea
                   ref={inputRef}
-                  value={idea}
-                  onChange={(e) => setIdea(e.target.value)}
+                  id="idea-input"
+                  name="idea"
                   placeholder="Describe your idea..."
-                  className={`input-primary text-lg py-4 min-h-[60px] ${isGrading ? 'animate-input-pulse' : ''}`}
+                  rows={1}
+                  aria-multiline="true"
+                  value={idea}
+                  onChange={(e) => {
+                    setIdea(e.target.value);
+                    // auto-grow
+                    const el = inputRef?.current as HTMLTextAreaElement | null;
+                    if (el) {
+                      el.style.height = "auto";
+                      el.style.height = `${el.scrollHeight}px`;
+                    }
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && !e.shiftKey) {
+                      e.preventDefault();
+                      handleSubmit(e as any);
+                    }
+                  }}
                   disabled={isLoading || isGrading}
                   style={{
                     paddingRight: `calc(var(--cta-w, 0px) + 12px)`
                   }}
+                  className={`input-primary text-lg py-4 min-h-[60px] whitespace-pre-wrap break-words resize-none overflow-hidden ${isGrading ? 'animate-input-pulse' : ''}`}
                 />
                 <Button
                   ref={buttonRef}
