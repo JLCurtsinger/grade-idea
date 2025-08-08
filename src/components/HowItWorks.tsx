@@ -113,20 +113,21 @@ export default function HowItWorks() {
               className="group rounded-2xl border bg-card/60 backdrop-blur-sm p-6 md:p-8 shadow-sm transition-colors hover:bg-accent/5"
               {...(useMotion ? { variants: cardVariants } : {})}
             >
-              <div className="flex items-start gap-4">
-                {/* Icon chip to match other sections */}
+              <div className="flex flex-col">
+                {/* Icon chip on top, left-aligned */}
                 <div className={`h-10 w-10 rounded-xl ring-1 ${chipClasses} flex items-center justify-center shrink-0`}>
                   <Icon className={`h-5 w-5 ${iconClasses}`} aria-hidden="true" />
                 </div>
 
-                <div>
-                  <h3 className="text-lg md:text-xl font-semibold tracking-tight">
-                    {title}
-                  </h3>
-                  <p className="mt-2 text-sm md:text-base leading-relaxed text-foreground/80">
-                    {body}
-                  </p>
-                </div>
+                {/* Title */}
+                <h3 className="mt-4 text-lg md:text-xl font-semibold tracking-tight">
+                  {title}
+                </h3>
+
+                {/* Body */}
+                <p className="mt-2 text-sm md:text-base leading-relaxed text-foreground/80">
+                  {body}
+                </p>
               </div>
             </Card>
           ))}
