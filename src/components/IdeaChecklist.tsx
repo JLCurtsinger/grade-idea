@@ -579,7 +579,7 @@ export function IdeaChecklist({
                           disabled={isSavingNotes}
                           className="text-xs text-brand hover:text-brand/80 transition-colors flex items-center gap-1 group"
                         >
-                          📝 Add Note
+                          + Add Note
                         </button>
                       )}
                     </div>

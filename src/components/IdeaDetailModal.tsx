@@ -1775,7 +1775,7 @@ export function IdeaDetailModal({ idea, isOpen, onClose, onScoreUpdate, googleTr
                       size="sm"
                       className="btn-secondary"
                     >
-                      + Add Insight
+                      + Add
                     </Button>
                   </div>
                 )}
@@ -1912,7 +1912,7 @@ export function IdeaDetailModal({ idea, isOpen, onClose, onScoreUpdate, googleTr
                                   size="sm"
                                   className="btn-secondary"
                                 >
-                                  + Add Mitigation Plan
+                                  + Add
                                 </Button>
                               </div>
                             )}
@@ -2125,7 +2125,7 @@ export function IdeaDetailModal({ idea, isOpen, onClose, onScoreUpdate, googleTr
                         size="sm"
                         className="btn-secondary"
                       >
-                        + Add User Type
+                        + Add
                       </Button>
                     </div>
                   )}
