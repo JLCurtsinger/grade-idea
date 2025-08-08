@@ -32,7 +32,8 @@ import {
   Users,
   ChevronDown,
   Plus,
-  X
+  X,
+  Edit
 } from "lucide-react";
 import { IdeaChecklist } from "./IdeaChecklist";
 import { calculateDynamicScores } from "@/lib/scoring";
@@ -81,6 +82,10 @@ interface Idea {
     go_to_market_channels?: string[];
     monetization_models?: string[];
     target_user_archetype?: string;
+    risk_mitigation_plans?: Array<{
+      risk: string;
+      mitigation: string;
+    }>;
   };
 }
 
@@ -127,6 +132,15 @@ export function IdeaDetailModal({ idea, isOpen, onClose, onScoreUpdate, googleTr
   const [isEditingArchetype, setIsEditingArchetype] = useState(false);
   const [editingArchetype, setEditingArchetype] = useState("");
   const [isSavingArchetype, setIsSavingArchetype] = useState(false);
+  
+  // Risk mitigation plans state
+  const [riskMitigationPlans, setRiskMitigationPlans] = useState<Array<{risk: string; mitigation: string}>>(
+    idea?.custom?.risk_mitigation_plans || []
+  );
+  const [editingRisk, setEditingRisk] = useState<string>("");
+  const [editingMitigation, setEditingMitigation] = useState<string>("");
+  const [isAddingMitigation, setIsAddingMitigation] = useState(false);
+  const [isSavingMitigation, setIsSavingMitigation] = useState(false);
 
   // Update isPublic when idea changes
   useEffect(() => {
@@ -152,6 +166,11 @@ export function IdeaDetailModal({ idea, isOpen, onClose, onScoreUpdate, googleTr
   useEffect(() => {
     setCustomArchetype(idea?.custom?.target_user_archetype || "");
   }, [idea?.custom?.target_user_archetype]);
+
+  // Update risk mitigation plans when idea changes
+  useEffect(() => {
+    setRiskMitigationPlans(idea?.custom?.risk_mitigation_plans || []);
+  }, [idea?.custom?.risk_mitigation_plans]);
 
 
 
@@ -514,6 +533,122 @@ export function IdeaDetailModal({ idea, isOpen, onClose, onScoreUpdate, googleTr
     }
   };
 
+  // Risk mitigation functions
+  const handleAddMitigation = (risk: string) => {
+    if (!user || !idea) return;
+    
+    setEditingRisk(risk);
+    setEditingMitigation("");
+    setIsAddingMitigation(true);
+  };
+
+  const handleEditMitigation = (risk: string, currentMitigation: string) => {
+    if (!user || !idea) return;
+    
+    setEditingRisk(risk);
+    setEditingMitigation(currentMitigation);
+    setIsAddingMitigation(true);
+  };
+
+  const handleSaveMitigation = async () => {
+    if (!user || !idea || !editingRisk.trim() || !editingMitigation.trim()) return;
+    
+    setIsSavingMitigation(true);
+    try {
+      const trimmedRisk = editingRisk.trim();
+      const trimmedMitigation = editingMitigation.trim();
+      
+      // Find existing mitigation for this risk or create new one
+      const existingIndex = riskMitigationPlans.findIndex(plan => plan.risk === trimmedRisk);
+      let updatedPlans = [...riskMitigationPlans];
+      
+      if (existingIndex >= 0) {
+        // Update existing mitigation
+        updatedPlans[existingIndex] = { risk: trimmedRisk, mitigation: trimmedMitigation };
+      } else {
+        // Add new mitigation
+        updatedPlans.push({ risk: trimmedRisk, mitigation: trimmedMitigation });
+      }
+      
+      setRiskMitigationPlans(updatedPlans);
+      setIsAddingMitigation(false);
+      setEditingRisk("");
+      setEditingMitigation("");
+      
+      // Save to Firestore
+      const idToken = await user.getIdToken();
+      const response = await fetch('/api/update-risk-mitigation', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          ideaId: idea.id,
+          idToken,
+          riskMitigationPlans: updatedPlans
+        }),
+      });
+
+      if (!response.ok) {
+        console.error('Failed to save risk mitigation plans');
+        // Revert on error
+        setRiskMitigationPlans(riskMitigationPlans);
+      }
+    } catch (error) {
+      console.error('Error saving risk mitigation plans:', error);
+      // Revert on error
+      setRiskMitigationPlans(riskMitigationPlans);
+    } finally {
+      setIsSavingMitigation(false);
+    }
+  };
+
+  const handleDeleteMitigation = async (riskToDelete: string) => {
+    if (!user || !idea) return;
+    
+    setIsSavingMitigation(true);
+    try {
+      const updatedPlans = riskMitigationPlans.filter(plan => plan.risk !== riskToDelete);
+      setRiskMitigationPlans(updatedPlans);
+      
+      // Save to Firestore
+      const idToken = await user.getIdToken();
+      const response = await fetch('/api/update-risk-mitigation', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          ideaId: idea.id,
+          idToken,
+          riskMitigationPlans: updatedPlans
+        }),
+      });
+
+      if (!response.ok) {
+        console.error('Failed to save risk mitigation plans');
+        // Revert on error
+        setRiskMitigationPlans(riskMitigationPlans);
+      }
+    } catch (error) {
+      console.error('Error saving risk mitigation plans:', error);
+      // Revert on error
+      setRiskMitigationPlans(riskMitigationPlans);
+    } finally {
+      setIsSavingMitigation(false);
+    }
+  };
+
+  const handleCancelMitigation = () => {
+    setIsAddingMitigation(false);
+    setEditingRisk("");
+    setEditingMitigation("");
+  };
+
+  const getMitigationForRisk = (risk: string) => {
+    return riskMitigationPlans.find(plan => plan.risk === risk)?.mitigation || null;
+  };
+
   // Get base score from idea data
   const baseScore = (idea as any)?.baseScore || idea.analysis.overall_score;
 
@@ -816,15 +951,104 @@ export function IdeaDetailModal({ idea, isOpen, onClose, onScoreUpdate, googleTr
                 <h3 className="text-lg font-semibold text-foreground">Key Risks & Blind Spots</h3>
               </div>
               <Card className="p-4">
-                <ul className="space-y-3">
-                  {idea.risks.map((risk, index) => (
-                    <li key={index} className="flex items-start gap-3">
-                      <div className="w-2 h-2 bg-orange-500 rounded-full mt-2 flex-shrink-0"></div>
-                      <p className="text-foreground leading-relaxed">
-                        {typeof risk === 'string' ? risk : JSON.stringify(risk)}
-                      </p>
-                    </li>
-                  ))}
+                <ul className="space-y-4">
+                  {idea.risks.map((risk, index) => {
+                    const riskText = typeof risk === 'string' ? risk : JSON.stringify(risk);
+                    const existingMitigation = getMitigationForRisk(riskText);
+                    
+                    return (
+                      <li key={index} className="space-y-2">
+                        <div className="flex items-start gap-3">
+                          <div className="w-2 h-2 bg-orange-500 rounded-full mt-2 flex-shrink-0"></div>
+                          <div className="flex-1">
+                            <p className="text-foreground leading-relaxed">
+                              {riskText}
+                            </p>
+                            
+                            {/* Existing mitigation display */}
+                            {existingMitigation && !isAddingMitigation && (
+                              <div className="mt-3 p-3 bg-brand/5 border border-brand/20 rounded-lg">
+                                <div className="flex items-start justify-between gap-2">
+                                  <div className="flex-1">
+                                    <p className="text-sm font-medium text-brand mb-1">Your Mitigation Plan:</p>
+                                    <p className="text-sm text-foreground leading-relaxed">{existingMitigation}</p>
+                                  </div>
+                                  {user && (
+                                    <div className="flex gap-1">
+                                      <button
+                                        onClick={() => handleEditMitigation(riskText, existingMitigation)}
+                                        disabled={isSavingMitigation}
+                                        className="p-1 text-foreground-muted hover:text-brand transition-colors"
+                                        title="Edit mitigation"
+                                      >
+                                        <Edit className="w-3 h-3" />
+                                      </button>
+                                      <button
+                                        onClick={() => handleDeleteMitigation(riskText)}
+                                        disabled={isSavingMitigation}
+                                        className="p-1 text-foreground-muted hover:text-red-500 transition-colors"
+                                        title="Delete mitigation"
+                                      >
+                                        <X className="w-3 h-3" />
+                                      </button>
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            )}
+                            
+                            {/* Add mitigation button */}
+                            {user && !existingMitigation && !isAddingMitigation && (
+                              <button
+                                onClick={() => handleAddMitigation(riskText)}
+                                disabled={isSavingMitigation}
+                                className="mt-2 text-sm text-brand hover:text-brand/80 transition-colors flex items-center gap-1"
+                              >
+                                <Plus className="w-3 h-3" />
+                                Add Mitigation Plan
+                              </button>
+                            )}
+                            
+                            {/* Mitigation input form */}
+                            {isAddingMitigation && editingRisk === riskText && (
+                              <div className="mt-3 space-y-3">
+                                <textarea
+                                  value={editingMitigation}
+                                  onChange={(e) => setEditingMitigation(e.target.value)}
+                                  placeholder="Describe your mitigation plan (1-3 sentences)..."
+                                  className="w-full min-h-[80px] p-3 border border-border rounded-lg bg-background text-foreground resize-none focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent"
+                                  disabled={isSavingMitigation}
+                                />
+                                <div className="flex gap-2">
+                                  <Button
+                                    onClick={handleSaveMitigation}
+                                    disabled={!editingMitigation.trim() || isSavingMitigation}
+                                    size="sm"
+                                    className="btn-primary"
+                                  >
+                                    {isSavingMitigation ? (
+                                      <div className="w-4 h-4 border-2 border-brand-foreground/30 border-t-brand-foreground rounded-full animate-spin" />
+                                    ) : (
+                                      'Save'
+                                    )}
+                                  </Button>
+                                  <Button
+                                    onClick={handleCancelMitigation}
+                                    disabled={isSavingMitigation}
+                                    variant="outline"
+                                    size="sm"
+                                    className="btn-secondary"
+                                  >
+                                    Cancel
+                                  </Button>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </li>
+                    );
+                  })}
                 </ul>
               </Card>
             </div>
