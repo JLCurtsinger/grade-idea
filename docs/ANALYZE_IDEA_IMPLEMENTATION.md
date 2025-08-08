@@ -105,7 +105,7 @@ The OpenAI API returns structured JSON with:
 
 ### 10. Environment Variables
 - ✅ `OPENAI_API_KEY` - Required for OpenAI API access
-- ✅ Documentation provided in `OPENAI_SETUP.md`
+- ✅ Documentation provided in `docs/OPENAI_SETUP.md`
 
 ## Testing
 
@@ -156,9 +156,9 @@ The implementation integrates with existing systems:
 
 ### New Files:
 - `src/app/api/analyzeIdea/route.ts` - Main API implementation
-- `OPENAI_SETUP.md` - Setup documentation
+- `docs/OPENAI_SETUP.md` - Setup documentation
 - `test-analyze-idea.js` - Test script
-- `ANALYZE_IDEA_IMPLEMENTATION.md` - This summary
+- `docs/ANALYZE_IDEA_IMPLEMENTATION.md` - This summary
 
 ### Modified Files:
 - `package.json` - Added OpenAI dependency

@@ -54,7 +54,7 @@ The Google Analytics 4 implementation has been audited and fixed to fully confor
 - `src/lib/gtag.ts` - Enhanced with debug logging and improved error handling
 - `src/components/GoogleAnalytics.tsx` - Completely rewritten with proper timing and error handling
 - `src/lib/ga-test.ts` - Test utility for verification
-- `GOOGLE_ANALYTICS_AUDIT_REPORT.md` - This audit report
+- `docs/GOOGLE_ANALYTICS_AUDIT_REPORT.md` - This audit report
 
 ### Modified Files:
 - `src/app/layout.tsx` - Added GoogleAnalytics component
