@@ -128,7 +128,9 @@ export function IdeaDetailModal({ idea, isOpen, onClose, onScoreUpdate, googleTr
   const [isSavingMonetization, setIsSavingMonetization] = useState(false);
   
   // Custom target user archetype state
-  const [customArchetype, setCustomArchetype] = useState<string[]>(idea?.custom?.target_user_archetype || []);
+  const [customArchetype, setCustomArchetype] = useState<string[]>(() => 
+    ensureArray(idea?.custom?.target_user_archetype)
+  );
   const [isEditingArchetype, setIsEditingArchetype] = useState(false);
   const [editingArchetypeItems, setEditingArchetypeItems] = useState<string[]>([]);
   const [isSavingArchetype, setIsSavingArchetype] = useState(false);
@@ -164,7 +166,7 @@ export function IdeaDetailModal({ idea, isOpen, onClose, onScoreUpdate, googleTr
 
   // Update custom archetype when idea changes
   useEffect(() => {
-    setCustomArchetype(idea?.custom?.target_user_archetype || []);
+    setCustomArchetype(ensureArray(idea?.custom?.target_user_archetype));
   }, [idea?.custom?.target_user_archetype]);
 
   // Update risk mitigation plans when idea changes
@@ -470,6 +472,13 @@ export function IdeaDetailModal({ idea, isOpen, onClose, onScoreUpdate, googleTr
     }
   };
 
+  // Helper function to ensure we always have a safe array
+  const ensureArray = (value: unknown): string[] => {
+    if (Array.isArray(value)) return value;
+    if (typeof value === 'string') return [value];
+    return [];
+  };
+
   // Helper function to parse text to bullet points
   const parseTextToBullets = (text: string | any): string[] => {
     if (typeof text !== 'string') return [];
@@ -489,8 +498,10 @@ export function IdeaDetailModal({ idea, isOpen, onClose, onScoreUpdate, googleTr
     
     // Defensive conversion to array
     let currentArchetype: string[];
-    if (Array.isArray(customArchetype) && customArchetype.length > 0) {
-      currentArchetype = customArchetype;
+    const safeCustomArchetype = ensureArray(customArchetype);
+    
+    if (safeCustomArchetype.length > 0) {
+      currentArchetype = safeCustomArchetype;
     } else if (typeof idea.userArchetype === 'string') {
       currentArchetype = parseTextToBullets(idea.userArchetype);
     } else {
@@ -1163,55 +1174,66 @@ export function IdeaDetailModal({ idea, isOpen, onClose, onScoreUpdate, googleTr
                   </div>
                 ) : (
                   <div>
-                    {customArchetype && customArchetype.length > 0 ? (
-                      <div>
-                        <ul className="space-y-2">
-                          {customArchetype.map((item, index) => (
-                            <li key={index} className="flex items-start gap-3">
-                              <div className="w-2 h-2 bg-brand rounded-full mt-2 flex-shrink-0"></div>
-                              <p className="text-foreground leading-relaxed">{item}</p>
-                            </li>
-                          ))}
-                        </ul>
-                        {user && (
-                          <p className="text-xs text-foreground-muted mt-2">
-                            Custom version - click Edit to modify
-                          </p>
-                        )}
-                      </div>
-                    ) : typeof idea.userArchetype === 'string' ? (
-                      <div>
-                        <ul className="space-y-2">
-                          {parseTextToBullets(idea.userArchetype).map((item, index) => (
-                            <li key={index} className="flex items-start gap-3">
-                              <div className="w-2 h-2 bg-orange-500 rounded-full mt-2 flex-shrink-0"></div>
-                              <p className="text-foreground leading-relaxed">{item}</p>
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    ) : (
-                      <div className="space-y-3">
-                        {idea.userArchetype.demographics && (
+                    {(() => {
+                      const safeCustomArchetype = ensureArray(customArchetype);
+                      
+                      if (safeCustomArchetype.length > 0) {
+                        return (
                           <div>
-                            <h4 className="font-medium text-foreground mb-1">Demographics</h4>
-                            <p className="text-foreground-muted leading-relaxed">{idea.userArchetype.demographics}</p>
+                            <ul className="space-y-2">
+                              {safeCustomArchetype.map((item, index) => (
+                                <li key={index} className="flex items-start gap-3">
+                                  <div className="w-2 h-2 bg-brand rounded-full mt-2 flex-shrink-0"></div>
+                                  <p className="text-foreground leading-relaxed">{item}</p>
+                                </li>
+                              ))}
+                            </ul>
+                            {user && (
+                              <p className="text-xs text-foreground-muted mt-2">
+                                Custom version - click Edit to modify
+                              </p>
+                            )}
                           </div>
-                        )}
-                        {idea.userArchetype.behavior && (
+                        );
+                      } else if (typeof idea.userArchetype === 'string') {
+                        const parsedBullets = parseTextToBullets(idea.userArchetype);
+                        return (
                           <div>
-                            <h4 className="font-medium text-foreground mb-1">Behavior</h4>
-                            <p className="text-foreground-muted leading-relaxed">{idea.userArchetype.behavior}</p>
+                            <ul className="space-y-2">
+                              {parsedBullets.map((item, index) => (
+                                <li key={index} className="flex items-start gap-3">
+                                  <div className="w-2 h-2 bg-orange-500 rounded-full mt-2 flex-shrink-0"></div>
+                                  <p className="text-foreground leading-relaxed">{item}</p>
+                                </li>
+                              ))}
+                            </ul>
                           </div>
-                        )}
-                        {idea.userArchetype.pain_points && (
-                          <div>
-                            <h4 className="font-medium text-foreground mb-1">Pain Points</h4>
-                            <p className="text-foreground-muted leading-relaxed">{idea.userArchetype.pain_points}</p>
+                        );
+                      } else {
+                        return (
+                          <div className="space-y-3">
+                            {idea.userArchetype.demographics && (
+                              <div>
+                                <h4 className="font-medium text-foreground mb-1">Demographics</h4>
+                                <p className="text-foreground-muted leading-relaxed">{idea.userArchetype.demographics}</p>
+                              </div>
+                            )}
+                            {idea.userArchetype.behavior && (
+                              <div>
+                                <h4 className="font-medium text-foreground mb-1">Behavior</h4>
+                                <p className="text-foreground-muted leading-relaxed">{idea.userArchetype.behavior}</p>
+                              </div>
+                            )}
+                            {idea.userArchetype.pain_points && (
+                              <div>
+                                <h4 className="font-medium text-foreground mb-1">Pain Points</h4>
+                                <p className="text-foreground-muted leading-relaxed">{idea.userArchetype.pain_points}</p>
+                              </div>
+                            )}
                           </div>
-                        )}
-                      </div>
-                    )}
+                        );
+                      }
+                    })()}
                   </div>
                 )}
               </Card>
