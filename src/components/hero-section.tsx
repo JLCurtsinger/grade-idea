@@ -115,18 +115,24 @@ export const HeroSection = ({ onSubmit, tokenBalance, exampleIdea, isGrading = f
 
             {/* Input Form */}
             <form onSubmit={handleSubmit} className="space-y-4">
-              <div ref={containerRef} className="relative">
+              <div
+                ref={containerRef}
+                className={`
+                  input-primary relative w-full
+                  min-h-12 md:min-h-14
+                  flex items-stretch
+                  ${isGrading ? 'animate-input-pulse' : ''}
+                `}
+              >
                 <textarea
                   ref={inputRef}
                   id="idea-input"
                   name="idea"
-                  placeholder="Describe your idea..."
-                  rows={1}
                   aria-multiline="true"
+                  rows={1}
                   value={idea}
                   onChange={(e) => {
                     setIdea(e.target.value);
-                    // auto-grow
                     const el = inputRef?.current as HTMLTextAreaElement | null;
                     if (el) {
                       el.style.height = "auto";
@@ -140,16 +146,29 @@ export const HeroSection = ({ onSubmit, tokenBalance, exampleIdea, isGrading = f
                     }
                   }}
                   disabled={isLoading || isGrading}
-                  style={{
-                    paddingRight: `calc(var(--cta-w, 0px) + 12px)`
-                  }}
-                  className={`input-primary text-lg py-4 min-h-[60px] whitespace-pre-wrap break-words resize-none overflow-hidden ${isGrading ? 'animate-input-pulse' : ''}`}
+                  placeholder="Describe your idea..."
+                  style={{ paddingRight: `calc(var(--cta-w, 0px) + 12px)` }}
+                  className="
+                    flex-1 bg-transparent border-0 outline-none ring-0
+                    px-4 py-3 md:py-4
+                    whitespace-pre-wrap break-words
+                    resize-none overflow-hidden
+                    text-base md:text-[15px]
+                  "
                 />
+
                 <Button
                   ref={buttonRef}
                   type="submit"
                   disabled={!idea.trim() || isLoading || isGrading}
-                  className="btn-primary-breathing absolute right-2 top-2 bottom-2 h-auto"
+                  className="
+                    absolute right-2
+                    top-1/2 -translate-y-1/2
+                    h-11 md:h-12
+                    px-5 md:px-6
+                    rounded-xl
+                    btn-primary-breathing
+                  "
                 >
                   {isLoading || isGrading ? (
                     <div className="w-5 h-5 border-2 border-brand-foreground/30 border-t-brand-foreground rounded-full animate-spin" />
