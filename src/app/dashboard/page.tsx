@@ -54,6 +54,7 @@ interface Idea {
   custom?: {
     go_to_market_channels?: string[];
     monetization_models?: string[];
+    target_user_archetype?: string;
   };
 }
 

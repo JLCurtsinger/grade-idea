@@ -80,6 +80,7 @@ interface Idea {
   custom?: {
     go_to_market_channels?: string[];
     monetization_models?: string[];
+    target_user_archetype?: string;
   };
 }
 
@@ -120,6 +121,12 @@ export function IdeaDetailModal({ idea, isOpen, onClose, onScoreUpdate, googleTr
   const [newMonetization, setNewMonetization] = useState("");
   const [isAddingMonetization, setIsAddingMonetization] = useState(false);
   const [isSavingMonetization, setIsSavingMonetization] = useState(false);
+  
+  // Custom target user archetype state
+  const [customArchetype, setCustomArchetype] = useState<string>(idea?.custom?.target_user_archetype || "");
+  const [isEditingArchetype, setIsEditingArchetype] = useState(false);
+  const [editingArchetype, setEditingArchetype] = useState("");
+  const [isSavingArchetype, setIsSavingArchetype] = useState(false);
 
   // Update isPublic when idea changes
   useEffect(() => {
@@ -140,6 +147,11 @@ export function IdeaDetailModal({ idea, isOpen, onClose, onScoreUpdate, googleTr
   useEffect(() => {
     setCustomMonetization(idea?.custom?.monetization_models || []);
   }, [idea?.custom?.monetization_models]);
+
+  // Update custom archetype when idea changes
+  useEffect(() => {
+    setCustomArchetype(idea?.custom?.target_user_archetype || "");
+  }, [idea?.custom?.target_user_archetype]);
 
 
 
@@ -436,6 +448,69 @@ export function IdeaDetailModal({ idea, isOpen, onClose, onScoreUpdate, googleTr
     if (e.key === 'Enter') {
       e.preventDefault();
       handleAddMonetization();
+    }
+  };
+
+  // Custom archetype functions
+  const handleEditArchetype = () => {
+    if (!user || !idea) return;
+    
+    setIsEditingArchetype(true);
+    // Set the current archetype (custom or AI-generated) as the starting value
+    const currentArchetype = customArchetype || (typeof idea.userArchetype === 'string' ? idea.userArchetype : '');
+    setEditingArchetype(currentArchetype);
+  };
+
+  const handleSaveArchetype = async () => {
+    if (!user || !idea || !editingArchetype.trim()) return;
+    
+    setIsSavingArchetype(true);
+    try {
+      const trimmedArchetype = editingArchetype.trim();
+      setCustomArchetype(trimmedArchetype);
+      setIsEditingArchetype(false);
+      setEditingArchetype("");
+      
+      // Save to Firestore
+      const idToken = await user.getIdToken();
+      const response = await fetch('/api/update-custom-archetype', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          ideaId: idea.id,
+          idToken,
+          customArchetype: trimmedArchetype
+        }),
+      });
+
+      if (!response.ok) {
+        console.error('Failed to save custom archetype');
+        // Revert on error
+        setCustomArchetype(customArchetype);
+      }
+    } catch (error) {
+      console.error('Error saving custom archetype:', error);
+      // Revert on error
+      setCustomArchetype(customArchetype);
+    } finally {
+      setIsSavingArchetype(false);
+    }
+  };
+
+  const handleCancelArchetype = () => {
+    setIsEditingArchetype(false);
+    setEditingArchetype("");
+  };
+
+  const handleArchetypeKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      handleSaveArchetype();
+    } else if (e.key === 'Escape') {
+      e.preventDefault();
+      handleCancelArchetype();
     }
   };
 
@@ -758,31 +833,91 @@ export function IdeaDetailModal({ idea, isOpen, onClose, onScoreUpdate, googleTr
           {/* User Archetype */}
           {idea.userArchetype && (
             <div className="space-y-3">
-              <div className="flex items-center gap-2">
-                <Users className="w-5 h-5 text-blue-600" />
-                <h3 className="text-lg font-semibold text-foreground">Target User Archetype</h3>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Users className="w-5 h-5 text-blue-600" />
+                  <h3 className="text-lg font-semibold text-foreground">Target User Archetype</h3>
+                </div>
+                {user && (
+                  <Button
+                    onClick={handleEditArchetype}
+                    disabled={isEditingArchetype || isSavingArchetype}
+                    variant="outline"
+                    size="sm"
+                    className="btn-secondary"
+                  >
+                    Edit
+                  </Button>
+                )}
               </div>
               <Card className="p-4">
-                {typeof idea.userArchetype === 'string' ? (
-                  <p className="text-foreground leading-relaxed">{idea.userArchetype}</p>
-                ) : (
+                {isEditingArchetype ? (
                   <div className="space-y-3">
-                    {idea.userArchetype.demographics && (
+                    <textarea
+                      value={editingArchetype}
+                      onChange={(e) => setEditingArchetype(e.target.value)}
+                      onKeyDown={handleArchetypeKeyPress}
+                      placeholder="Describe your target user archetype..."
+                      className="w-full min-h-[100px] p-3 border border-border rounded-lg bg-background text-foreground resize-none focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent"
+                      disabled={isSavingArchetype}
+                    />
+                    <div className="flex gap-2">
+                      <Button
+                        onClick={handleSaveArchetype}
+                        disabled={!editingArchetype.trim() || isSavingArchetype}
+                        size="sm"
+                        className="btn-primary"
+                      >
+                        {isSavingArchetype ? (
+                          <div className="w-4 h-4 border-2 border-brand-foreground/30 border-t-brand-foreground rounded-full animate-spin" />
+                        ) : (
+                          'Save'
+                        )}
+                      </Button>
+                      <Button
+                        onClick={handleCancelArchetype}
+                        disabled={isSavingArchetype}
+                        variant="outline"
+                        size="sm"
+                        className="btn-secondary"
+                      >
+                        Cancel
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <div>
+                    {customArchetype ? (
                       <div>
-                        <h4 className="font-medium text-foreground mb-1">Demographics</h4>
-                        <p className="text-foreground-muted leading-relaxed">{idea.userArchetype.demographics}</p>
+                        <p className="text-foreground leading-relaxed">{customArchetype}</p>
+                        {user && (
+                          <p className="text-xs text-foreground-muted mt-2">
+                            Custom version - click Edit to modify
+                          </p>
+                        )}
                       </div>
-                    )}
-                    {idea.userArchetype.behavior && (
-                      <div>
-                        <h4 className="font-medium text-foreground mb-1">Behavior</h4>
-                        <p className="text-foreground-muted leading-relaxed">{idea.userArchetype.behavior}</p>
-                      </div>
-                    )}
-                    {idea.userArchetype.pain_points && (
-                      <div>
-                        <h4 className="font-medium text-foreground mb-1">Pain Points</h4>
-                        <p className="text-foreground-muted leading-relaxed">{idea.userArchetype.pain_points}</p>
+                    ) : typeof idea.userArchetype === 'string' ? (
+                      <p className="text-foreground leading-relaxed">{idea.userArchetype}</p>
+                    ) : (
+                      <div className="space-y-3">
+                        {idea.userArchetype.demographics && (
+                          <div>
+                            <h4 className="font-medium text-foreground mb-1">Demographics</h4>
+                            <p className="text-foreground-muted leading-relaxed">{idea.userArchetype.demographics}</p>
+                          </div>
+                        )}
+                        {idea.userArchetype.behavior && (
+                          <div>
+                            <h4 className="font-medium text-foreground mb-1">Behavior</h4>
+                            <p className="text-foreground-muted leading-relaxed">{idea.userArchetype.behavior}</p>
+                          </div>
+                        )}
+                        {idea.userArchetype.pain_points && (
+                          <div>
+                            <h4 className="font-medium text-foreground mb-1">Pain Points</h4>
+                            <p className="text-foreground-muted leading-relaxed">{idea.userArchetype.pain_points}</p>
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>
