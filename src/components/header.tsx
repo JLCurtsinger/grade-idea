@@ -97,6 +97,23 @@ export const Header = () => {
     setIsMobileMenuOpen(false);
   };
 
+  const handleHowItWorksClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
+    e.preventDefault();
+    
+    if (isLandingPage) {
+      // On landing page, scroll smoothly to the section
+      const howItWorksSection = document.getElementById('how-it-works');
+      if (howItWorksSection) {
+        howItWorksSection.scrollIntoView({ behavior: 'smooth' });
+      }
+    } else {
+      // On other pages, navigate to landing page with hash
+      router.push('/#how-it-works');
+    }
+    
+    setIsMobileMenuOpen(false);
+  };
+
   const handleAuthClick = () => {
     if (user) {
       logout();
@@ -177,6 +194,13 @@ export const Header = () => {
               </a>
               <a href="/examples" className="text-sm font-medium text-foreground-muted hover:text-foreground transition-colors">
                 Examples
+              </a>
+              <a 
+                href="#how-it-works" 
+                onClick={handleHowItWorksClick}
+                className="text-sm font-medium text-foreground-muted hover:text-foreground transition-colors"
+              >
+                How It Works
               </a>
             </nav>
 
@@ -272,6 +296,13 @@ export const Header = () => {
                 className="block text-lg font-medium text-foreground-muted hover:text-foreground transition-colors py-3 border-b border-border/50"
               >
                 Examples
+              </a>
+              <a 
+                href="#how-it-works" 
+                onClick={handleHowItWorksClick}
+                className="block text-lg font-medium text-foreground-muted hover:text-foreground transition-colors py-3 border-b border-border/50"
+              >
+                How It Works
               </a>
             </nav>
 

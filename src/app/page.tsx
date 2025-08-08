@@ -6,6 +6,7 @@ import { ResultsSection } from "@/components/results-section";
 import { ConversionFooter } from "@/components/conversion-footer";
 import { FeaturesSection } from "@/components/features-section";
 import { PricingSection } from "@/components/pricing-section";
+import { HowItWorks } from "@/components/HowItWorks";
 import { useCurrentIdea } from "@/context/CurrentIdeaContext";
 import { useAuth } from "@/context/AuthContext";
 import { useTokenBalance } from "@/hooks/use-token-balance";
@@ -192,6 +193,7 @@ export default function HomePage() {
       {!currentIdea ? (
         <>
           <HeroSection onSubmit={handleIdeaSubmit} tokenBalance={tokenBalance} exampleIdea={exampleIdea} isGrading={isGrading} />
+          <HowItWorks />
           <FeaturesSection />
           <PricingSection />
         </>
