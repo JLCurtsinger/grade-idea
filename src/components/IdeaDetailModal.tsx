@@ -79,6 +79,7 @@ interface Idea {
   // Custom fields
   custom?: {
     go_to_market_channels?: string[];
+    monetization_models?: string[];
   };
 }
 
@@ -113,6 +114,12 @@ export function IdeaDetailModal({ idea, isOpen, onClose, onScoreUpdate, googleTr
   const [newChannel, setNewChannel] = useState("");
   const [isAddingChannel, setIsAddingChannel] = useState(false);
   const [isSavingChannels, setIsSavingChannels] = useState(false);
+  
+  // Custom monetization models state
+  const [customMonetization, setCustomMonetization] = useState<string[]>(idea?.custom?.monetization_models || []);
+  const [newMonetization, setNewMonetization] = useState("");
+  const [isAddingMonetization, setIsAddingMonetization] = useState(false);
+  const [isSavingMonetization, setIsSavingMonetization] = useState(false);
 
   // Update isPublic when idea changes
   useEffect(() => {
@@ -128,6 +135,11 @@ export function IdeaDetailModal({ idea, isOpen, onClose, onScoreUpdate, googleTr
   useEffect(() => {
     setCustomChannels(idea?.custom?.go_to_market_channels || []);
   }, [idea?.custom?.go_to_market_channels]);
+
+  // Update custom monetization when idea changes
+  useEffect(() => {
+    setCustomMonetization(idea?.custom?.monetization_models || []);
+  }, [idea?.custom?.monetization_models]);
 
 
 
@@ -335,6 +347,95 @@ export function IdeaDetailModal({ idea, isOpen, onClose, onScoreUpdate, googleTr
     if (e.key === 'Enter') {
       e.preventDefault();
       handleAddChannel();
+    }
+  };
+
+  // Custom monetization functions
+  const handleAddMonetization = async () => {
+    if (!newMonetization.trim() || !user || !idea) return;
+    
+    const trimmedModel = newMonetization.trim();
+    
+    // Check for duplicates
+    if (customMonetization.includes(trimmedModel)) {
+      setNewMonetization("");
+      return;
+    }
+    
+    setIsAddingMonetization(true);
+    try {
+      const updatedMonetization = [...customMonetization, trimmedModel];
+      setCustomMonetization(updatedMonetization);
+      setNewMonetization("");
+      
+      // Save to Firestore
+      const idToken = await user.getIdToken();
+      const response = await fetch('/api/update-custom-monetization', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          ideaId: idea.id,
+          idToken,
+          customMonetization: updatedMonetization
+        }),
+      });
+
+      if (!response.ok) {
+        console.error('Failed to save custom monetization models');
+        // Revert on error
+        setCustomMonetization(customMonetization);
+      }
+    } catch (error) {
+      console.error('Error saving custom monetization models:', error);
+      // Revert on error
+      setCustomMonetization(customMonetization);
+    } finally {
+      setIsAddingMonetization(false);
+    }
+  };
+
+  const handleRemoveMonetization = async (modelToRemove: string) => {
+    if (!user || !idea) return;
+    
+    setIsSavingMonetization(true);
+    try {
+      const updatedMonetization = customMonetization.filter(model => model !== modelToRemove);
+      setCustomMonetization(updatedMonetization);
+      
+      // Save to Firestore
+      const idToken = await user.getIdToken();
+      const response = await fetch('/api/update-custom-monetization', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          ideaId: idea.id,
+          idToken,
+          customMonetization: updatedMonetization
+        }),
+      });
+
+      if (!response.ok) {
+        console.error('Failed to save custom monetization models');
+        // Revert on error
+        setCustomMonetization(customMonetization);
+      }
+    } catch (error) {
+      console.error('Error saving custom monetization models:', error);
+      // Revert on error
+      setCustomMonetization(customMonetization);
+    } finally {
+      setIsSavingMonetization(false);
+    }
+  };
+
+  const handleMonetizationKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      handleAddMonetization();
     }
   };
 
@@ -727,18 +828,78 @@ export function IdeaDetailModal({ idea, isOpen, onClose, onScoreUpdate, googleTr
               <h3 className="text-lg font-semibold text-foreground">Strategy</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {/* Monetization Models */}
-                {idea.monetization_models && idea.monetization_models.length > 0 && (
-                  <Card className="p-4">
-                    <h4 className="font-medium text-foreground mb-3">Monetization Models</h4>
-                    <div className="flex flex-wrap gap-2">
-                      {idea.monetization_models.map((model, index) => (
-                        <Badge key={index} variant="secondary" className="bg-brand/10 text-brand border-brand/20">
-                          {model}
-                        </Badge>
-                      ))}
+                <Card className="p-4">
+                  <h4 className="font-medium text-foreground mb-3">Monetization Models</h4>
+                  
+                  {/* AI-generated models */}
+                  {idea.monetization_models && idea.monetization_models.length > 0 && (
+                    <div className="mb-4">
+                      <div className="flex flex-wrap gap-2">
+                        {idea.monetization_models.map((model, index) => (
+                          <Badge key={index} variant="secondary" className="bg-brand/10 text-brand border-brand/20">
+                            {model}
+                          </Badge>
+                        ))}
+                      </div>
                     </div>
-                  </Card>
-                )}
+                  )}
+                  
+                  {/* Custom models - only show for authenticated users */}
+                  {user && (
+                    <div className="space-y-3">
+                      {/* Custom models display */}
+                      {customMonetization.length > 0 && (
+                        <div>
+                          <div className="flex items-center gap-2 mb-2">
+                            <span className="text-sm font-medium text-foreground">Your Models:</span>
+                          </div>
+                          <div className="flex flex-wrap gap-2">
+                            {customMonetization.map((model, index) => (
+                              <Badge 
+                                key={index} 
+                                variant="secondary" 
+                                className="bg-brand/10 text-brand border-brand/20 group"
+                              >
+                                <span className="mr-1">{model}</span>
+                                <button
+                                  onClick={() => handleRemoveMonetization(model)}
+                                  disabled={isSavingMonetization}
+                                  className="ml-1 opacity-0 group-hover:opacity-100 transition-opacity hover:text-red-500"
+                                >
+                                  <X className="w-3 h-3" />
+                                </button>
+                              </Badge>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                      
+                      {/* Add new model input */}
+                      <div className="flex gap-2">
+                        <Input
+                          value={newMonetization}
+                          onChange={(e) => setNewMonetization(e.target.value)}
+                          onKeyPress={handleMonetizationKeyPress}
+                          placeholder="Add a custom model..."
+                          className="flex-1"
+                          disabled={isAddingMonetization || isSavingMonetization}
+                        />
+                        <Button
+                          onClick={handleAddMonetization}
+                          disabled={!newMonetization.trim() || isAddingMonetization || isSavingMonetization}
+                          size="sm"
+                          className="btn-primary"
+                        >
+                          {isAddingMonetization ? (
+                            <div className="w-4 h-4 border-2 border-brand-foreground/30 border-t-brand-foreground rounded-full animate-spin" />
+                          ) : (
+                            <Plus className="w-4 h-4" />
+                          )}
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                </Card>
 
                 {/* GTM Channels */}
                 <Card className="p-4">

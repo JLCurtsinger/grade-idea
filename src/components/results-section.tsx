@@ -47,6 +47,7 @@ interface ResultsSectionProps {
     // Custom fields
     custom?: {
       go_to_market_channels?: string[];
+      monetization_models?: string[];
     };
   };
 }
@@ -237,11 +238,23 @@ export const ResultsSection = ({ idea, analysis: apiAnalysis }: ResultsSectionPr
                   <div>
                     <h4 className="font-semibold mb-3">Monetization Models</h4>
                     <div className="flex flex-wrap gap-2">
+                      {/* AI-generated models */}
                       {analysis.monetization.map((model) => (
                         <Badge key={model} variant="secondary" className="bg-brand/10 text-brand border-brand/20">
                           {model}
                         </Badge>
                       ))}
+                      
+                      {/* Custom models - only show for authenticated users */}
+                      {user && analysisData.custom?.monetization_models && analysisData.custom.monetization_models.length > 0 && (
+                        <>
+                          {analysisData.custom.monetization_models.map((model) => (
+                            <Badge key={`custom-${model}`} variant="secondary" className="bg-brand/10 text-brand border-brand/20">
+                              {model}
+                            </Badge>
+                          ))}
+                        </>
+                      )}
                     </div>
                   </div>
                   <div>

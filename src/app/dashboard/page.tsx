@@ -53,6 +53,7 @@ interface Idea {
   // Custom fields
   custom?: {
     go_to_market_channels?: string[];
+    monetization_models?: string[];
   };
 }
 
