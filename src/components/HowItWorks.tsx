@@ -45,18 +45,24 @@ export default function HowItWorks() {
         title: "Describe Your Idea",
         body:
           "Type your startup idea in one or two sentences. Guests can try two free mock analyses; signed-in users spend one token per real scan.",
+        chipClasses: "bg-violet-500/15 ring-violet-500/30",
+        iconClasses: "text-violet-400",
       },
       {
         icon: Gauge,
         title: "Get a Founder‑Grade Review",
         body:
           "Our AI evaluates market potential, differentiation, monetization clarity, and execution difficulty, then returns scores and a clear summary in about a minute.",
+        chipClasses: "bg-green-500/15 ring-green-500/30",
+        iconClasses: "text-green-400",
       },
       {
         icon: ClipboardCheck,
         title: "Improve with a Checklist",
         body:
           "You'll get actionable steps to raise your score, suggested monetization models and channels, and everything is saved to your dashboard for later.",
+        chipClasses: "bg-amber-500/15 ring-amber-500/30",
+        iconClasses: "text-amber-400",
       },
     ],
     []
@@ -101,7 +107,7 @@ export default function HowItWorks() {
           className="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8"
           {...(useMotion ? { variants: containerVariants } : {})}
         >
-          {steps.map(({ icon: Icon, title, body }, i) => (
+          {steps.map(({ icon: Icon, title, body, chipClasses, iconClasses }, i) => (
             <Card
               key={i}
               className="group rounded-2xl border bg-card/60 backdrop-blur-sm p-6 md:p-8 shadow-sm transition-colors hover:bg-accent/5"
@@ -109,8 +115,8 @@ export default function HowItWorks() {
             >
               <div className="flex items-start gap-4">
                 {/* Icon chip to match other sections */}
-                <div className="h-10 w-10 rounded-xl ring-1 ring-border/50 bg-foreground/5 flex items-center justify-center shrink-0">
-                  <Icon className="h-5 w-5" aria-hidden="true" />
+                <div className={`h-10 w-10 rounded-xl ring-1 ${chipClasses} flex items-center justify-center shrink-0`}>
+                  <Icon className={`h-5 w-5 ${iconClasses}`} aria-hidden="true" />
                 </div>
 
                 <div>
