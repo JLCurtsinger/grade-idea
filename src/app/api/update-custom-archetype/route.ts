@@ -17,7 +17,7 @@ export async function POST(request: NextRequest) {
   
   let ideaId: string | undefined;
   let idToken: string | undefined;
-      let customArchetype: string[] | undefined;
+  let customArchetype: string | undefined;
   let uid: string | undefined;
   
   try {
@@ -34,15 +34,15 @@ export async function POST(request: NextRequest) {
     });
 
     // Validate input
-    if (!ideaId || !idToken || !Array.isArray(customArchetype)) {
+    if (!ideaId || !idToken || typeof customArchetype !== 'string') {
       console.error('Missing required fields:', { 
         hasIdeaId: !!ideaId, 
         hasIdToken: !!idToken,
-        hasCustomArchetype: Array.isArray(customArchetype)
+        hasCustomArchetype: typeof customArchetype === 'string'
       });
       return NextResponse.json({
         success: false,
-        error: 'Missing required fields: ideaId, idToken, and customArchetype array'
+        error: 'Missing required fields: ideaId, idToken, and customArchetype string'
       }, { status: 400 });
     }
 
@@ -62,11 +62,8 @@ export async function POST(request: NextRequest) {
       }, { status: 404 });
     }
     
-    // Clean and validate the array
-    const cleanedArchetype = customArchetype
-      .map(item => item.trim())
-      .filter(item => item.length > 0)
-      .filter((item, index, array) => array.indexOf(item) === index); // Remove duplicates
+    // Trim whitespace
+    const cleanedArchetype = customArchetype.trim();
 
     // Update the idea document with custom target user archetype
     const updateData: any = {

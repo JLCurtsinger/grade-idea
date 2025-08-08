@@ -54,7 +54,7 @@ interface Idea {
   custom?: {
     go_to_market_channels?: string[];
     monetization_models?: string[];
-    target_user_archetype?: string[];
+    target_user_archetype?: string;
     risk_mitigation_plans?: Array<{
       risk: string;
       mitigation: string;

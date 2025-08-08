@@ -32,8 +32,7 @@ import {
   Users,
   ChevronDown,
   Plus,
-  X,
-  Edit
+  X
 } from "lucide-react";
 import { IdeaChecklist } from "./IdeaChecklist";
 import { calculateDynamicScores } from "@/lib/scoring";
@@ -81,7 +80,7 @@ interface Idea {
   custom?: {
     go_to_market_channels?: string[];
     monetization_models?: string[];
-    target_user_archetype?: string[];
+    target_user_archetype?: string;
     risk_mitigation_plans?: Array<{
       risk: string;
       mitigation: string;
@@ -128,20 +127,17 @@ export function IdeaDetailModal({ idea, isOpen, onClose, onScoreUpdate, googleTr
   const [isSavingMonetization, setIsSavingMonetization] = useState(false);
   
   // Custom target user archetype state
-  const [customArchetype, setCustomArchetype] = useState<string[]>(() => 
-    ensureArray(idea?.custom?.target_user_archetype)
-  );
+  const [customArchetype, setCustomArchetype] = useState<string>(idea?.custom?.target_user_archetype || "");
   const [isEditingArchetype, setIsEditingArchetype] = useState(false);
-  const [editingArchetypeItems, setEditingArchetypeItems] = useState<string[]>([]);
+  const [editingArchetype, setEditingArchetype] = useState("");
   const [isSavingArchetype, setIsSavingArchetype] = useState(false);
   
-  // Risk mitigation plans state
-  const [riskMitigationPlans, setRiskMitigationPlans] = useState<Array<{risk: string; mitigation: string}>>(
-    idea?.custom?.risk_mitigation_plans || []
+  // Custom risk mitigation plans state - with crash prevention
+  const [riskMitigations, setRiskMitigations] = useState<Array<{ risk: string; mitigation: string }>>(
+    Array.isArray(idea?.custom?.risk_mitigation_plans) ? idea.custom.risk_mitigation_plans : []
   );
-  const [editingRisk, setEditingRisk] = useState<string>("");
-  const [editingMitigation, setEditingMitigation] = useState<string>("");
-  const [isAddingMitigation, setIsAddingMitigation] = useState(false);
+  const [editingMitigation, setEditingMitigation] = useState("");
+  const [editingRiskIndex, setEditingRiskIndex] = useState<number | null>(null);
   const [isSavingMitigation, setIsSavingMitigation] = useState(false);
 
   // Update isPublic when idea changes
@@ -166,12 +162,17 @@ export function IdeaDetailModal({ idea, isOpen, onClose, onScoreUpdate, googleTr
 
   // Update custom archetype when idea changes
   useEffect(() => {
-    setCustomArchetype(ensureArray(idea?.custom?.target_user_archetype));
+    setCustomArchetype(idea?.custom?.target_user_archetype || "");
   }, [idea?.custom?.target_user_archetype]);
 
-  // Update risk mitigation plans when idea changes
+  // Update risk mitigations when idea changes - with crash prevention
   useEffect(() => {
-    setRiskMitigationPlans(idea?.custom?.risk_mitigation_plans || []);
+    const customMitigations = idea?.custom?.risk_mitigation_plans;
+    if (Array.isArray(customMitigations)) {
+      setRiskMitigations(customMitigations);
+    } else {
+      setRiskMitigations([]);
+    }
   }, [idea?.custom?.risk_mitigation_plans]);
 
 
@@ -472,55 +473,25 @@ export function IdeaDetailModal({ idea, isOpen, onClose, onScoreUpdate, googleTr
     }
   };
 
-  // Helper function to ensure we always have a safe array
-  const ensureArray = (value: unknown): string[] => {
-    if (Array.isArray(value)) return value;
-    if (typeof value === 'string') return [value];
-    return [];
-  };
-
-  // Helper function to parse text to bullet points
-  const parseTextToBullets = (text: string | any): string[] => {
-    if (typeof text !== 'string') return [];
-    
-    // Split by common bullet point indicators and clean up
-    return text
-      .split(/[•\-\*]/)
-      .map(item => item.trim())
-      .filter(item => item.length > 0);
-  };
-
   // Custom archetype functions
   const handleEditArchetype = () => {
     if (!user || !idea) return;
     
     setIsEditingArchetype(true);
-    
-    // Defensive conversion to array
-    let currentArchetype: string[];
-    const safeCustomArchetype = ensureArray(customArchetype);
-    
-    if (safeCustomArchetype.length > 0) {
-      currentArchetype = safeCustomArchetype;
-    } else if (typeof idea.userArchetype === 'string') {
-      currentArchetype = parseTextToBullets(idea.userArchetype);
-    } else {
-      currentArchetype = [];
-    }
-    
-    setEditingArchetypeItems(currentArchetype);
+    // Set the current archetype (custom or AI-generated) as the starting value
+    const currentArchetype = customArchetype || (typeof idea.userArchetype === 'string' ? idea.userArchetype : '');
+    setEditingArchetype(currentArchetype);
   };
 
   const handleSaveArchetype = async () => {
-    if (!user || !idea) return;
+    if (!user || !idea || !editingArchetype.trim()) return;
     
     setIsSavingArchetype(true);
     try {
-      // Filter out empty items
-      const cleanedArchetype = editingArchetypeItems.filter(item => item.trim().length > 0);
-      setCustomArchetype(cleanedArchetype);
+      const trimmedArchetype = editingArchetype.trim();
+      setCustomArchetype(trimmedArchetype);
       setIsEditingArchetype(false);
-      setEditingArchetypeItems([]);
+      setEditingArchetype("");
       
       // Save to Firestore
       const idToken = await user.getIdToken();
@@ -532,7 +503,7 @@ export function IdeaDetailModal({ idea, isOpen, onClose, onScoreUpdate, googleTr
         body: JSON.stringify({
           ideaId: idea.id,
           idToken,
-          customArchetype: cleanedArchetype
+          customArchetype: trimmedArchetype
         }),
       });
 
@@ -552,69 +523,56 @@ export function IdeaDetailModal({ idea, isOpen, onClose, onScoreUpdate, googleTr
 
   const handleCancelArchetype = () => {
     setIsEditingArchetype(false);
-    setEditingArchetypeItems([]);
+    setEditingArchetype("");
   };
 
-  const handleAddArchetypeItem = () => {
-    setEditingArchetypeItems([...editingArchetypeItems, '']);
+  const handleArchetypeKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      handleSaveArchetype();
+    } else if (e.key === 'Escape') {
+      e.preventDefault();
+      handleCancelArchetype();
+    }
   };
 
-  const handleUpdateArchetypeItem = (index: number, value: string) => {
-    const updatedItems = [...editingArchetypeItems];
-    updatedItems[index] = value;
-    setEditingArchetypeItems(updatedItems);
-  };
-
-  const handleDeleteArchetypeItem = (index: number) => {
-    const updatedItems = editingArchetypeItems.filter((_, i) => i !== index);
-    setEditingArchetypeItems(updatedItems);
-  };
-
-  // Risk mitigation functions
-  const handleAddMitigation = (risk: string) => {
+  // Risk mitigation functions - with crash prevention
+  const handleAddMitigation = (riskIndex: number, riskText: string) => {
     if (!user || !idea) return;
     
-    setEditingRisk(risk);
-    setEditingMitigation("");
-    setIsAddingMitigation(true);
-  };
-
-  const handleEditMitigation = (risk: string, currentMitigation: string) => {
-    if (!user || !idea) return;
-    
-    setEditingRisk(risk);
-    setEditingMitigation(currentMitigation);
-    setIsAddingMitigation(true);
+    setEditingRiskIndex(riskIndex);
+    // Check if mitigation already exists for this risk
+    const existingMitigation = riskMitigations.find(m => m.risk === riskText);
+    setEditingMitigation(existingMitigation?.mitigation || "");
   };
 
   const handleSaveMitigation = async () => {
-    if (!user || !idea || !editingRisk.trim() || !editingMitigation.trim()) return;
+    if (!user || !idea || editingRiskIndex === null || !editingMitigation.trim()) return;
     
     setIsSavingMitigation(true);
     try {
-      const trimmedRisk = editingRisk.trim();
-      const trimmedMitigation = editingMitigation.trim();
+      const riskText = idea.risks?.[editingRiskIndex] || "";
+      const newMitigation = editingMitigation.trim();
       
-      // Find existing mitigation for this risk or create new one
-      const existingIndex = riskMitigationPlans.findIndex(plan => plan.risk === trimmedRisk);
-      let updatedPlans = [...riskMitigationPlans];
+      // Create updated mitigations array
+      const updatedMitigations = [...riskMitigations];
+      const existingIndex = updatedMitigations.findIndex(m => m.risk === riskText);
       
       if (existingIndex >= 0) {
         // Update existing mitigation
-        updatedPlans[existingIndex] = { risk: trimmedRisk, mitigation: trimmedMitigation };
+        updatedMitigations[existingIndex] = { risk: riskText, mitigation: newMitigation };
       } else {
         // Add new mitigation
-        updatedPlans.push({ risk: trimmedRisk, mitigation: trimmedMitigation });
+        updatedMitigations.push({ risk: riskText, mitigation: newMitigation });
       }
       
-      setRiskMitigationPlans(updatedPlans);
-      setIsAddingMitigation(false);
-      setEditingRisk("");
+      setRiskMitigations(updatedMitigations);
+      setEditingRiskIndex(null);
       setEditingMitigation("");
       
       // Save to Firestore
       const idToken = await user.getIdToken();
-      const response = await fetch('/api/update-risk-mitigation', {
+      const response = await fetch('/api/update-custom-risk-mitigations', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -622,35 +580,35 @@ export function IdeaDetailModal({ idea, isOpen, onClose, onScoreUpdate, googleTr
         body: JSON.stringify({
           ideaId: idea.id,
           idToken,
-          riskMitigationPlans: updatedPlans
+          riskMitigations: updatedMitigations
         }),
       });
 
       if (!response.ok) {
         console.error('Failed to save risk mitigation plans');
         // Revert on error
-        setRiskMitigationPlans(riskMitigationPlans);
+        setRiskMitigations(riskMitigations);
       }
     } catch (error) {
       console.error('Error saving risk mitigation plans:', error);
       // Revert on error
-      setRiskMitigationPlans(riskMitigationPlans);
+      setRiskMitigations(riskMitigations);
     } finally {
       setIsSavingMitigation(false);
     }
   };
 
-  const handleDeleteMitigation = async (riskToDelete: string) => {
+  const handleDeleteMitigation = async (riskText: string) => {
     if (!user || !idea) return;
     
     setIsSavingMitigation(true);
     try {
-      const updatedPlans = riskMitigationPlans.filter(plan => plan.risk !== riskToDelete);
-      setRiskMitigationPlans(updatedPlans);
+      const updatedMitigations = riskMitigations.filter(m => m.risk !== riskText);
+      setRiskMitigations(updatedMitigations);
       
       // Save to Firestore
       const idToken = await user.getIdToken();
-      const response = await fetch('/api/update-risk-mitigation', {
+      const response = await fetch('/api/update-custom-risk-mitigations', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -658,32 +616,43 @@ export function IdeaDetailModal({ idea, isOpen, onClose, onScoreUpdate, googleTr
         body: JSON.stringify({
           ideaId: idea.id,
           idToken,
-          riskMitigationPlans: updatedPlans
+          riskMitigations: updatedMitigations
         }),
       });
 
       if (!response.ok) {
         console.error('Failed to save risk mitigation plans');
         // Revert on error
-        setRiskMitigationPlans(riskMitigationPlans);
+        setRiskMitigations(riskMitigations);
       }
     } catch (error) {
       console.error('Error saving risk mitigation plans:', error);
       // Revert on error
-      setRiskMitigationPlans(riskMitigationPlans);
+      setRiskMitigations(riskMitigations);
     } finally {
       setIsSavingMitigation(false);
     }
   };
 
   const handleCancelMitigation = () => {
-    setIsAddingMitigation(false);
-    setEditingRisk("");
+    setEditingRiskIndex(null);
     setEditingMitigation("");
   };
 
-  const getMitigationForRisk = (risk: string) => {
-    return riskMitigationPlans.find(plan => plan.risk === risk)?.mitigation || null;
+  const handleMitigationKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      handleSaveMitigation();
+    } else if (e.key === 'Escape') {
+      e.preventDefault();
+      handleCancelMitigation();
+    }
+  };
+
+  // Helper function to get mitigation for a specific risk
+  const getMitigationForRisk = (riskText: string): string | null => {
+    const mitigation = riskMitigations.find(m => m.risk === riskText);
+    return mitigation?.mitigation || null;
   };
 
   // Get base score from idea data
@@ -992,6 +961,7 @@ export function IdeaDetailModal({ idea, isOpen, onClose, onScoreUpdate, googleTr
                   {idea.risks.map((risk, index) => {
                     const riskText = typeof risk === 'string' ? risk : JSON.stringify(risk);
                     const existingMitigation = getMitigationForRisk(riskText);
+                    const isEditing = editingRiskIndex === index;
                     
                     return (
                       <li key={index} className="space-y-2">
@@ -1002,57 +972,48 @@ export function IdeaDetailModal({ idea, isOpen, onClose, onScoreUpdate, googleTr
                               {riskText}
                             </p>
                             
-                            {/* Existing mitigation display */}
-                            {existingMitigation && !isAddingMitigation && (
-                              <div className="mt-3 p-3 bg-brand/5 border border-brand/20 rounded-lg">
+                            {/* Show existing mitigation if available */}
+                            {existingMitigation && !isEditing && (
+                              <div className="mt-2 p-3 bg-brand/5 border border-brand/20 rounded-lg">
                                 <div className="flex items-start justify-between gap-2">
                                   <div className="flex-1">
-                                    <p className="text-sm font-medium text-brand mb-1">Your Mitigation Plan:</p>
+                                    <p className="text-sm font-medium text-brand mb-1">Mitigation Plan:</p>
                                     <p className="text-sm text-foreground leading-relaxed">{existingMitigation}</p>
                                   </div>
                                   {user && (
                                     <div className="flex gap-1">
-                                      <button
-                                        onClick={() => handleEditMitigation(riskText, existingMitigation)}
+                                      <Button
+                                        onClick={() => handleAddMitigation(index, riskText)}
                                         disabled={isSavingMitigation}
-                                        className="p-1 text-foreground-muted hover:text-brand transition-colors"
-                                        title="Edit mitigation"
+                                        variant="outline"
+                                        size="sm"
+                                        className="btn-secondary"
                                       >
-                                        <Edit className="w-3 h-3" />
-                                      </button>
-                                      <button
+                                        ✏️
+                                      </Button>
+                                      <Button
                                         onClick={() => handleDeleteMitigation(riskText)}
                                         disabled={isSavingMitigation}
-                                        className="p-1 text-foreground-muted hover:text-red-500 transition-colors"
-                                        title="Delete mitigation"
+                                        variant="outline"
+                                        size="sm"
+                                        className="btn-secondary text-red-500 hover:text-red-600"
                                       >
-                                        <X className="w-3 h-3" />
-                                      </button>
+                                        ❌
+                                      </Button>
                                     </div>
                                   )}
                                 </div>
                               </div>
                             )}
                             
-                            {/* Add mitigation button */}
-                            {user && !existingMitigation && !isAddingMitigation && (
-                              <button
-                                onClick={() => handleAddMitigation(riskText)}
-                                disabled={isSavingMitigation}
-                                className="mt-2 text-sm text-brand hover:text-brand/80 transition-colors flex items-center gap-1"
-                              >
-                                <Plus className="w-3 h-3" />
-                                Add Mitigation Plan
-                              </button>
-                            )}
-                            
-                            {/* Mitigation input form */}
-                            {isAddingMitigation && editingRisk === riskText && (
-                              <div className="mt-3 space-y-3">
+                            {/* Add/Edit mitigation input */}
+                            {isEditing && (
+                              <div className="mt-2 space-y-2">
                                 <textarea
                                   value={editingMitigation}
                                   onChange={(e) => setEditingMitigation(e.target.value)}
-                                  placeholder="Describe your mitigation plan (1-3 sentences)..."
+                                  onKeyDown={handleMitigationKeyPress}
+                                  placeholder="Add your mitigation plan for this risk..."
                                   className="w-full min-h-[80px] p-3 border border-border rounded-lg bg-background text-foreground resize-none focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent"
                                   disabled={isSavingMitigation}
                                 />
@@ -1079,6 +1040,21 @@ export function IdeaDetailModal({ idea, isOpen, onClose, onScoreUpdate, googleTr
                                     Cancel
                                   </Button>
                                 </div>
+                              </div>
+                            )}
+                            
+                            {/* Add mitigation button for authenticated users */}
+                            {user && !existingMitigation && !isEditing && (
+                              <div className="mt-2">
+                                <Button
+                                  onClick={() => handleAddMitigation(index, riskText)}
+                                  disabled={isSavingMitigation}
+                                  variant="outline"
+                                  size="sm"
+                                  className="btn-secondary"
+                                >
+                                  + Add Mitigation Plan
+                                </Button>
                               </div>
                             )}
                           </div>
@@ -1114,44 +1090,18 @@ export function IdeaDetailModal({ idea, isOpen, onClose, onScoreUpdate, googleTr
               <Card className="p-4">
                 {isEditingArchetype ? (
                   <div className="space-y-3">
-                    {/* Bullet list editor */}
-                    <div className="space-y-2">
-                      {editingArchetypeItems.map((item, index) => (
-                        <div key={index} className="flex items-center gap-2">
-                          <div className="w-2 h-2 bg-brand rounded-full flex-shrink-0"></div>
-                          <Input
-                            value={item}
-                            onChange={(e) => handleUpdateArchetypeItem(index, e.target.value)}
-                            placeholder="Enter archetype detail..."
-                            className="flex-1"
-                            disabled={isSavingArchetype}
-                          />
-                          <button
-                            onClick={() => handleDeleteArchetypeItem(index)}
-                            disabled={isSavingArchetype}
-                            className="p-1 text-foreground-muted hover:text-red-500 transition-colors"
-                            title="Delete item"
-                          >
-                            <X className="w-4 h-4" />
-                          </button>
-                        </div>
-                      ))}
-                      
-                      {/* Add new item button */}
-                      <button
-                        onClick={handleAddArchetypeItem}
-                        disabled={isSavingArchetype}
-                        className="flex items-center gap-2 text-sm text-brand hover:text-brand/80 transition-colors"
-                      >
-                        <Plus className="w-4 h-4" />
-                        Add Item
-                      </button>
-                    </div>
-                    
+                    <textarea
+                      value={editingArchetype}
+                      onChange={(e) => setEditingArchetype(e.target.value)}
+                      onKeyDown={handleArchetypeKeyPress}
+                      placeholder="Describe your target user archetype..."
+                      className="w-full min-h-[100px] p-3 border border-border rounded-lg bg-background text-foreground resize-none focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent"
+                      disabled={isSavingArchetype}
+                    />
                     <div className="flex gap-2">
                       <Button
                         onClick={handleSaveArchetype}
-                        disabled={editingArchetypeItems.length === 0 || isSavingArchetype}
+                        disabled={!editingArchetype.trim() || isSavingArchetype}
                         size="sm"
                         className="btn-primary"
                       >
@@ -1174,66 +1124,39 @@ export function IdeaDetailModal({ idea, isOpen, onClose, onScoreUpdate, googleTr
                   </div>
                 ) : (
                   <div>
-                    {(() => {
-                      const safeCustomArchetype = ensureArray(customArchetype);
-                      
-                      if (safeCustomArchetype.length > 0) {
-                        return (
+                    {customArchetype ? (
+                      <div>
+                        <p className="text-foreground leading-relaxed">{customArchetype}</p>
+                        {user && (
+                          <p className="text-xs text-foreground-muted mt-2">
+                            Custom version - click Edit to modify
+                          </p>
+                        )}
+                      </div>
+                    ) : typeof idea.userArchetype === 'string' ? (
+                      <p className="text-foreground leading-relaxed">{idea.userArchetype}</p>
+                    ) : (
+                      <div className="space-y-3">
+                        {idea.userArchetype.demographics && (
                           <div>
-                            <ul className="space-y-2">
-                              {safeCustomArchetype.map((item, index) => (
-                                <li key={index} className="flex items-start gap-3">
-                                  <div className="w-2 h-2 bg-brand rounded-full mt-2 flex-shrink-0"></div>
-                                  <p className="text-foreground leading-relaxed">{item}</p>
-                                </li>
-                              ))}
-                            </ul>
-                            {user && (
-                              <p className="text-xs text-foreground-muted mt-2">
-                                Custom version - click Edit to modify
-                              </p>
-                            )}
+                            <h4 className="font-medium text-foreground mb-1">Demographics</h4>
+                            <p className="text-foreground-muted leading-relaxed">{idea.userArchetype.demographics}</p>
                           </div>
-                        );
-                      } else if (typeof idea.userArchetype === 'string') {
-                        const parsedBullets = parseTextToBullets(idea.userArchetype);
-                        return (
+                        )}
+                        {idea.userArchetype.behavior && (
                           <div>
-                            <ul className="space-y-2">
-                              {parsedBullets.map((item, index) => (
-                                <li key={index} className="flex items-start gap-3">
-                                  <div className="w-2 h-2 bg-orange-500 rounded-full mt-2 flex-shrink-0"></div>
-                                  <p className="text-foreground leading-relaxed">{item}</p>
-                                </li>
-                              ))}
-                            </ul>
+                            <h4 className="font-medium text-foreground mb-1">Behavior</h4>
+                            <p className="text-foreground-muted leading-relaxed">{idea.userArchetype.behavior}</p>
                           </div>
-                        );
-                      } else {
-                        return (
-                          <div className="space-y-3">
-                            {idea.userArchetype.demographics && (
-                              <div>
-                                <h4 className="font-medium text-foreground mb-1">Demographics</h4>
-                                <p className="text-foreground-muted leading-relaxed">{idea.userArchetype.demographics}</p>
-                              </div>
-                            )}
-                            {idea.userArchetype.behavior && (
-                              <div>
-                                <h4 className="font-medium text-foreground mb-1">Behavior</h4>
-                                <p className="text-foreground-muted leading-relaxed">{idea.userArchetype.behavior}</p>
-                              </div>
-                            )}
-                            {idea.userArchetype.pain_points && (
-                              <div>
-                                <h4 className="font-medium text-foreground mb-1">Pain Points</h4>
-                                <p className="text-foreground-muted leading-relaxed">{idea.userArchetype.pain_points}</p>
-                              </div>
-                            )}
+                        )}
+                        {idea.userArchetype.pain_points && (
+                          <div>
+                            <h4 className="font-medium text-foreground mb-1">Pain Points</h4>
+                            <p className="text-foreground-muted leading-relaxed">{idea.userArchetype.pain_points}</p>
                           </div>
-                        );
-                      }
-                    })()}
+                        )}
+                      </div>
+                    )}
                   </div>
                 )}
               </Card>
