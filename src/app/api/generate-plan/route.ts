@@ -52,7 +52,7 @@ Return a step-by-step plan in paragraph or list format that is practical and act
       { role: 'system', content: 'You are a startup advisor helping founders execute on their ideas. Provide practical, actionable advice.' },
       { role: 'user', content: prompt }
     ],
-    temperature: 0.7,
+    temperature: 0.4,
     max_tokens: 500,
   };
 
