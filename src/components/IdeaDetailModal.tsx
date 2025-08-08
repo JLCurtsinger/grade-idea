@@ -82,6 +82,8 @@ interface Idea {
     monetization_models?: string[];
     target_user_archetype?: string;
     target_user_archetypes?: string[];
+    key_insights?: string[];
+    notes?: Record<string, string>;
     risk_mitigation_plans?: Array<{
       risk: string;
       mitigation: string;
@@ -150,6 +152,24 @@ export function IdeaDetailModal({ idea, isOpen, onClose, onScoreUpdate, googleTr
   const [editingArchetypeText, setEditingArchetypeText] = useState("");
   const [isAddingArchetype, setIsAddingArchetype] = useState(false);
   const [isSavingArchetypes, setIsSavingArchetypes] = useState(false);
+  
+  // Custom key insights state - with crash prevention
+  const [customKeyInsights, setCustomKeyInsights] = useState<string[]>(
+    Array.isArray(idea?.custom?.key_insights) ? idea.custom.key_insights : []
+  );
+  const [newKeyInsight, setNewKeyInsight] = useState("");
+  const [editingKeyInsightIndex, setEditingKeyInsightIndex] = useState<number | null>(null);
+  const [editingKeyInsightText, setEditingKeyInsightText] = useState("");
+  const [isAddingKeyInsight, setIsAddingKeyInsight] = useState(false);
+  const [isSavingKeyInsights, setIsSavingKeyInsights] = useState(false);
+  
+  // Custom notes state - with crash prevention
+  const [customNotes, setCustomNotes] = useState<Record<string, string>>(
+    typeof idea?.custom?.notes === 'object' && idea.custom.notes !== null ? idea.custom.notes : {}
+  );
+  const [editingNoteId, setEditingNoteId] = useState<string | null>(null);
+  const [editingNoteText, setEditingNoteText] = useState("");
+  const [isSavingNotes, setIsSavingNotes] = useState(false);
 
   // Update isPublic when idea changes
   useEffect(() => {
@@ -195,6 +215,26 @@ export function IdeaDetailModal({ idea, isOpen, onClose, onScoreUpdate, googleTr
       setCustomArchetypes([]);
     }
   }, [idea?.custom?.target_user_archetypes]);
+
+  // Update custom key insights when idea changes - with crash prevention
+  useEffect(() => {
+    const customKeyInsightsData = idea?.custom?.key_insights;
+    if (Array.isArray(customKeyInsightsData)) {
+      setCustomKeyInsights(customKeyInsightsData);
+    } else {
+      setCustomKeyInsights([]);
+    }
+  }, [idea?.custom?.key_insights]);
+
+  // Update custom notes when idea changes - with crash prevention
+  useEffect(() => {
+    const customNotesData = idea?.custom?.notes;
+    if (typeof customNotesData === 'object' && customNotesData !== null) {
+      setCustomNotes(customNotesData);
+    } else {
+      setCustomNotes({});
+    }
+  }, [idea?.custom?.notes]);
 
 
 
@@ -849,6 +889,290 @@ export function IdeaDetailModal({ idea, isOpen, onClose, onScoreUpdate, googleTr
     }
   };
 
+  // Custom key insights functions - with crash prevention
+  const handleAddKeyInsight = () => {
+    if (!user || !idea) return;
+    
+    setIsAddingKeyInsight(true);
+    setNewKeyInsight("");
+  };
+
+  const handleSaveKeyInsight = async () => {
+    if (!user || !idea || !newKeyInsight.trim()) return;
+    
+    setIsSavingKeyInsights(true);
+    try {
+      const trimmedInsight = newKeyInsight.trim();
+      
+      // Check for duplicates
+      if (customKeyInsights.includes(trimmedInsight)) {
+        setNewKeyInsight("");
+        setIsAddingKeyInsight(false);
+        setIsSavingKeyInsights(false);
+        return;
+      }
+      
+      const updatedKeyInsights = [...customKeyInsights, trimmedInsight];
+      setCustomKeyInsights(updatedKeyInsights);
+      setNewKeyInsight("");
+      setIsAddingKeyInsight(false);
+      
+      // Save to Firestore
+      const idToken = await user.getIdToken();
+      const response = await fetch('/api/update-custom-key-insights', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          ideaId: idea.id,
+          idToken,
+          customKeyInsights: updatedKeyInsights
+        }),
+      });
+
+      if (!response.ok) {
+        console.error('Failed to save custom key insights');
+        // Revert on error
+        setCustomKeyInsights(customKeyInsights);
+      }
+    } catch (error) {
+      console.error('Error saving custom key insights:', error);
+      // Revert on error
+      setCustomKeyInsights(customKeyInsights);
+    } finally {
+      setIsSavingKeyInsights(false);
+    }
+  };
+
+  const handleEditKeyInsight = (index: number) => {
+    if (!user || !idea) return;
+    
+    setEditingKeyInsightIndex(index);
+    setEditingKeyInsightText(customKeyInsights[index] || "");
+  };
+
+  const handleSaveEditedKeyInsight = async () => {
+    if (!user || !idea || editingKeyInsightIndex === null || !editingKeyInsightText.trim()) return;
+    
+    setIsSavingKeyInsights(true);
+    try {
+      const trimmedInsight = editingKeyInsightText.trim();
+      
+      // Check for duplicates (excluding current index)
+      const isDuplicate = customKeyInsights.some((insight, idx) => 
+        idx !== editingKeyInsightIndex && insight === trimmedInsight
+      );
+      
+      if (isDuplicate) {
+        setEditingKeyInsightIndex(null);
+        setEditingKeyInsightText("");
+        setIsSavingKeyInsights(false);
+        return;
+      }
+      
+      const updatedKeyInsights = [...customKeyInsights];
+      updatedKeyInsights[editingKeyInsightIndex] = trimmedInsight;
+      setCustomKeyInsights(updatedKeyInsights);
+      setEditingKeyInsightIndex(null);
+      setEditingKeyInsightText("");
+      
+      // Save to Firestore
+      const idToken = await user.getIdToken();
+      const response = await fetch('/api/update-custom-key-insights', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          ideaId: idea.id,
+          idToken,
+          customKeyInsights: updatedKeyInsights
+        }),
+      });
+
+      if (!response.ok) {
+        console.error('Failed to save custom key insights');
+        // Revert on error
+        setCustomKeyInsights(customKeyInsights);
+      }
+    } catch (error) {
+      console.error('Error saving custom key insights:', error);
+      // Revert on error
+      setCustomKeyInsights(customKeyInsights);
+    } finally {
+      setIsSavingKeyInsights(false);
+    }
+  };
+
+  const handleDeleteKeyInsight = async (index: number) => {
+    if (!user || !idea) return;
+    
+    setIsSavingKeyInsights(true);
+    try {
+      const updatedKeyInsights = customKeyInsights.filter((_, idx) => idx !== index);
+      setCustomKeyInsights(updatedKeyInsights);
+      
+      // Save to Firestore
+      const idToken = await user.getIdToken();
+      const response = await fetch('/api/update-custom-key-insights', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          ideaId: idea.id,
+          idToken,
+          customKeyInsights: updatedKeyInsights
+        }),
+      });
+
+      if (!response.ok) {
+        console.error('Failed to save custom key insights');
+        // Revert on error
+        setCustomKeyInsights(customKeyInsights);
+      }
+    } catch (error) {
+      console.error('Error saving custom key insights:', error);
+      // Revert on error
+      setCustomKeyInsights(customKeyInsights);
+    } finally {
+      setIsSavingKeyInsights(false);
+    }
+  };
+
+  const handleCancelKeyInsight = () => {
+    setIsAddingKeyInsight(false);
+    setNewKeyInsight("");
+    setEditingKeyInsightIndex(null);
+    setEditingKeyInsightText("");
+  };
+
+  const handleKeyInsightKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      if (editingKeyInsightIndex !== null) {
+        handleSaveEditedKeyInsight();
+      } else {
+        handleSaveKeyInsight();
+      }
+    } else if (e.key === 'Escape') {
+      e.preventDefault();
+      handleCancelKeyInsight();
+    }
+  };
+
+  // Custom notes functions - with crash prevention
+  const handleAddNote = (itemId: string) => {
+    if (!user || !idea) return;
+    
+    setEditingNoteId(itemId);
+    setEditingNoteText(customNotes[itemId] || "");
+  };
+
+  const handleSaveNote = async () => {
+    if (!user || !idea || !editingNoteId) return;
+    
+    setIsSavingNotes(true);
+    try {
+      const trimmedNote = editingNoteText.trim();
+      const updatedNotes = { ...customNotes };
+      
+      if (trimmedNote) {
+        updatedNotes[editingNoteId] = trimmedNote;
+      } else {
+        delete updatedNotes[editingNoteId];
+      }
+      
+      setCustomNotes(updatedNotes);
+      setEditingNoteId(null);
+      setEditingNoteText("");
+      
+      // Save to Firestore
+      const idToken = await user.getIdToken();
+      const response = await fetch('/api/update-custom-notes', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          ideaId: idea.id,
+          idToken,
+          customNotes: updatedNotes
+        }),
+      });
+
+      if (!response.ok) {
+        console.error('Failed to save custom notes');
+        // Revert on error
+        setCustomNotes(customNotes);
+      }
+    } catch (error) {
+      console.error('Error saving custom notes:', error);
+      // Revert on error
+      setCustomNotes(customNotes);
+    } finally {
+      setIsSavingNotes(false);
+    }
+  };
+
+  const handleDeleteNote = async (itemId: string) => {
+    if (!user || !idea) return;
+    
+    setIsSavingNotes(true);
+    try {
+      const updatedNotes = { ...customNotes };
+      delete updatedNotes[itemId];
+      setCustomNotes(updatedNotes);
+      
+      // Save to Firestore
+      const idToken = await user.getIdToken();
+      const response = await fetch('/api/update-custom-notes', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          ideaId: idea.id,
+          idToken,
+          customNotes: updatedNotes
+        }),
+      });
+
+      if (!response.ok) {
+        console.error('Failed to save custom notes');
+        // Revert on error
+        setCustomNotes(customNotes);
+      }
+    } catch (error) {
+      console.error('Error saving custom notes:', error);
+      // Revert on error
+      setCustomNotes(customNotes);
+    } finally {
+      setIsSavingNotes(false);
+    }
+  };
+
+  const handleCancelNote = () => {
+    setEditingNoteId(null);
+    setEditingNoteText("");
+  };
+
+  const handleNoteKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      handleSaveNote();
+    } else if (e.key === 'Escape') {
+      e.preventDefault();
+      handleCancelNote();
+    }
+  };
+
+  // Helper function to get note for a specific checklist item
+  const getNoteForItem = (itemId: string): string | null => {
+    return customNotes[itemId] || null;
+  };
+
   // Get base score from idea data
   const baseScore = (idea as any)?.baseScore || idea.analysis.overall_score;
 
@@ -1132,14 +1456,154 @@ export function IdeaDetailModal({ idea, isOpen, onClose, onScoreUpdate, googleTr
               <h3 className="text-lg font-semibold text-foreground">Key Insights</h3>
             </div>
             <Card className="p-4">
-              <ul className="space-y-3">
-                {idea.analysis.insights.map((insight, index) => (
-                  <li key={index} className="flex items-start gap-3">
-                    <div className="w-2 h-2 bg-brand rounded-full mt-2 flex-shrink-0"></div>
-                    <p className="text-foreground leading-relaxed">{insight}</p>
-                  </li>
-                ))}
-              </ul>
+              <div className="space-y-4">
+                {/* AI-generated insights (always shown) */}
+                {idea.analysis.insights.length > 0 && (
+                  <div>
+                    <p className="text-sm font-medium text-foreground-muted mb-2">AI Insights:</p>
+                    <ul className="space-y-3">
+                      {idea.analysis.insights.map((insight, index) => (
+                        <li key={index} className="flex items-start gap-3">
+                          <div className="w-2 h-2 bg-brand rounded-full mt-2 flex-shrink-0"></div>
+                          <p className="text-foreground leading-relaxed">{insight}</p>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+                
+                {/* Custom insights */}
+                {customKeyInsights.length > 0 && (
+                  <div>
+                    <p className="text-sm font-medium text-foreground mb-2">Your Insights:</p>
+                    <div className="space-y-2">
+                      {customKeyInsights.map((insight, index) => {
+                        const isEditing = editingKeyInsightIndex === index;
+                        
+                        return (
+                          <div key={index} className="p-3 bg-brand/5 border border-brand/20 rounded-lg">
+                            {isEditing ? (
+                              <div className="space-y-2">
+                                <Input
+                                  value={editingKeyInsightText}
+                                  onChange={(e) => setEditingKeyInsightText(e.target.value)}
+                                  onKeyDown={handleKeyInsightKeyPress}
+                                  placeholder="Enter your insight..."
+                                  className="w-full"
+                                  disabled={isSavingKeyInsights}
+                                />
+                                <div className="flex gap-2">
+                                  <Button
+                                    onClick={handleSaveEditedKeyInsight}
+                                    disabled={!editingKeyInsightText.trim() || isSavingKeyInsights}
+                                    size="sm"
+                                    className="btn-primary"
+                                  >
+                                    {isSavingKeyInsights ? (
+                                      <div className="w-4 h-4 border-2 border-brand-foreground/30 border-t-brand-foreground rounded-full animate-spin" />
+                                    ) : (
+                                      'Save'
+                                    )}
+                                  </Button>
+                                  <Button
+                                    onClick={handleCancelKeyInsight}
+                                    disabled={isSavingKeyInsights}
+                                    variant="outline"
+                                    size="sm"
+                                    className="btn-secondary"
+                                  >
+                                    Cancel
+                                  </Button>
+                                </div>
+                              </div>
+                            ) : (
+                              <div className="flex items-start justify-between gap-2">
+                                <div className="flex-1">
+                                  <p className="text-sm text-foreground leading-relaxed">{insight}</p>
+                                </div>
+                                {user && (
+                                  <div className="flex gap-1">
+                                    <Button
+                                      onClick={() => handleEditKeyInsight(index)}
+                                      disabled={isSavingKeyInsights}
+                                      variant="outline"
+                                      size="sm"
+                                      className="btn-secondary"
+                                    >
+                                      ✏️
+                                    </Button>
+                                    <Button
+                                      onClick={() => handleDeleteKeyInsight(index)}
+                                      disabled={isSavingKeyInsights}
+                                      variant="outline"
+                                      size="sm"
+                                      className="btn-secondary text-red-500 hover:text-red-600"
+                                    >
+                                      ❌
+                                    </Button>
+                                  </div>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+                
+                {/* Add new insight input */}
+                {isAddingKeyInsight && (
+                  <div className="space-y-2">
+                    <Input
+                      value={newKeyInsight}
+                      onChange={(e) => setNewKeyInsight(e.target.value)}
+                      onKeyDown={handleKeyInsightKeyPress}
+                      placeholder="Enter a new insight..."
+                      className="w-full"
+                      disabled={isSavingKeyInsights}
+                    />
+                    <div className="flex gap-2">
+                      <Button
+                        onClick={handleSaveKeyInsight}
+                        disabled={!newKeyInsight.trim() || isSavingKeyInsights}
+                        size="sm"
+                        className="btn-primary"
+                      >
+                        {isSavingKeyInsights ? (
+                          <div className="w-4 h-4 border-2 border-brand-foreground/30 border-t-brand-foreground rounded-full animate-spin" />
+                        ) : (
+                          'Save'
+                        )}
+                      </Button>
+                      <Button
+                        onClick={handleCancelKeyInsight}
+                        disabled={isSavingKeyInsights}
+                        variant="outline"
+                        size="sm"
+                        className="btn-secondary"
+                      >
+                        Cancel
+                      </Button>
+                    </div>
+                  </div>
+                )}
+                
+                {/* Add insight button for authenticated users */}
+                {user && !isAddingKeyInsight && (
+                  <div>
+                    <Button
+                      onClick={handleAddKeyInsight}
+                      disabled={isSavingKeyInsights}
+                      variant="outline"
+                      size="sm"
+                      className="btn-secondary"
+                    >
+                      + Add Insight
+                    </Button>
+                  </div>
+                )}
+              </div>
             </Card>
           </div>
 
@@ -1624,7 +2088,24 @@ export function IdeaDetailModal({ idea, isOpen, onClose, onScoreUpdate, googleTr
 
           {/* Action Items Checklist */}
           <div className="space-y-3">
-            <IdeaChecklist ideaId={idea.id} ideaText={idea.ideaText} baseScore={baseScore} onScoreUpdate={handleScoreUpdate} />
+            <IdeaChecklist 
+              ideaId={idea.id} 
+              ideaText={idea.ideaText} 
+              baseScore={baseScore} 
+              onScoreUpdate={handleScoreUpdate}
+              // Notes functionality
+              customNotes={customNotes}
+              onAddNote={handleAddNote}
+              onSaveNote={handleSaveNote}
+              onDeleteNote={handleDeleteNote}
+              onCancelNote={handleCancelNote}
+              editingNoteId={editingNoteId}
+              editingNoteText={editingNoteText}
+              onEditingNoteTextChange={setEditingNoteText}
+              onNoteKeyPress={handleNoteKeyPress}
+              isSavingNotes={isSavingNotes}
+              getNoteForItem={getNoteForItem}
+            />
           </div>
         </div>
       </DialogContent>

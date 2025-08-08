@@ -56,6 +56,8 @@ interface Idea {
     monetization_models?: string[];
     target_user_archetype?: string;
     target_user_archetypes?: string[];
+    key_insights?: string[];
+    notes?: Record<string, string>;
     risk_mitigation_plans?: Array<{
       risk: string;
       mitigation: string;

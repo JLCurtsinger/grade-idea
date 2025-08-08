@@ -40,9 +40,37 @@ interface IdeaChecklistProps {
     overall_score: number;
     letter_grade: string;
   }) => void;
+  // Notes functionality props
+  customNotes?: Record<string, string>;
+  onAddNote?: (itemId: string) => void;
+  onSaveNote?: () => void;
+  onDeleteNote?: (itemId: string) => void;
+  onCancelNote?: () => void;
+  editingNoteId?: string | null;
+  editingNoteText?: string;
+  onEditingNoteTextChange?: (text: string) => void;
+  onNoteKeyPress?: (e: React.KeyboardEvent) => void;
+  isSavingNotes?: boolean;
+  getNoteForItem?: (itemId: string) => string | null;
 }
 
-export function IdeaChecklist({ ideaId, ideaText, baseScore, onScoreUpdate }: IdeaChecklistProps) {
+export function IdeaChecklist({ 
+  ideaId, 
+  ideaText, 
+  baseScore, 
+  onScoreUpdate,
+  customNotes = {},
+  onAddNote,
+  onSaveNote,
+  onDeleteNote,
+  onCancelNote,
+  editingNoteId,
+  editingNoteText = "",
+  onEditingNoteTextChange,
+  onNoteKeyPress,
+  isSavingNotes = false,
+  getNoteForItem
+}: IdeaChecklistProps) {
   const { 
     checklistData, 
     loading, 
@@ -475,6 +503,87 @@ export function IdeaChecklist({ ideaId, ideaText, baseScore, onScoreUpdate }: Id
                     </button>
                   );
                   })()}
+                  
+                  {/* Notes Section */}
+                  {onAddNote && (
+                    <div className="mt-3 space-y-2">
+                      {/* Show existing note if available */}
+                      {getNoteForItem && getNoteForItem(suggestion.id) && editingNoteId !== suggestion.id && (
+                        <div className="p-3 bg-brand/5 border border-brand/20 rounded-lg">
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="flex-1">
+                              <p className="text-xs font-medium text-brand mb-1">Note:</p>
+                              <p className="text-xs text-foreground leading-relaxed">{getNoteForItem(suggestion.id)}</p>
+                            </div>
+                            <div className="flex gap-1">
+                              <button
+                                onClick={() => onAddNote(suggestion.id)}
+                                disabled={isSavingNotes}
+                                className="text-xs text-brand hover:text-brand/80 transition-colors"
+                              >
+                                ✏️
+                              </button>
+                              <button
+                                onClick={() => onDeleteNote?.(suggestion.id)}
+                                disabled={isSavingNotes}
+                                className="text-xs text-red-500 hover:text-red-600 transition-colors"
+                              >
+                                ❌
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                      
+                      {/* Add/Edit note input */}
+                      {editingNoteId === suggestion.id && (
+                        <div className="space-y-2">
+                          <textarea
+                            value={editingNoteText}
+                            onChange={(e) => onEditingNoteTextChange?.(e.target.value)}
+                            onKeyDown={onNoteKeyPress}
+                            placeholder="Add a note for this action item..."
+                            className="w-full min-h-[60px] p-2 text-xs border border-border rounded-lg bg-background text-foreground resize-none focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent"
+                            disabled={isSavingNotes}
+                          />
+                          <div className="flex gap-2">
+                            <Button
+                              onClick={onSaveNote}
+                              disabled={!editingNoteText.trim() || isSavingNotes}
+                              size="sm"
+                              className="btn-primary text-xs"
+                            >
+                              {isSavingNotes ? (
+                                <div className="w-3 h-3 border-2 border-brand-foreground/30 border-t-brand-foreground rounded-full animate-spin" />
+                              ) : (
+                                'Save'
+                              )}
+                            </Button>
+                            <Button
+                              onClick={onCancelNote}
+                              disabled={isSavingNotes}
+                              variant="outline"
+                              size="sm"
+                              className="btn-secondary text-xs"
+                            >
+                              Cancel
+                            </Button>
+                          </div>
+                        </div>
+                      )}
+                      
+                      {/* Add note button - only show if no note exists and not editing */}
+                      {!getNoteForItem?.(suggestion.id) && editingNoteId !== suggestion.id && (
+                        <button
+                          onClick={() => onAddNote(suggestion.id)}
+                          disabled={isSavingNotes}
+                          className="text-xs text-brand hover:text-brand/80 transition-colors flex items-center gap-1 group"
+                        >
+                          📝 Add Note
+                        </button>
+                      )}
+                    </div>
+                  )}
                 </div>
                 {suggestion.completed && (
                   <CheckCircle className="w-4 h-4 text-green-600 flex-shrink-0" />
