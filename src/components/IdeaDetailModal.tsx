@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
+import { useTokenBalance } from "@/hooks/use-token-balance";
+import { useToast } from "@/hooks/use-toast";
 import { 
   Dialog, 
   DialogContent, 
@@ -32,10 +34,12 @@ import {
   Users,
   ChevronDown,
   Plus,
-  X
+  X,
+  RefreshCw
 } from "lucide-react";
 import { IdeaChecklist } from "./IdeaChecklist";
 import { calculateDynamicScores } from "@/lib/scoring";
+import { RegradeConfirmationModal } from "./RegradeConfirmationModal";
 
 interface Idea {
   id: string;
@@ -170,6 +174,12 @@ export function IdeaDetailModal({ idea, isOpen, onClose, onScoreUpdate, googleTr
   const [editingNoteId, setEditingNoteId] = useState<string | null>(null);
   const [editingNoteText, setEditingNoteText] = useState("");
   const [isSavingNotes, setIsSavingNotes] = useState(false);
+
+  // Regrade functionality state
+  const { tokenBalance } = useTokenBalance();
+  const { toast } = useToast();
+  const [isRegradeModalOpen, setIsRegradeModalOpen] = useState(false);
+  const [isRegrading, setIsRegrading] = useState(false);
 
   // Update isPublic when idea changes
   useEffect(() => {
@@ -1173,6 +1183,101 @@ export function IdeaDetailModal({ idea, isOpen, onClose, onScoreUpdate, googleTr
     return customNotes[itemId] || null;
   };
 
+  // Regrade functionality
+  const handleRegradeClick = () => {
+    if (!user) return;
+    setIsRegradeModalOpen(true);
+  };
+
+  const handleRegradeConfirm = async (userContextNote?: string) => {
+    if (!user || !idea) return;
+    
+    setIsRegrading(true);
+    try {
+      const idToken = await user.getIdToken();
+      
+      // Prepare checklist data - we'll use a simplified structure for the regrade API
+      const checklistData = [
+        // Market potential items
+        { category: "marketPotential", item: "Conduct customer interviews", completed: false },
+        { category: "marketPotential", item: "Analyze competitor pricing", completed: false },
+        { category: "marketPotential", item: "Define unique value proposition", completed: false },
+        // Monetization items
+        { category: "monetizationClarity", item: "Test pricing with customers", completed: false },
+        { category: "monetizationClarity", item: "Research similar pricing models", completed: false },
+        { category: "monetizationClarity", item: "Create revenue projection", completed: false },
+        // Execution items
+        { category: "executionDifficulty", item: "Build MVP", completed: false },
+        { category: "executionDifficulty", item: "Set up analytics", completed: false },
+        { category: "executionDifficulty", item: "Create technical architecture", completed: false },
+      ];
+
+      // Prepare custom fields
+      const customFields = {
+        target_user_archetype: customArchetypes,
+        risk_mitigation_plans: riskMitigations.map(m => `${m.risk}: ${m.mitigation}`),
+        key_insights: customKeyInsights,
+        checklist_notes: customNotes,
+      };
+
+      const response = await fetch('/api/regrade', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          ideaId: idea.id,
+          ideaText: idea.ideaText,
+          customFields,
+          checklist: checklistData,
+          userContextNote,
+          idToken,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to regrade idea');
+      }
+
+      if (data.success) {
+        // Update the idea with new analysis
+        const updatedIdea = {
+          ...idea,
+          analysis: data.analysis,
+          summary_analysis: data.summary_analysis,
+          ai_action_items: data.ai_action_items,
+          ai_key_insights: data.ai_key_insights,
+          ai_key_risks: data.ai_key_risks,
+          score_explanations: data.score_explanations,
+        };
+
+        // Force a refresh of the modal content by triggering a re-render
+        // This is a simple approach - in a real app you might want to update the parent state
+        window.location.reload();
+
+        toast({
+          title: "Idea successfully regraded",
+          description: "Your idea has been re-evaluated with the new context.",
+        });
+
+        setIsRegradeModalOpen(false);
+      } else {
+        throw new Error(data.error || 'Regrade operation failed');
+      }
+    } catch (error) {
+      console.error('Error regrading idea:', error);
+      toast({
+        title: "Regrade failed",
+        description: error instanceof Error ? error.message : "Failed to regrade idea. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsRegrading(false);
+    }
+  };
+
   // Get base score from idea data
   const baseScore = (idea as any)?.baseScore || idea.analysis.overall_score;
 
@@ -1180,12 +1285,30 @@ export function IdeaDetailModal({ idea, isOpen, onClose, onScoreUpdate, googleTr
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="text-xl font-bold text-foreground">
-            Idea Analysis Details
-          </DialogTitle>
-          <DialogDescription className="text-foreground-muted">
-            Detailed breakdown of your idea evaluation
-          </DialogDescription>
+          <div className="flex items-center justify-between">
+            <div>
+              <DialogTitle className="text-xl font-bold text-foreground">
+                Idea Analysis Details
+              </DialogTitle>
+              <DialogDescription className="text-foreground-muted">
+                Detailed breakdown of your idea evaluation
+              </DialogDescription>
+            </div>
+            {user && (
+              <Button
+                onClick={handleRegradeClick}
+                className="btn-primary"
+                size="sm"
+              >
+                <RefreshCw className="w-4 h-4 mr-2" />
+                Regrade Idea
+                <div className="ml-2 flex items-center gap-1">
+                  <Coins className="w-3 h-3" />
+                  <span className="text-xs">1</span>
+                </div>
+              </Button>
+            )}
+          </div>
         </DialogHeader>
 
         <div className="space-y-6">
@@ -2109,6 +2232,15 @@ export function IdeaDetailModal({ idea, isOpen, onClose, onScoreUpdate, googleTr
           </div>
         </div>
       </DialogContent>
+
+      {/* Regrade Confirmation Modal */}
+      <RegradeConfirmationModal
+        isOpen={isRegradeModalOpen}
+        onClose={() => setIsRegradeModalOpen(false)}
+        onConfirm={handleRegradeConfirm}
+        tokenBalance={tokenBalance}
+        isLoading={isRegrading}
+      />
     </Dialog>
   );
 } 
