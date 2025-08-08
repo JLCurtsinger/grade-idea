@@ -17,7 +17,7 @@ export async function POST(request: NextRequest) {
   
   let ideaId: string | undefined;
   let idToken: string | undefined;
-  let customArchetype: string[] | undefined;
+      let customArchetype: string[] | undefined;
   let uid: string | undefined;
   
   try {
@@ -62,8 +62,11 @@ export async function POST(request: NextRequest) {
       }, { status: 404 });
     }
     
-    // Remove duplicates and trim whitespace, filter out empty strings
-    const cleanedArchetype = [...new Set(customArchetype.map(item => item.trim()).filter(item => item.length > 0))];
+    // Clean and validate the array
+    const cleanedArchetype = customArchetype
+      .map(item => item.trim())
+      .filter(item => item.length > 0)
+      .filter((item, index, array) => array.indexOf(item) === index); // Remove duplicates
 
     // Update the idea document with custom target user archetype
     const updateData: any = {

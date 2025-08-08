@@ -130,7 +130,7 @@ export function IdeaDetailModal({ idea, isOpen, onClose, onScoreUpdate, googleTr
   // Custom target user archetype state
   const [customArchetype, setCustomArchetype] = useState<string[]>(idea?.custom?.target_user_archetype || []);
   const [isEditingArchetype, setIsEditingArchetype] = useState(false);
-  const [editingArchetype, setEditingArchetype] = useState<string[]>([]);
+  const [editingArchetypeItems, setEditingArchetypeItems] = useState<string[]>([]);
   const [isSavingArchetype, setIsSavingArchetype] = useState(false);
   
   // Risk mitigation plans state
@@ -470,40 +470,46 @@ export function IdeaDetailModal({ idea, isOpen, onClose, onScoreUpdate, googleTr
     }
   };
 
+  // Helper function to parse text to bullet points
+  const parseTextToBullets = (text: string | any): string[] => {
+    if (typeof text !== 'string') return [];
+    
+    // Split by common bullet point indicators and clean up
+    return text
+      .split(/[•\-\*]/)
+      .map(item => item.trim())
+      .filter(item => item.length > 0);
+  };
+
   // Custom archetype functions
   const handleEditArchetype = () => {
     if (!user || !idea) return;
     
     setIsEditingArchetype(true);
-    // Set the current archetype (custom or AI-generated) as the starting value
+    
+    // Defensive conversion to array
     let currentArchetype: string[];
-    if (customArchetype && customArchetype.length > 0) {
+    if (Array.isArray(customArchetype) && customArchetype.length > 0) {
       currentArchetype = customArchetype;
     } else if (typeof idea.userArchetype === 'string') {
-      // Convert string to array for editing
-      currentArchetype = [idea.userArchetype];
-    } else if (idea.userArchetype && typeof idea.userArchetype === 'object') {
-      // Convert object to array of strings
-      const archetypeObj = idea.userArchetype as any;
-      currentArchetype = [];
-      if (archetypeObj.demographics) currentArchetype.push(`Demographics: ${archetypeObj.demographics}`);
-      if (archetypeObj.behavior) currentArchetype.push(`Behavior: ${archetypeObj.behavior}`);
-      if (archetypeObj.pain_points) currentArchetype.push(`Pain Points: ${archetypeObj.pain_points}`);
+      currentArchetype = parseTextToBullets(idea.userArchetype);
     } else {
       currentArchetype = [];
     }
-    setEditingArchetype(currentArchetype);
+    
+    setEditingArchetypeItems(currentArchetype);
   };
 
   const handleSaveArchetype = async () => {
-    if (!user || !idea || !editingArchetype.length) return;
+    if (!user || !idea) return;
     
     setIsSavingArchetype(true);
     try {
-      const trimmedArchetype = editingArchetype;
-      setCustomArchetype(trimmedArchetype);
+      // Filter out empty items
+      const cleanedArchetype = editingArchetypeItems.filter(item => item.trim().length > 0);
+      setCustomArchetype(cleanedArchetype);
       setIsEditingArchetype(false);
-      setEditingArchetype([]);
+      setEditingArchetypeItems([]);
       
       // Save to Firestore
       const idToken = await user.getIdToken();
@@ -515,7 +521,7 @@ export function IdeaDetailModal({ idea, isOpen, onClose, onScoreUpdate, googleTr
         body: JSON.stringify({
           ideaId: idea.id,
           idToken,
-          customArchetype: trimmedArchetype
+          customArchetype: cleanedArchetype
         }),
       });
 
@@ -535,17 +541,22 @@ export function IdeaDetailModal({ idea, isOpen, onClose, onScoreUpdate, googleTr
 
   const handleCancelArchetype = () => {
     setIsEditingArchetype(false);
-    setEditingArchetype([]);
+    setEditingArchetypeItems([]);
   };
 
-  const handleArchetypeKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      handleSaveArchetype();
-    } else if (e.key === 'Escape') {
-      e.preventDefault();
-      handleCancelArchetype();
-    }
+  const handleAddArchetypeItem = () => {
+    setEditingArchetypeItems([...editingArchetypeItems, '']);
+  };
+
+  const handleUpdateArchetypeItem = (index: number, value: string) => {
+    const updatedItems = [...editingArchetypeItems];
+    updatedItems[index] = value;
+    setEditingArchetypeItems(updatedItems);
+  };
+
+  const handleDeleteArchetypeItem = (index: number) => {
+    const updatedItems = editingArchetypeItems.filter((_, i) => i !== index);
+    setEditingArchetypeItems(updatedItems);
   };
 
   // Risk mitigation functions
@@ -1092,76 +1103,44 @@ export function IdeaDetailModal({ idea, isOpen, onClose, onScoreUpdate, googleTr
               <Card className="p-4">
                 {isEditingArchetype ? (
                   <div className="space-y-3">
-                    {/* Existing archetype bullets */}
-                    {editingArchetype.map((item, index) => (
-                      <div key={index} className="flex items-start gap-3">
-                        <div className="w-2 h-2 bg-blue-500 rounded-full mt-2 flex-shrink-0"></div>
-                        <div className="flex-1 flex gap-2">
-                          <input
-                            type="text"
+                    {/* Bullet list editor */}
+                    <div className="space-y-2">
+                      {editingArchetypeItems.map((item, index) => (
+                        <div key={index} className="flex items-center gap-2">
+                          <div className="w-2 h-2 bg-brand rounded-full flex-shrink-0"></div>
+                          <Input
                             value={item}
-                            onChange={(e) => {
-                              const newArchetype = [...editingArchetype];
-                              newArchetype[index] = e.target.value;
-                              setEditingArchetype(newArchetype);
-                            }}
-                            className="flex-1 p-2 border border-border rounded-lg bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent"
-                            placeholder="Enter archetype point..."
+                            onChange={(e) => handleUpdateArchetypeItem(index, e.target.value)}
+                            placeholder="Enter archetype detail..."
+                            className="flex-1"
                             disabled={isSavingArchetype}
                           />
                           <button
-                            onClick={() => {
-                              const newArchetype = editingArchetype.filter((_, i) => i !== index);
-                              setEditingArchetype(newArchetype);
-                            }}
+                            onClick={() => handleDeleteArchetypeItem(index)}
                             disabled={isSavingArchetype}
-                            className="p-2 text-foreground-muted hover:text-red-500 transition-colors"
-                            title="Delete this point"
+                            className="p-1 text-foreground-muted hover:text-red-500 transition-colors"
+                            title="Delete item"
                           >
                             <X className="w-4 h-4" />
                           </button>
                         </div>
-                      </div>
-                    ))}
-                    
-                    {/* Add new archetype point */}
-                    <div className="flex items-start gap-3">
-                      <div className="w-2 h-2 bg-blue-500 rounded-full mt-2 flex-shrink-0"></div>
-                      <div className="flex-1 flex gap-2">
-                        <input
-                          type="text"
-                          placeholder="Add new archetype point..."
-                          onKeyPress={(e) => {
-                            if (e.key === 'Enter' && e.currentTarget.value.trim()) {
-                              setEditingArchetype([...editingArchetype, e.currentTarget.value.trim()]);
-                              e.currentTarget.value = '';
-                            }
-                          }}
-                          className="flex-1 p-2 border border-border rounded-lg bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent"
-                          disabled={isSavingArchetype}
-                        />
-                        <button
-                          onClick={(e) => {
-                            const input = e.currentTarget.previousElementSibling as HTMLInputElement;
-                            if (input.value.trim()) {
-                              setEditingArchetype([...editingArchetype, input.value.trim()]);
-                              input.value = '';
-                            }
-                          }}
-                          disabled={isSavingArchetype}
-                          className="p-2 text-foreground-muted hover:text-brand transition-colors"
-                          title="Add new point"
-                        >
-                          <Plus className="w-4 h-4" />
-                        </button>
-                      </div>
+                      ))}
+                      
+                      {/* Add new item button */}
+                      <button
+                        onClick={handleAddArchetypeItem}
+                        disabled={isSavingArchetype}
+                        className="flex items-center gap-2 text-sm text-brand hover:text-brand/80 transition-colors"
+                      >
+                        <Plus className="w-4 h-4" />
+                        Add Item
+                      </button>
                     </div>
                     
-                    {/* Save/Cancel buttons */}
-                    <div className="flex gap-2 pt-2">
+                    <div className="flex gap-2">
                       <Button
                         onClick={handleSaveArchetype}
-                        disabled={editingArchetype.length === 0 || isSavingArchetype}
+                        disabled={editingArchetypeItems.length === 0 || isSavingArchetype}
                         size="sm"
                         className="btn-primary"
                       >
@@ -1186,10 +1165,10 @@ export function IdeaDetailModal({ idea, isOpen, onClose, onScoreUpdate, googleTr
                   <div>
                     {customArchetype && customArchetype.length > 0 ? (
                       <div>
-                        <ul className="space-y-3">
+                        <ul className="space-y-2">
                           {customArchetype.map((item, index) => (
                             <li key={index} className="flex items-start gap-3">
-                              <div className="w-2 h-2 bg-blue-500 rounded-full mt-2 flex-shrink-0"></div>
+                              <div className="w-2 h-2 bg-brand rounded-full mt-2 flex-shrink-0"></div>
                               <p className="text-foreground leading-relaxed">{item}</p>
                             </li>
                           ))}
@@ -1201,39 +1180,34 @@ export function IdeaDetailModal({ idea, isOpen, onClose, onScoreUpdate, googleTr
                         )}
                       </div>
                     ) : typeof idea.userArchetype === 'string' ? (
-                      <ul className="space-y-3">
-                        <li className="flex items-start gap-3">
-                          <div className="w-2 h-2 bg-blue-500 rounded-full mt-2 flex-shrink-0"></div>
-                          <p className="text-foreground leading-relaxed">{idea.userArchetype}</p>
-                        </li>
-                      </ul>
+                      <div>
+                        <ul className="space-y-2">
+                          {parseTextToBullets(idea.userArchetype).map((item, index) => (
+                            <li key={index} className="flex items-start gap-3">
+                              <div className="w-2 h-2 bg-orange-500 rounded-full mt-2 flex-shrink-0"></div>
+                              <p className="text-foreground leading-relaxed">{item}</p>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
                     ) : (
                       <div className="space-y-3">
                         {idea.userArchetype.demographics && (
-                          <div className="flex items-start gap-3">
-                            <div className="w-2 h-2 bg-blue-500 rounded-full mt-2 flex-shrink-0"></div>
-                            <div>
-                              <h4 className="font-medium text-foreground mb-1">Demographics</h4>
-                              <p className="text-foreground-muted leading-relaxed">{idea.userArchetype.demographics}</p>
-                            </div>
+                          <div>
+                            <h4 className="font-medium text-foreground mb-1">Demographics</h4>
+                            <p className="text-foreground-muted leading-relaxed">{idea.userArchetype.demographics}</p>
                           </div>
                         )}
                         {idea.userArchetype.behavior && (
-                          <div className="flex items-start gap-3">
-                            <div className="w-2 h-2 bg-blue-500 rounded-full mt-2 flex-shrink-0"></div>
-                            <div>
-                              <h4 className="font-medium text-foreground mb-1">Behavior</h4>
-                              <p className="text-foreground-muted leading-relaxed">{idea.userArchetype.behavior}</p>
-                            </div>
+                          <div>
+                            <h4 className="font-medium text-foreground mb-1">Behavior</h4>
+                            <p className="text-foreground-muted leading-relaxed">{idea.userArchetype.behavior}</p>
                           </div>
                         )}
                         {idea.userArchetype.pain_points && (
-                          <div className="flex items-start gap-3">
-                            <div className="w-2 h-2 bg-blue-500 rounded-full mt-2 flex-shrink-0"></div>
-                            <div>
-                              <h4 className="font-medium text-foreground mb-1">Pain Points</h4>
-                              <p className="text-foreground-muted leading-relaxed">{idea.userArchetype.pain_points}</p>
-                            </div>
+                          <div>
+                            <h4 className="font-medium text-foreground mb-1">Pain Points</h4>
+                            <p className="text-foreground-muted leading-relaxed">{idea.userArchetype.pain_points}</p>
                           </div>
                         )}
                       </div>
