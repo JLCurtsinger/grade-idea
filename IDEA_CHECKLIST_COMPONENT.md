@@ -7,7 +7,7 @@ The `IdeaChecklist` component is an interactive checklist that allows users to t
 ## Features
 
 - **Interactive Checkboxes**: Click to mark suggestions as completed
-- **Progress Tracking**: Visual progress bars and completion counts
+- **Progress Tracking**: Visual progress bars and completion counts 
 - **Score Display**: Shows category scores with color-coded indicators
 - **Smooth Animations**: Hover effects and transitions for better UX
 - **Keyboard Accessible**: Full keyboard navigation support
