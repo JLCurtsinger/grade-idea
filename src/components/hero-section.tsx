@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ArrowRight, Sparkles } from "lucide-react";
@@ -15,6 +15,11 @@ interface HeroSectionProps {
 export const HeroSection = ({ onSubmit, tokenBalance, exampleIdea, isGrading = false }: HeroSectionProps) => {
   const [idea, setIdea] = useState(exampleIdea || "");
   const [isLoading, setIsLoading] = useState(false);
+  
+  // Refs for dynamic padding calculation
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  const buttonRef = useRef<HTMLButtonElement | null>(null);
+  const inputRef = useRef<HTMLInputElement | null>(null);
 
   const suggestionChips = [
     "AI tool for digital nomads",
@@ -29,6 +34,30 @@ export const HeroSection = ({ onSubmit, tokenBalance, exampleIdea, isGrading = f
       setIdea(exampleIdea);
     }
   }, [exampleIdea]);
+
+  // Dynamic padding calculation effect
+  useEffect(() => {
+    const btn = buttonRef.current;
+    const el = containerRef.current;
+    if (!btn || !el) return;
+
+    const setWidth = () => {
+      const w = btn.getBoundingClientRect().width;
+      el.style.setProperty("--cta-w", `${Math.ceil(w)}px`);
+    };
+
+    setWidth();
+
+    const ro = new ResizeObserver(setWidth);
+    ro.observe(btn);
+    const onResize = () => setWidth();
+    window.addEventListener("resize", onResize);
+
+    return () => {
+      ro.disconnect();
+      window.removeEventListener("resize", onResize);
+    };
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -72,18 +101,20 @@ export const HeroSection = ({ onSubmit, tokenBalance, exampleIdea, isGrading = f
 
             {/* Input Form */}
             <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="relative">
+              <div ref={containerRef} className="relative">
                 <Input
+                  ref={inputRef}
                   value={idea}
                   onChange={(e) => setIdea(e.target.value)}
                   placeholder="Describe your idea..."
-                  className={`input-primary text-lg py-4 pr-36 min-h-[60px] ${isGrading ? 'animate-input-pulse' : ''}`}
+                  className={`input-primary text-lg py-4 min-h-[60px] ${isGrading ? 'animate-input-pulse' : ''}`}
                   disabled={isLoading || isGrading}
                   style={{
-                    paddingRight: 'calc(8rem + 1rem)', // Account for button width + padding
+                    paddingRight: `calc(var(--cta-w, 0px) + 12px)`
                   }}
                 />
                 <Button
+                  ref={buttonRef}
                   type="submit"
                   disabled={!idea.trim() || isLoading || isGrading}
                   className="btn-primary-breathing absolute right-2 top-2 bottom-2 h-auto"
