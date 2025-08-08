@@ -81,6 +81,7 @@ interface Idea {
     go_to_market_channels?: string[];
     monetization_models?: string[];
     target_user_archetype?: string;
+    target_user_archetypes?: string[];
     risk_mitigation_plans?: Array<{
       risk: string;
       mitigation: string;
@@ -139,6 +140,16 @@ export function IdeaDetailModal({ idea, isOpen, onClose, onScoreUpdate, googleTr
   const [editingMitigation, setEditingMitigation] = useState("");
   const [editingRiskIndex, setEditingRiskIndex] = useState<number | null>(null);
   const [isSavingMitigation, setIsSavingMitigation] = useState(false);
+  
+  // Custom target user archetypes state - with crash prevention
+  const [customArchetypes, setCustomArchetypes] = useState<string[]>(
+    Array.isArray(idea?.custom?.target_user_archetypes) ? idea.custom.target_user_archetypes : []
+  );
+  const [newArchetype, setNewArchetype] = useState("");
+  const [editingArchetypeIndex, setEditingArchetypeIndex] = useState<number | null>(null);
+  const [editingArchetypeText, setEditingArchetypeText] = useState("");
+  const [isAddingArchetype, setIsAddingArchetype] = useState(false);
+  const [isSavingArchetypes, setIsSavingArchetypes] = useState(false);
 
   // Update isPublic when idea changes
   useEffect(() => {
@@ -174,6 +185,16 @@ export function IdeaDetailModal({ idea, isOpen, onClose, onScoreUpdate, googleTr
       setRiskMitigations([]);
     }
   }, [idea?.custom?.risk_mitigation_plans]);
+
+  // Update custom archetypes when idea changes - with crash prevention
+  useEffect(() => {
+    const customArchetypesData = idea?.custom?.target_user_archetypes;
+    if (Array.isArray(customArchetypesData)) {
+      setCustomArchetypes(customArchetypesData);
+    } else {
+      setCustomArchetypes([]);
+    }
+  }, [idea?.custom?.target_user_archetypes]);
 
 
 
@@ -655,6 +676,179 @@ export function IdeaDetailModal({ idea, isOpen, onClose, onScoreUpdate, googleTr
     return mitigation?.mitigation || null;
   };
 
+  // Custom archetypes list functions - with crash prevention
+  const handleAddArchetypeToList = () => {
+    if (!user || !idea) return;
+    
+    setIsAddingArchetype(true);
+    setNewArchetype("");
+  };
+
+  const handleSaveArchetypeToList = async () => {
+    if (!user || !idea || !newArchetype.trim()) return;
+    
+    setIsSavingArchetypes(true);
+    try {
+      const trimmedArchetype = newArchetype.trim();
+      
+      // Check for duplicates
+      if (customArchetypes.includes(trimmedArchetype)) {
+        setNewArchetype("");
+        setIsAddingArchetype(false);
+        setIsSavingArchetypes(false);
+        return;
+      }
+      
+      const updatedArchetypes = [...customArchetypes, trimmedArchetype];
+      setCustomArchetypes(updatedArchetypes);
+      setNewArchetype("");
+      setIsAddingArchetype(false);
+      
+      // Save to Firestore
+      const idToken = await user.getIdToken();
+      const response = await fetch('/api/update-custom-archetypes', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          ideaId: idea.id,
+          idToken,
+          customArchetypes: updatedArchetypes
+        }),
+      });
+
+      if (!response.ok) {
+        console.error('Failed to save custom archetypes');
+        // Revert on error
+        setCustomArchetypes(customArchetypes);
+      }
+    } catch (error) {
+      console.error('Error saving custom archetypes:', error);
+      // Revert on error
+      setCustomArchetypes(customArchetypes);
+    } finally {
+      setIsSavingArchetypes(false);
+    }
+  };
+
+  const handleEditArchetypeInList = (index: number) => {
+    if (!user || !idea) return;
+    
+    setEditingArchetypeIndex(index);
+    setEditingArchetypeText(customArchetypes[index] || "");
+  };
+
+  const handleSaveEditedArchetypeInList = async () => {
+    if (!user || !idea || editingArchetypeIndex === null || !editingArchetypeText.trim()) return;
+    
+    setIsSavingArchetypes(true);
+    try {
+      const trimmedArchetype = editingArchetypeText.trim();
+      
+      // Check for duplicates (excluding current index)
+      const isDuplicate = customArchetypes.some((archetype, idx) => 
+        idx !== editingArchetypeIndex && archetype === trimmedArchetype
+      );
+      
+      if (isDuplicate) {
+        setEditingArchetypeIndex(null);
+        setEditingArchetypeText("");
+        setIsSavingArchetypes(false);
+        return;
+      }
+      
+      const updatedArchetypes = [...customArchetypes];
+      updatedArchetypes[editingArchetypeIndex] = trimmedArchetype;
+      setCustomArchetypes(updatedArchetypes);
+      setEditingArchetypeIndex(null);
+      setEditingArchetypeText("");
+      
+      // Save to Firestore
+      const idToken = await user.getIdToken();
+      const response = await fetch('/api/update-custom-archetypes', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          ideaId: idea.id,
+          idToken,
+          customArchetypes: updatedArchetypes
+        }),
+      });
+
+      if (!response.ok) {
+        console.error('Failed to save custom archetypes');
+        // Revert on error
+        setCustomArchetypes(customArchetypes);
+      }
+    } catch (error) {
+      console.error('Error saving custom archetypes:', error);
+      // Revert on error
+      setCustomArchetypes(customArchetypes);
+    } finally {
+      setIsSavingArchetypes(false);
+    }
+  };
+
+  const handleDeleteArchetypeFromList = async (index: number) => {
+    if (!user || !idea) return;
+    
+    setIsSavingArchetypes(true);
+    try {
+      const updatedArchetypes = customArchetypes.filter((_, idx) => idx !== index);
+      setCustomArchetypes(updatedArchetypes);
+      
+      // Save to Firestore
+      const idToken = await user.getIdToken();
+      const response = await fetch('/api/update-custom-archetypes', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          ideaId: idea.id,
+          idToken,
+          customArchetypes: updatedArchetypes
+        }),
+      });
+
+      if (!response.ok) {
+        console.error('Failed to save custom archetypes');
+        // Revert on error
+        setCustomArchetypes(customArchetypes);
+      }
+    } catch (error) {
+      console.error('Error saving custom archetypes:', error);
+      // Revert on error
+      setCustomArchetypes(customArchetypes);
+    } finally {
+      setIsSavingArchetypes(false);
+    }
+  };
+
+  const handleCancelArchetypeList = () => {
+    setIsAddingArchetype(false);
+    setNewArchetype("");
+    setEditingArchetypeIndex(null);
+    setEditingArchetypeText("");
+  };
+
+  const handleArchetypeListKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      if (editingArchetypeIndex !== null) {
+        handleSaveEditedArchetypeInList();
+      } else {
+        handleSaveArchetypeToList();
+      }
+    } else if (e.key === 'Escape') {
+      e.preventDefault();
+      handleCancelArchetypeList();
+    }
+  };
+
   // Get base score from idea data
   const baseScore = (idea as any)?.baseScore || idea.analysis.overall_score;
 
@@ -1070,70 +1264,16 @@ export function IdeaDetailModal({ idea, isOpen, onClose, onScoreUpdate, googleTr
           {/* User Archetype */}
           {idea.userArchetype && (
             <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Users className="w-5 h-5 text-blue-600" />
-                  <h3 className="text-lg font-semibold text-foreground">Target User Archetype</h3>
-                </div>
-                {user && (
-                  <Button
-                    onClick={handleEditArchetype}
-                    disabled={isEditingArchetype || isSavingArchetype}
-                    variant="outline"
-                    size="sm"
-                    className="btn-secondary"
-                  >
-                    Edit
-                  </Button>
-                )}
+              <div className="flex items-center gap-2">
+                <Users className="w-5 h-5 text-blue-600" />
+                <h3 className="text-lg font-semibold text-foreground">Target User Archetype</h3>
               </div>
               <Card className="p-4">
-                {isEditingArchetype ? (
-                  <div className="space-y-3">
-                    <textarea
-                      value={editingArchetype}
-                      onChange={(e) => setEditingArchetype(e.target.value)}
-                      onKeyDown={handleArchetypeKeyPress}
-                      placeholder="Describe your target user archetype..."
-                      className="w-full min-h-[100px] p-3 border border-border rounded-lg bg-background text-foreground resize-none focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent"
-                      disabled={isSavingArchetype}
-                    />
-                    <div className="flex gap-2">
-                      <Button
-                        onClick={handleSaveArchetype}
-                        disabled={!editingArchetype.trim() || isSavingArchetype}
-                        size="sm"
-                        className="btn-primary"
-                      >
-                        {isSavingArchetype ? (
-                          <div className="w-4 h-4 border-2 border-brand-foreground/30 border-t-brand-foreground rounded-full animate-spin" />
-                        ) : (
-                          'Save'
-                        )}
-                      </Button>
-                      <Button
-                        onClick={handleCancelArchetype}
-                        disabled={isSavingArchetype}
-                        variant="outline"
-                        size="sm"
-                        className="btn-secondary"
-                      >
-                        Cancel
-                      </Button>
-                    </div>
-                  </div>
-                ) : (
+                <div className="space-y-4">
+                  {/* AI-generated archetype (always shown) */}
                   <div>
-                    {customArchetype ? (
-                      <div>
-                        <p className="text-foreground leading-relaxed">{customArchetype}</p>
-                        {user && (
-                          <p className="text-xs text-foreground-muted mt-2">
-                            Custom version - click Edit to modify
-                          </p>
-                        )}
-                      </div>
-                    ) : typeof idea.userArchetype === 'string' ? (
+                    <p className="text-sm font-medium text-foreground-muted mb-2">AI Suggestion:</p>
+                    {typeof idea.userArchetype === 'string' ? (
                       <p className="text-foreground leading-relaxed">{idea.userArchetype}</p>
                     ) : (
                       <div className="space-y-3">
@@ -1158,7 +1298,139 @@ export function IdeaDetailModal({ idea, isOpen, onClose, onScoreUpdate, googleTr
                       </div>
                     )}
                   </div>
-                )}
+                  
+                  {/* Custom user archetypes */}
+                  {customArchetypes.length > 0 && (
+                    <div>
+                      <p className="text-sm font-medium text-foreground mb-2">Your User Types:</p>
+                      <div className="space-y-2">
+                        {customArchetypes.map((archetype, index) => {
+                          const isEditing = editingArchetypeIndex === index;
+                          
+                          return (
+                            <div key={index} className="p-3 bg-brand/5 border border-brand/20 rounded-lg">
+                              {isEditing ? (
+                                <div className="space-y-2">
+                                  <Input
+                                    value={editingArchetypeText}
+                                    onChange={(e) => setEditingArchetypeText(e.target.value)}
+                                    onKeyDown={handleArchetypeListKeyPress}
+                                    placeholder="Enter user type..."
+                                    className="w-full"
+                                    disabled={isSavingArchetypes}
+                                  />
+                                  <div className="flex gap-2">
+                                    <Button
+                                      onClick={handleSaveEditedArchetypeInList}
+                                      disabled={!editingArchetypeText.trim() || isSavingArchetypes}
+                                      size="sm"
+                                      className="btn-primary"
+                                    >
+                                      {isSavingArchetypes ? (
+                                        <div className="w-4 h-4 border-2 border-brand-foreground/30 border-t-brand-foreground rounded-full animate-spin" />
+                                      ) : (
+                                        'Save'
+                                      )}
+                                    </Button>
+                                    <Button
+                                      onClick={handleCancelArchetypeList}
+                                      disabled={isSavingArchetypes}
+                                      variant="outline"
+                                      size="sm"
+                                      className="btn-secondary"
+                                    >
+                                      Cancel
+                                    </Button>
+                                  </div>
+                                </div>
+                              ) : (
+                                <div className="flex items-start justify-between gap-2">
+                                  <div className="flex-1">
+                                    <p className="text-sm text-foreground leading-relaxed">{archetype}</p>
+                                  </div>
+                                  {user && (
+                                    <div className="flex gap-1">
+                                      <Button
+                                        onClick={() => handleEditArchetypeInList(index)}
+                                        disabled={isSavingArchetypes}
+                                        variant="outline"
+                                        size="sm"
+                                        className="btn-secondary"
+                                      >
+                                        ✏️
+                                      </Button>
+                                      <Button
+                                        onClick={() => handleDeleteArchetypeFromList(index)}
+                                        disabled={isSavingArchetypes}
+                                        variant="outline"
+                                        size="sm"
+                                        className="btn-secondary text-red-500 hover:text-red-600"
+                                      >
+                                        ❌
+                                      </Button>
+                                    </div>
+                                  )}
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+                  
+                  {/* Add new archetype input */}
+                  {isAddingArchetype && (
+                    <div className="space-y-2">
+                      <Input
+                        value={newArchetype}
+                        onChange={(e) => setNewArchetype(e.target.value)}
+                        onKeyDown={handleArchetypeListKeyPress}
+                        placeholder="Enter a new user type..."
+                        className="w-full"
+                        disabled={isSavingArchetypes}
+                      />
+                      <div className="flex gap-2">
+                        <Button
+                          onClick={handleSaveArchetypeToList}
+                          disabled={!newArchetype.trim() || isSavingArchetypes}
+                          size="sm"
+                          className="btn-primary"
+                        >
+                          {isSavingArchetypes ? (
+                            <div className="w-4 h-4 border-2 border-brand-foreground/30 border-t-brand-foreground rounded-full animate-spin" />
+                          ) : (
+                            'Save'
+                          )}
+                        </Button>
+                        <Button
+                          onClick={handleCancelArchetypeList}
+                          disabled={isSavingArchetypes}
+                          variant="outline"
+                          size="sm"
+                          className="btn-secondary"
+                        >
+                          Cancel
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {/* Add archetype button for authenticated users */}
+                  {user && !isAddingArchetype && (
+                    <div>
+                      <Button
+                        onClick={handleAddArchetypeToList}
+                        disabled={isSavingArchetypes}
+                        variant="outline"
+                        size="sm"
+                        className="btn-secondary"
+                      >
+                        + Add User Type
+                      </Button>
+                    </div>
+                  )}
+                </div>
               </Card>
             </div>
           )}
