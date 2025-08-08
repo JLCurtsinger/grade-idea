@@ -80,6 +80,17 @@ interface Idea {
     monetization: string;
     execution: string;
   };
+  // Regrade fields (added after regrade)
+  ai_action_items?: Array<{
+    category: string;
+    items: string[];
+  }>;
+  ai_key_insights?: string[];
+  ai_key_risks?: string[];
+  last_regraded_at?: {
+    seconds: number;
+    nanoseconds: number;
+  };
   // Custom fields
   custom?: {
     go_to_market_channels?: string[];
@@ -1251,10 +1262,15 @@ export function IdeaDetailModal({ idea, isOpen, onClose, onScoreUpdate, googleTr
           ai_key_insights: data.ai_key_insights,
           ai_key_risks: data.ai_key_risks,
           score_explanations: data.score_explanations,
+          last_regraded_at: {
+            seconds: Math.floor(Date.now() / 1000),
+            nanoseconds: 0,
+          },
         };
 
-        // Force a refresh of the modal content by triggering a re-render
-        // This is a simple approach - in a real app you might want to update the parent state
+        // Update the idea state to trigger re-render with new data
+        // Note: In a real app, you might want to update the parent state
+        // For now, we'll rely on the page refresh to show updated data
         window.location.reload();
 
         toast({
@@ -1326,6 +1342,26 @@ export function IdeaDetailModal({ idea, isOpen, onClose, onScoreUpdate, googleTr
               <h3 className="text-lg font-semibold text-foreground">AI Analysis</h3>
               <Card className="p-4 bg-surface">
                 <p className="text-foreground-muted leading-relaxed">{idea.summary_analysis}</p>
+              </Card>
+            </div>
+          )}
+
+          {/* Updated AI Analysis from Regrade */}
+          {idea.last_regraded_at && idea.summary_analysis && (
+            <div className="space-y-3">
+              <div className="flex items-center gap-2">
+                <h3 className="text-lg font-semibold text-foreground">Updated Analysis</h3>
+                <Badge variant="secondary" className="bg-brand/10 text-brand border-brand/20">
+                  From Regrade
+                </Badge>
+              </div>
+              <Card className="p-4 bg-surface border-brand/20">
+                <p className="text-foreground-muted leading-relaxed">{idea.summary_analysis}</p>
+                <div className="mt-3 pt-3 border-t border-border">
+                  <p className="text-xs text-foreground-muted">
+                    Updated on {formatDate(idea.last_regraded_at)}
+                  </p>
+                </div>
               </Card>
             </div>
           )}
@@ -1424,6 +1460,26 @@ export function IdeaDetailModal({ idea, isOpen, onClose, onScoreUpdate, googleTr
               </div>
             </div>
           </div>
+
+          {/* Updated Recommendation from Regrade */}
+          {idea.last_regraded_at && idea.analysis.recommendation && (
+            <div className="space-y-3">
+              <div className="flex items-center gap-2">
+                <h3 className="text-lg font-semibold text-foreground">Updated Recommendation</h3>
+                <Badge variant="secondary" className="bg-brand/10 text-brand border-brand/20">
+                  From Regrade
+                </Badge>
+              </div>
+              <div className="space-y-3">
+                <p className={`text-lg font-medium ${getRecommendationColor(idea.analysis.recommendation)}`}>
+                  {idea.analysis.recommendation}
+                </p>
+                <div className="text-xs text-foreground-muted">
+                  Updated on {formatDate(idea.last_regraded_at)}
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Score Breakdown */}
           <div className="space-y-4">
@@ -1730,6 +1786,34 @@ export function IdeaDetailModal({ idea, isOpen, onClose, onScoreUpdate, googleTr
             </Card>
           </div>
 
+          {/* New Insights from Regrade */}
+          {idea.last_regraded_at && idea.ai_key_insights && idea.ai_key_insights.length > 0 && (
+            <div className="space-y-3">
+              <div className="flex items-center gap-2">
+                <Lightbulb className="w-5 h-5 text-brand" />
+                <h3 className="text-lg font-semibold text-foreground">New Insights from Regrade</h3>
+                <Badge variant="secondary" className="bg-brand/10 text-brand border-brand/20">
+                  From Regrade
+                </Badge>
+              </div>
+              <Card className="p-4 border-brand/20">
+                <ul className="space-y-3">
+                  {idea.ai_key_insights.map((insight, index) => (
+                    <li key={index} className="flex items-start gap-3">
+                      <div className="w-2 h-2 bg-brand rounded-full mt-2 flex-shrink-0"></div>
+                      <p className="text-foreground leading-relaxed">{insight}</p>
+                    </li>
+                  ))}
+                </ul>
+                <div className="mt-3 pt-3 border-t border-border">
+                  <p className="text-xs text-foreground-muted">
+                    Updated on {formatDate(idea.last_regraded_at)}
+                  </p>
+                </div>
+              </Card>
+            </div>
+          )}
+
           {/* Risks */}
           {idea.risks && idea.risks.length > 0 && (
             <div className="space-y-3">
@@ -1844,6 +1928,34 @@ export function IdeaDetailModal({ idea, isOpen, onClose, onScoreUpdate, googleTr
                     );
                   })}
                 </ul>
+              </Card>
+            </div>
+          )}
+
+          {/* New Risks from Regrade */}
+          {idea.last_regraded_at && idea.ai_key_risks && idea.ai_key_risks.length > 0 && (
+            <div className="space-y-3">
+              <div className="flex items-center gap-2">
+                <AlertCircle className="w-5 h-5 text-orange-600" />
+                <h3 className="text-lg font-semibold text-foreground">New Risks Identified</h3>
+                <Badge variant="secondary" className="bg-brand/10 text-brand border-brand/20">
+                  From Regrade
+                </Badge>
+              </div>
+              <Card className="p-4 border-brand/20">
+                <ul className="space-y-3">
+                  {idea.ai_key_risks.map((risk, index) => (
+                    <li key={index} className="flex items-start gap-3">
+                      <div className="w-2 h-2 bg-orange-500 rounded-full mt-2 flex-shrink-0"></div>
+                      <p className="text-foreground leading-relaxed">{risk}</p>
+                    </li>
+                  ))}
+                </ul>
+                <div className="mt-3 pt-3 border-t border-border">
+                  <p className="text-xs text-foreground-muted">
+                    Updated on {formatDate(idea.last_regraded_at)}
+                  </p>
+                </div>
               </Card>
             </div>
           )}
@@ -2230,6 +2342,40 @@ export function IdeaDetailModal({ idea, isOpen, onClose, onScoreUpdate, googleTr
               getNoteForItem={getNoteForItem}
             />
           </div>
+
+          {/* New Action Items from Regrade */}
+          {idea.last_regraded_at && idea.ai_action_items && idea.ai_action_items.length > 0 && (
+            <div className="space-y-3">
+              <div className="flex items-center gap-2">
+                <h3 className="text-lg font-semibold text-foreground">New Action Items from Regrade</h3>
+                <Badge variant="secondary" className="bg-brand/10 text-brand border-brand/20">
+                  From Regrade
+                </Badge>
+              </div>
+              <Card className="p-4 border-brand/20">
+                <div className="space-y-4">
+                  {idea.ai_action_items.map((actionGroup, groupIndex) => (
+                    <div key={groupIndex} className="space-y-2">
+                      <h4 className="font-medium text-foreground">{actionGroup.category}</h4>
+                      <ul className="space-y-2">
+                        {actionGroup.items.map((item, itemIndex) => (
+                          <li key={itemIndex} className="flex items-start gap-3">
+                            <div className="w-2 h-2 bg-brand rounded-full mt-2 flex-shrink-0"></div>
+                            <p className="text-foreground leading-relaxed">{item}</p>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  ))}
+                </div>
+                <div className="mt-3 pt-3 border-t border-border">
+                  <p className="text-xs text-foreground-muted">
+                    Updated on {formatDate(idea.last_regraded_at)}
+                  </p>
+                </div>
+              </Card>
+            </div>
+          )}
         </div>
       </DialogContent>
 
