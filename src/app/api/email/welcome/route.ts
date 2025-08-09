@@ -1,8 +1,19 @@
 // src/app/api/email/welcome/route.ts
 import { NextRequest, NextResponse } from 'next/server';
+import { z } from 'zod';
 import { sendEmail } from '@/lib/email/resend';
 import { welcomeTemplate } from '@/lib/email/templates';
 import { adminDb } from '@/lib/firebase-admin';
+import { logInfo, logWarn, logError } from '@/lib/log';
+
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+
+const welcomeSchema = z.object({
+  uid: z.string(),
+  email: z.string().email(),
+  name: z.string().optional(),
+});
 
 export async function GET() {
   console.log('GET /api/email/welcome invoked');
@@ -10,26 +21,99 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
-  console.log('POST /api/email/welcome invoked');
-  const { uid, email, name } = await req.json();
-  if (!uid || !email) {
-    return NextResponse.json({ error: 'uid and email are required' }, { status: 400 });
+  const { searchParams } = new URL(req.url);
+  const forced = searchParams.get("force") === "true";
+  
+  try {
+    const parse = welcomeSchema.safeParse(await req.json());
+    if (!parse.success) {
+      logError("welcome email validation failed", { 
+        route: "welcome", 
+        method: "POST", 
+        forced, 
+        details: parse.error.issues 
+      });
+      return NextResponse.json({ 
+        ok: false, 
+        reason: "validation-failed", 
+        details: parse.error.issues,
+        route: "welcome" 
+      }, { status: 400 });
+    }
+    
+    const { uid, email, name } = parse.data;
+    
+    logInfo("welcome email request started", { 
+      route: "welcome", 
+      method: "POST", 
+      forced, 
+      uid 
+    });
+
+    // Idempotency: check user flag (skip if forced)
+    if (!forced) {
+      const userRef = adminDb.collection('users').doc(uid);
+      const snap = await userRef.get();
+      if (snap.exists && snap.data()?.welcomeEmailSent) {
+        logInfo("welcome email skipped - already sent", { 
+          route: "welcome", 
+          uid, 
+          skipped: true, 
+          reason: "already-sent" 
+        });
+        return NextResponse.json({ 
+          ok: true, 
+          skipped: true, 
+          reason: "already-sent",
+          route: "welcome" 
+        });
+      }
+    } else {
+      logWarn("welcome email forced send", { 
+        route: "welcome", 
+        uid, 
+        forced: true 
+      });
+    }
+
+    const res = await sendEmail({
+      to: email,
+      subject: 'Welcome to GradeIdea',
+      html: welcomeTemplate({ name }),
+    });
+
+    const emailId = (res as any)?.id || null;
+    
+    // Set idempotency flag
+    const userRef = adminDb.collection('users').doc(uid);
+    await userRef.set({ welcomeEmailSent: true }, { merge: true });
+
+    logInfo("welcome email sent successfully", { 
+      route: "welcome", 
+      uid, 
+      emailId,
+      forced: forced || false 
+    });
+
+    return NextResponse.json({ 
+      ok: true, 
+      forced: forced || false,
+      emailId,
+      route: "welcome" 
+    });
+  } catch (error: any) {
+    logError("welcome email error", { 
+      route: "welcome", 
+      method: "POST", 
+      forced, 
+      error: error?.message || 'unknown',
+      stack: error?.stack 
+    });
+    
+    return NextResponse.json({ 
+      ok: false, 
+      reason: "send-error",
+      route: "welcome" 
+    }, { status: 500 });
   }
-
-  // Idempotency: check user flag
-  const userRef = adminDb.collection('users').doc(uid);
-  const snap = await userRef.get();
-  if (snap.exists && snap.data()?.welcomeEmailSent) {
-    return NextResponse.json({ ok: true, skipped: true });
-  }
-
-  await sendEmail({
-    to: email,
-    subject: 'Welcome to GradeIdea',
-    html: welcomeTemplate({ name }),
-  });
-
-  await userRef.set({ welcomeEmailSent: true }, { merge: true });
-
-  return NextResponse.json({ ok: true });
 }
