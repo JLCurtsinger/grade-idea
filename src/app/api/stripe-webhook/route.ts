@@ -147,6 +147,39 @@ export async function POST(request: NextRequest) {
         
         console.log(`Successfully added ${tokenCount} tokens to user ${userId}`);
         
+        // Send token confirmation email (idempotent handled at API route)
+        try {
+          // Get user email from session metadata or fetch from user document
+          let userEmail = session.customer_details?.email;
+          if (!userEmail) {
+            // Fallback: get email from user document
+            const userRef = adminDb.collection('users').doc(userId);
+            const userDoc = await userRef.get();
+            if (userDoc.exists) {
+              userEmail = userDoc.data()?.email;
+            }
+          }
+          
+          if (userEmail) {
+            await fetch(`${process.env.APP_BASE_URL}/api/email/token-confirmation`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                sessionId: session.id,
+                uid: userId,
+                email: userEmail,
+                tokensAdded: tokenCount,
+              }),
+            });
+            console.log(`Token confirmation email sent to ${userEmail}`);
+          } else {
+            console.warn('Could not send token confirmation email: no user email found');
+          }
+        } catch (emailError) {
+          console.error('Error sending token confirmation email:', emailError);
+          // Don't fail the webhook for email errors
+        }
+        
         return NextResponse.json({ received: true });
       } catch (error) {
         console.error('Error processing checkout session:', error);

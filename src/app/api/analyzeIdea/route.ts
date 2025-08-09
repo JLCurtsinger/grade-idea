@@ -340,6 +340,25 @@ export async function POST(request: NextRequest) {
 
     console.log('=== IDEA ANALYSIS REQUEST SUCCESS ===');
     
+    // Send report-ready email (idempotent handled at API route)
+    try {
+      await fetch(`${process.env.APP_BASE_URL}/api/email/report-ready`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ideaId,
+          ideaTitle: ideaText.substring(0, 100), // Use first 100 chars as title
+          uid,
+          email: decoded.email || '',
+          dashboardPath: '/dashboard',
+        }),
+      });
+      console.log(`Report-ready email sent for idea ${ideaId}`);
+    } catch (emailError) {
+      console.error('Error sending report-ready email:', emailError);
+      // Don't fail the analysis for email errors
+    }
+    
     return NextResponse.json({
       success: true,
       ideaId

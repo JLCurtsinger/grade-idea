@@ -82,6 +82,23 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
               
               console.log(`[TOKEN_TRANSACTION] Context: onboarding | User: ${user.uid} | Tokens: ${remaining}`);
               console.log(`Transferred ${remaining} free scans to new user account`);
+              
+              // Send welcome email for new users
+              try {
+                await fetch('/api/email/welcome', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    uid: user.uid,
+                    email: user.email,
+                    name: user.displayName || '',
+                  }),
+                });
+                console.log(`Welcome email sent to ${user.email}`);
+              } catch (emailError) {
+                console.error('Error sending welcome email:', emailError);
+                // Don't fail user creation for email errors
+              }
             } else {
               console.log(`[TOKEN_TRANSACTION] Context: onboarding | User: ${user.uid} | Skipped - user document already exists`);
             }
