@@ -18,7 +18,7 @@ export const HeroSection = ({ onSubmit, tokenBalance, exampleIdea, isGrading = f
   // Refs for dynamic padding calculation
   const containerRef = useRef<HTMLDivElement | null>(null);
   const buttonRef = useRef<HTMLButtonElement | null>(null);
-  const inputRef = useRef<HTMLInputElement | null>(null);
+  const inputRef = useRef<HTMLTextAreaElement | null>(null);
 
   const suggestionChips = [
     "AI tool for digital nomads",
@@ -73,6 +73,73 @@ export const HeroSection = ({ onSubmit, tokenBalance, exampleIdea, isGrading = f
     };
   }, []);
 
+  // Baseline height and CTA positioning measurement
+  useEffect(() => {
+    const btn = buttonRef.current;
+    const el = containerRef.current;
+    if (!btn || !el) return;
+
+    const measureAndPosition = () => {
+      // Measure baseline container height (no input text)
+      const CH = el.offsetHeight;
+      const BH = btn.offsetHeight;
+      
+      // Get computed styles for precise measurements
+      const containerStyles = window.getComputedStyle(el);
+      const textareaStyles = window.getComputedStyle(inputRef.current as HTMLTextAreaElement);
+      
+      const containerPaddingTop = parseFloat(containerStyles.paddingTop);
+      const containerPaddingBottom = parseFloat(containerStyles.paddingBottom);
+      const textareaPaddingTop = parseFloat(textareaStyles.paddingTop);
+      const textareaPaddingBottom = parseFloat(textareaStyles.paddingBottom);
+      const textareaLineHeight = parseFloat(textareaStyles.lineHeight);
+      
+      console.log('Baseline measurements:', {
+        CH, BH, containerPaddingTop, containerPaddingBottom,
+        textareaPaddingTop, textareaPaddingBottom, textareaLineHeight
+      });
+
+      // Calculate content box height (excluding borders)
+      const contentBoxHeight = CH - parseFloat(containerStyles.borderTopWidth) - parseFloat(containerStyles.borderBottomWidth);
+      
+      // Calculate fixed top offset for centered CTA
+      const topOffset = Math.round((contentBoxHeight - BH) / 2);
+      
+      // Apply fixed top offset
+      btn.style.top = `${topOffset}px`;
+      
+      console.log('CTA positioning:', { contentBoxHeight, topOffset });
+    };
+
+    measureAndPosition();
+
+    // Recompute on font-size/viewport changes
+    const ro = new ResizeObserver(measureAndPosition);
+    ro.observe(el);
+    ro.observe(btn);
+    
+    const debouncedResize = debounce(measureAndPosition, 100);
+    window.addEventListener("resize", debouncedResize);
+
+    return () => {
+      ro.disconnect();
+      window.removeEventListener("resize", debouncedResize);
+    };
+  }, []);
+
+  // Debounce utility
+  const debounce = (func: Function, wait: number) => {
+    let timeout: NodeJS.Timeout;
+    return function executedFunction(...args: any[]) {
+      const later = () => {
+        clearTimeout(timeout);
+        func(...args);
+      };
+      clearTimeout(timeout);
+      timeout = setTimeout(later, wait);
+    };
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!idea.trim()) return;
@@ -105,8 +172,8 @@ export const HeroSection = ({ onSubmit, tokenBalance, exampleIdea, isGrading = f
             {/* Headline */}
             <div className="space-y-4">
               <h1 className="text-hero">
-                Validate your startup idea in{" "}
-                <span className="text-gradient">60 seconds</span>
+                Validate your startup idea {" "}
+                <span className="text-gradient">in seconds</span>
               </h1>
               <p className="text-subhero max-w-lg">
                 Founder-grade insights to help you decide what&apos;s worth building.
@@ -118,7 +185,7 @@ export const HeroSection = ({ onSubmit, tokenBalance, exampleIdea, isGrading = f
               <div
                 ref={containerRef}
                 className={`
-                  bg-transparent border border-border rounded-lg px-4 py-2 text-foreground placeholder:text-foreground-subtle focus:border-brand focus:ring-1 focus:ring-brand transition-all duration-200 outline-none relative w-full overflow-hidden max-sm:pr-2 max-sm:pr-[env(safe-area-inset-right)]
+                  bg-transparent border border-border rounded-lg px-4 text-foreground placeholder:text-foreground-subtle focus:border-brand focus:ring-1 focus:ring-brand transition-all duration-200 outline-none relative w-full overflow-hidden max-sm:pr-2 max-sm:pr-[env(safe-area-inset-right)]
                   ${isGrading ? 'animate-input-pulse' : ''}
                 `}
               >
@@ -148,10 +215,10 @@ export const HeroSection = ({ onSubmit, tokenBalance, exampleIdea, isGrading = f
                   style={{ paddingRight: `calc(var(--cta-w, 0px) + 12px)` }}
                   className="
                     flex-1 bg-transparent border-0 outline-none ring-0
-                    text-lg py-2 min-h-[40px]
+                    text-lg py-1 min-h-[40px]
                     whitespace-pre-wrap break-words
                     resize-none overflow-hidden
-                    text-foreground placeholder:text-base placeholder:text-foreground-subtle
+                    text-foreground placeholder:text-[15px] placeholder:text-foreground-subtle
                   "
                 />
 
@@ -160,7 +227,7 @@ export const HeroSection = ({ onSubmit, tokenBalance, exampleIdea, isGrading = f
                   type="submit"
                   disabled={!idea.trim() || isLoading || isGrading}
                   className="
-                    absolute right-2 top-2 h-10
+                    absolute right-2 h-10
                     btn-primary-breathing px-4 py-1 max-sm:px-2 max-sm:right-0.5
                   "
                 >
