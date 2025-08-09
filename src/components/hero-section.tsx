@@ -97,7 +97,7 @@ export const HeroSection = ({ onSubmit, tokenBalance, exampleIdea, isGrading = f
       console.log('Baseline measurements:', {
         CH, BH, containerPaddingTop, containerPaddingBottom,
         textareaPaddingTop, textareaPaddingBottom, textareaLineHeight
-      });
+      }); 
 
       // Calculate content box height (excluding borders)
       const contentBoxHeight = CH - parseFloat(containerStyles.borderTopWidth) - parseFloat(containerStyles.borderBottomWidth);
