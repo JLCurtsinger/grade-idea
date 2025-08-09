@@ -118,9 +118,7 @@ export const HeroSection = ({ onSubmit, tokenBalance, exampleIdea, isGrading = f
               <div
                 ref={containerRef}
                 className={`
-                  input-primary relative w-full
-                  min-h-12 md:min-h-14
-                  flex items-stretch
+                  bg-input border border-border rounded-lg px-4 py-3 text-foreground placeholder:text-foreground-subtle focus:border-brand focus:ring-1 focus:ring-brand transition-all duration-200 outline-none relative w-full
                   ${isGrading ? 'animate-input-pulse' : ''}
                 `}
               >
@@ -150,10 +148,10 @@ export const HeroSection = ({ onSubmit, tokenBalance, exampleIdea, isGrading = f
                   style={{ paddingRight: `calc(var(--cta-w, 0px) + 12px)` }}
                   className="
                     flex-1 bg-transparent border-0 outline-none ring-0
-                    px-4 py-3 md:py-4
+                    text-lg py-4
                     whitespace-pre-wrap break-words
                     resize-none overflow-hidden
-                    text-base md:text-[15px]
+                    text-foreground placeholder:text-foreground-subtle
                   "
                 />
 
@@ -162,11 +160,7 @@ export const HeroSection = ({ onSubmit, tokenBalance, exampleIdea, isGrading = f
                   type="submit"
                   disabled={!idea.trim() || isLoading || isGrading}
                   className="
-                    absolute right-2
-                    top-1/2 -translate-y-1/2
-                    h-11 md:h-12
-                    px-5 md:px-6
-                    rounded-xl
+                    absolute right-2 top-2 bottom-2 h-auto
                     btn-primary-breathing
                   "
                 >
