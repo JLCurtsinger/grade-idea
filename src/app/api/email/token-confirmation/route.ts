@@ -4,7 +4,13 @@ import { sendEmail } from '@/lib/email/resend';
 import { tokenPurchaseTemplate } from '@/lib/email/templates';
 import { adminDb } from '@/lib/firebase-admin';
 
+export async function GET() {
+  console.log('GET /api/email/token-confirmation invoked');
+  return NextResponse.json({ ok: true, route: 'token-confirmation' });
+}
+
 export async function POST(req: NextRequest) {
+  console.log('POST /api/email/token-confirmation invoked');
   const { sessionId, uid, email, tokensAdded } = await req.json();
   if (!sessionId || !uid || !email || typeof tokensAdded !== 'number') {
     return NextResponse.json({ error: 'sessionId, uid, email, tokensAdded are required' }, { status: 400 });

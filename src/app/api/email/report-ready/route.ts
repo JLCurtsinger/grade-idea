@@ -4,7 +4,13 @@ import { sendEmail } from '@/lib/email/resend';
 import { reportReadyTemplate } from '@/lib/email/templates';
 import { adminDb } from '@/lib/firebase-admin';
 
+export async function GET() {
+  console.log('GET /api/email/report-ready invoked');
+  return NextResponse.json({ ok: true, route: 'report-ready' });
+}
+
 export async function POST(req: NextRequest) {
+  console.log('POST /api/email/report-ready invoked');
   const { ideaId, ideaTitle, uid, email, dashboardPath } = await req.json();
   if (!ideaId || !uid || !email) {
     return NextResponse.json({ error: 'ideaId, uid, email are required' }, { status: 400 });
