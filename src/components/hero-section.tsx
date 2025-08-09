@@ -215,7 +215,7 @@ export const HeroSection = ({ onSubmit, tokenBalance, exampleIdea, isGrading = f
                   style={{ paddingRight: `calc(var(--cta-w, 0px) + 12px)` }}
                   className="
                     flex-1 bg-transparent border-0 outline-none ring-0
-                    text-lg py-1 min-h-[40px]
+                    text-lg leading-6 py-1 min-h-[40px]
                     whitespace-pre-wrap break-words
                     resize-none overflow-hidden
                     text-foreground placeholder:text-[15px] placeholder:text-foreground-subtle
