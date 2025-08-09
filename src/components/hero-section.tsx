@@ -151,7 +151,7 @@ export const HeroSection = ({ onSubmit, tokenBalance, exampleIdea, isGrading = f
                     text-lg py-2 min-h-[40px]
                     whitespace-pre-wrap break-words
                     resize-none overflow-hidden
-                    text-foreground placeholder:text-foreground-subtle
+                    text-foreground placeholder:text-base placeholder:text-foreground-subtle
                   "
                 />
 
@@ -160,7 +160,7 @@ export const HeroSection = ({ onSubmit, tokenBalance, exampleIdea, isGrading = f
                   type="submit"
                   disabled={!idea.trim() || isLoading || isGrading}
                   className="
-                    absolute right-2 top-1 h-10
+                    absolute right-2 top-2 h-10
                     btn-primary-breathing px-4 py-1 max-sm:px-2 max-sm:right-0.5
                   "
                 >
