@@ -92,7 +92,7 @@ export function TopIdeaModal({ idea, isOpen, onClose }: TopIdeaModalProps) {
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto mx-4">
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto mx-auto px-4">
         <DialogHeader>
           <div className="flex items-center gap-3">
             <Lightbulb className="w-6 h-6 text-brand" />
