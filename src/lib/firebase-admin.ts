@@ -118,6 +118,19 @@ const isFirebaseInitialized = () => {
   }
 };
 
+// Initialize Firebase Admin SDK (for use in API routes)
+export const initFirebaseAdmin = async (): Promise<void> => {
+  if (isFirebaseInitialized()) {
+    return; // Already initialized
+  }
+  
+  // If not initialized, the module-level initialization should have already run
+  // This function provides a consistent interface for API routes
+  if (!isFirebaseInitialized()) {
+    throw new Error('Firebase Admin SDK failed to initialize');
+  }
+};
+
 export const adminAuth = getAuth();
 export const adminDb = getFirestore(getApp());
 
