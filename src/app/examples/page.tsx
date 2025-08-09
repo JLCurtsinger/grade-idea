@@ -284,7 +284,7 @@ export default function ExamplesPage() {
                           </span>
                         </div>
                         <div className="flex items-center gap-2">
-                          <Target className="w-4 h-4 text-purple-600" />
+                          <Target className="w-4 h-4 text-[#95FC0F]" />
                           <span className="text-sm text-foreground-muted">Differentiation:</span>
                           <span className={`text-sm font-medium ${getScoreColor(idea.baseScores.differentiation)}`}>
                             {idea.baseScores.differentiation}%

@@ -163,7 +163,7 @@ export const ResultsSection = ({ idea, analysis: apiAnalysis }: ResultsSectionPr
         {/* Mock Data Banner for Non-Authenticated Users */}
         {!user && (
           <div className="mb-8">
-            <Card className="bg-gradient-to-r from-blue-500/10 to-purple-500/10 border-blue-500/20">
+            <Card className="bg-gradient-to-r from-blue-500/10 to-[#95FC0F]/10 border-blue-500/20">
               <div className="p-6">
                 <div className="flex items-center gap-3 mb-3">
                   <Sparkles className="w-5 h-5 text-blue-500" />

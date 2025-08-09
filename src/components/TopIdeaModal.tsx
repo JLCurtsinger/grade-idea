@@ -148,7 +148,7 @@ export function TopIdeaModal({ idea, isOpen, onClose }: TopIdeaModalProps) {
 
               <Card className="p-4">
                 <div className="flex items-center gap-3 mb-3">
-                  <Target className="w-5 h-5 text-purple-600" />
+                  <Target className="w-5 h-5 text-[#95FC0F]" />
                   <h4 className="font-medium text-foreground">Competition</h4>
                 </div>
                 <div className="flex items-center justify-between">

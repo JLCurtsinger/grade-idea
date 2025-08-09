@@ -45,8 +45,8 @@ export default function HowItWorks() {
         title: "Describe Your Idea",
         body:
           "Type your startup idea in one or two sentences. Guests can try two free mock analyses; signed-in users spend one token per real scan.",
-        chipClasses: "bg-violet-500/15 ring-violet-500/30",
-        iconClasses: "text-violet-400",
+        chipClasses: "bg-[#95FC0F]/15 ring-[#95FC0F]/30",
+        iconClasses: "text-[#95FC0F]",
       },
       {
         icon: Gauge,
