@@ -12,6 +12,8 @@ import { IdeaDetailModal } from "@/components/IdeaDetailModal";
 import { DeleteConfirmationModal } from "@/components/DeleteConfirmationModal";
 import { collection, query, orderBy, limit, getDocs, doc, getDoc, updateDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
+import { getAuth, onAuthStateChanged } from 'firebase/auth';
+import * as React from 'react';
 import { 
   User, 
   Coins, 
@@ -192,6 +194,26 @@ export default function DashboardPage() {
     loadData();
     // Don't clear updated scores - let them persist for user experience
   }, [user, profileRefreshKey, ideasRefreshKey, forceRefresh]);
+
+  // Call seeding endpoint on dashboard mount and refresh balance
+  React.useEffect(() => {
+    const auth = getAuth();
+    const unsub = onAuthStateChanged(auth, async (user) => {
+      if (!user) return;
+      try {
+        const idToken = await user.getIdToken();
+        const res = await fetch('/api/seed-initial-token', {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${idToken}` },
+        });
+        // Refresh token balance after seeding
+        setProfileRefreshKey(prev => prev + 1);
+      } catch (e) {
+        console.error('Failed to seed initial token:', e);
+      }
+    });
+    return () => unsub();
+  }, []);
 
   // Force refresh token balance on page mount to ensure fresh data
   useEffect(() => {
