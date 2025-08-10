@@ -1,16 +1,14 @@
 // src/app/api/email/welcome/route.ts
-/*
-QA CHECKLIST:
-- Test on production domain to avoid Vercel deployment protection
-- Protected deployment returns 401 or Vercel SSO HTML
-- Check Vercel logs for [API] prefixed console.log statements
-- Check browser console for [WelcomeEmail] prefixed logs
-- Force=true param bypasses idempotency for testing
-- Validation errors log parsed Zod issues
-- Success logs include uid, emailId, forced status
-- Skipped emails log reason (already-sent)
-*/
-
+// 
+// QA CHECKLIST:
+// - Test on production domain to avoid Vercel deployment protection
+// - Protected deployment returns 401 or Vercel SSO HTML in response body
+// - Check Vercel logs for [API] prefixed console.log statements
+// - Check browser console for [WelcomeEmail] prefixed logs
+// - Force=true param added in non-production environments
+// - Both Google sign-in and email/password signup trigger welcome emails
+// - Idempotency: welcomeEmailSent flag prevents duplicate sends (unless forced)
+//
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { sendEmail } from '@/lib/email/resend';
@@ -43,13 +41,18 @@ export async function POST(req: NextRequest) {
   try {
     const parse = welcomeSchema.safeParse(await req.json());
     if (!parse.success) {
-      console.log('[API] /api/email/welcome validation failed:', parse.error.issues);
       logError("welcome email validation failed", { 
         route: "welcome", 
         method: "POST", 
         forced, 
         details: parse.error.issues 
       });
+      
+      console.log('[API] /api/email/welcome outcome: validation-failed', { 
+        forced, 
+        details: parse.error.issues 
+      });
+      
       return NextResponse.json({ 
         ok: false, 
         reason: "validation-failed", 
@@ -73,13 +76,15 @@ export async function POST(req: NextRequest) {
       const userRef = adminDb.collection('users').doc(uid);
       const snap = await userRef.get();
       if (snap.exists && snap.data()?.welcomeEmailSent) {
-        console.log('[API] /api/email/welcome outcome: skipped (already sent)', { uid, skipped: true });
         logInfo("welcome email skipped - already sent", { 
           route: "welcome", 
           uid, 
           skipped: true, 
           reason: "already-sent" 
         });
+        
+        console.log('[API] /api/email/welcome outcome: skipped', { uid, reason: 'already-sent' });
+        
         return NextResponse.json({ 
           ok: true, 
           skipped: true, 
@@ -93,6 +98,8 @@ export async function POST(req: NextRequest) {
         uid, 
         forced: true 
       });
+      
+      console.log('[API] /api/email/welcome outcome: forced', { uid, forced: true });
     }
 
     const html = await render(<WelcomeEmail name={name} />);
@@ -108,7 +115,6 @@ export async function POST(req: NextRequest) {
     const userRef = adminDb.collection('users').doc(uid);
     await userRef.set({ welcomeEmailSent: true }, { merge: true });
 
-    console.log('[API] /api/email/welcome outcome: sent successfully', { uid, emailId, forced: forced || false });
     logInfo("welcome email sent successfully", { 
       route: "welcome", 
       uid, 
@@ -117,6 +123,8 @@ export async function POST(req: NextRequest) {
       hasName: !!name
     });
 
+    console.log('[API] /api/email/welcome outcome: sent', { uid, emailId, forced, hasName: !!name });
+
     return NextResponse.json({ 
       ok: true, 
       forced: forced || false,
@@ -124,13 +132,17 @@ export async function POST(req: NextRequest) {
       route: "welcome" 
     });
   } catch (error: any) {
-    console.log('[API] /api/email/welcome outcome: error', { error: error?.message || 'unknown' });
     logError("welcome email error", { 
       route: "welcome", 
       method: "POST", 
       forced, 
       error: error?.message || 'unknown',
       stack: error?.stack 
+    });
+    
+    console.log('[API] /api/email/welcome outcome: error', { 
+      forced, 
+      error: error?.message || 'unknown' 
     });
     
     return NextResponse.json({ 
