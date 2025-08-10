@@ -72,6 +72,59 @@ export default function PostPage({ params }: { params: { slug: string } }) {
         className="prose prose-neutral max-w-none"
         dangerouslySetInnerHTML={{ __html: html }}
       />
+
+      {/* JSON-LD: BlogPosting */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "BlogPosting",
+            "mainEntityOfPage": {
+              "@type": "WebPage",
+              "@id": `https://gradeidea.cc/founders-hub/${post.slug}`
+            },
+            "headline": post.title,
+            "description": post.description || "",
+            "datePublished": post.date || "",
+            "dateModified": post.date || "",
+            "author": { "@type": "Organization", "name": "GradeIdea.cc" },
+            "publisher": { "@type": "Organization", "name": "GradeIdea.cc" },
+            "url": `https://gradeidea.cc/founders-hub/${post.slug}`
+          })
+        }}
+      />
+
+      {/* JSON-LD: BreadcrumbList */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "BreadcrumbList",
+            "itemListElement": [
+              {
+                "@type": "ListItem",
+                "position": 1,
+                "name": "Home",
+                "item": "https://gradeidea.cc/"
+              },
+              {
+                "@type": "ListItem",
+                "position": 2,
+                "name": "Founders' Learning Hub",
+                "item": "https://gradeidea.cc/founders-hub"
+              },
+              {
+                "@type": "ListItem",
+                "position": 3,
+                "name": post.title,
+                "item": `https://gradeidea.cc/founders-hub/${post.slug}`
+              }
+            ]
+          })
+        }}
+      />
     </main>
   );
 }
