@@ -42,6 +42,25 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={inter.className}>
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "Product",
+          "name": "GradeIdea.cc",
+          "description": "AI-powered startup idea validation tool that scores market potential, monetization clarity, competitive differentiation, and growth potential.",
+          "url": "https://gradeidea.cc",
+          "brand": {
+            "@type": "Brand",
+            "name": "GradeIdea.cc"
+          },
+          "offers": {
+            "@type": "Offer",
+            "url": "https://gradeidea.cc",
+            "priceCurrency": "USD",
+            "price": "0",
+            "priceValidUntil": "2025-12-31",
+            "availability": "https://schema.org/InStock"
+          }
+        }) }} />
         <Providers>
           <AuthProvider>
             <CurrentIdeaProvider>

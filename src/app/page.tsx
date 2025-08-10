@@ -175,6 +175,44 @@ export default function HomePage() {
           />
         </>
       )}
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "How does GradeIdea.cc validate my startup idea?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "GradeIdea.cc uses AI to evaluate your startup idea across market potential, monetization clarity, competitive differentiation, execution difficulty, and growth potential."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Is GradeIdea.cc free to use?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Your first idea validation is free. Additional scans require tokens, which can be purchased on the site."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "What information do I need to provide?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "You only need to describe your idea in 1–3 sentences. GradeIdea.cc generates a full founder-grade report."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Will my idea be kept private?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Yes, ideas you submit are private by default unless you choose to make them public."
+            }
+          }
+        ]
+      }) }} />
     </div>
   );
 } 
