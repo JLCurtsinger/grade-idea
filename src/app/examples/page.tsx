@@ -142,6 +142,51 @@ export default function ExamplesPage() {
       </section>
 
       <div className="container mx-auto px-6 py-12">
+        {/* Category Navigation */}
+        <div className="mb-12">
+          <div className="text-center space-y-4 mb-8">
+            <h2 className="text-2xl font-semibold text-foreground">
+              Browse Ideas by Category
+            </h2>
+            <p className="text-foreground-muted">
+              Explore AI-powered validation reports for specific startup categories
+            </p>
+          </div>
+          
+          <div className="flex flex-wrap justify-center gap-4">
+            <Link 
+              href="/validate/ai" 
+              className="px-6 py-3 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-lg hover:shadow-lg transition-all duration-200 hover:scale-105 font-medium"
+            >
+              AI Startup Ideas
+            </Link>
+            <Link 
+              href="/validate/saas" 
+              className="px-6 py-3 bg-gradient-to-r from-green-500 to-blue-600 text-white rounded-lg hover:shadow-lg transition-all duration-200 hover:scale-105 font-medium"
+            >
+              SaaS Startup Ideas
+            </Link>
+            <Link 
+              href="/validate/ecommerce" 
+              className="px-6 py-3 bg-gradient-to-r from-orange-500 to-red-600 text-white rounded-lg hover:shadow-lg transition-all duration-200 hover:scale-105 font-medium"
+            >
+              E-commerce Startup Ideas
+            </Link>
+            <Link 
+              href="/validate/healthtech" 
+              className="px-6 py-3 bg-gradient-to-r from-emerald-500 to-teal-600 text-white rounded-lg hover:shadow-lg transition-all duration-200 hover:scale-105 font-medium"
+            >
+              HealthTech Startup Ideas
+            </Link>
+            <Link 
+              href="/validate/fintech" 
+              className="px-6 py-3 bg-gradient-to-r from-indigo-500 to-purple-600 text-white rounded-lg hover:shadow-lg transition-all duration-200 hover:scale-105 font-medium"
+            >
+              FinTech Startup Ideas
+            </Link>
+          </div>
+        </div>
+
         <div className="grid lg:grid-cols-2 gap-12">
           {/* Section A: Example Prompts */}
           <div className="space-y-6">
