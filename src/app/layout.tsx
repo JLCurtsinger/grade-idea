@@ -32,6 +32,9 @@ export const metadata: Metadata = {
     description:
       "Get an AI-powered, founder-grade validation report for your startup idea. Score market potential, monetization, and growth – instantly.",
   },
+  other: {
+    'google-site-verification': 'XXXXXX', // replace with actual code from GSC
+  },
 };
 
 export default function RootLayout({
