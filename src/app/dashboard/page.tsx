@@ -74,7 +74,7 @@ interface UserProfile {
 }
 
 export default function DashboardPage() {
-  const { user } = useAuth();
+  const { user, userName } = useAuth(); // Get userName from auth context
   const router = useRouter();
   const { toast } = useToast();
   const [ideas, setIdeas] = useState<Idea[]>([]);
@@ -411,7 +411,7 @@ export default function DashboardPage() {
         body: JSON.stringify({
           uid: user.uid,
           email: user.email,
-          name: user.displayName || '',
+          ...(userName ? { name: userName } : {}), // Only include name if available
         }),
       });
       
@@ -437,6 +437,7 @@ export default function DashboardPage() {
             email: user.email,
             ideaTitle: ideas[0].ideaText.substring(0, 100),
             reportUrl: `${window.location.origin}/dashboard/idea/${ideas[0].id}`,
+            ...(userName ? { name: userName } : {}), // Only include name if available
           }),
         });
         
@@ -460,7 +461,8 @@ export default function DashboardPage() {
           uid: user.uid,
           email: user.email,
           tokensAdded: 10,
-          sessionId: "test-session-id"
+          sessionId: "test-session-id",
+          ...(userName ? { name: userName } : {}), // Only include name if available
         }),
       });
       

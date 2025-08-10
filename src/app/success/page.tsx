@@ -13,7 +13,7 @@ function SuccessPageContent() {
   const searchParams = useSearchParams();
   const sessionId = searchParams.get('session_id');
   const [isLoading, setIsLoading] = useState(true);
-  const { user } = useAuth();
+  const { user, userName } = useAuth(); // Get userName from auth context
   const { toast } = useToast();
 
   useEffect(() => {
@@ -41,7 +41,8 @@ function SuccessPageContent() {
           uid: user.uid,
           email: user.email,
           tokensAdded: 10, // This should come from actual purchase data
-          sessionId: sessionId
+          sessionId: sessionId,
+          ...(userName ? { name: userName } : {}), // Only include name if available
         }),
       });
 

@@ -19,6 +19,7 @@ import { toast } from '@/hooks/use-toast';
 
 interface AuthContextType {
   user: User | null;
+  userName: string | null; // Add userName to context
   loading: boolean;
   isModalOpen: boolean;
   modalView: 'signin' | 'signup' | 'forgot-password' | 'reset-password';
@@ -48,17 +49,50 @@ interface AuthProviderProps {
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
+  const [userName, setUserName] = useState<string | null>(null); // Add userName state
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalView, setModalView] = useState<'signin' | 'signup' | 'forgot-password' | 'reset-password'>('signin');
   const [resetCode, setResetCode] = useState<string | null>(null);
 
+  // Helper function to extract user name defensively
+  const extractUserName = (user: User): string | null => {
+    // Try displayName first, then fallback to reloadUserInfo
+    const name = user.displayName?.trim() || (user as any)?.reloadUserInfo?.displayName?.trim();
+    return name || null;
+  };
+
+  // Helper function to save user data to Firestore
+  const saveUserToFirestore = async (user: User, name: string | null) => {
+    try {
+      const userRef = doc(db, "users", user.uid);
+      const userData: any = {
+        email: user.email,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+      
+      // Only add name if it exists
+      if (name) {
+        userData.name = name;
+      }
+      
+      await setDoc(userRef, userData, { merge: true });
+      console.log(`[USER_CREATION] User: ${user.uid} | Name: ${name || 'not provided'} | Email: ${user.email}`);
+    } catch (error) {
+      console.error('Error saving user to Firestore:', error);
+    }
+  };
+
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       setUser(user);
-      setLoading(false);
       
       if (user) {
+        // Extract and set user name
+        const name = extractUserName(user);
+        setUserName(name);
+        
         setIsModalOpen(false);
         
         // Transfer guest scans to user account - ONLY if user document doesn't exist
@@ -73,13 +107,16 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             const userSnap = await getDoc(userRef);
             
             if (!userSnap.exists()) {
-              // Only create user document with tokens if it doesn't exist
+              // Save user data to Firestore first
+              await saveUserToFirestore(user, name);
+              
+              // Then create user document with tokens
               await setDoc(userRef, { 
                 token_balance: remaining,
                 created_at: new Date(),
                 updated_at: new Date(),
                 last_token_source: 'onboarding'
-              });
+              }, { merge: true });
               
               console.log(`[TOKEN_TRANSACTION] Context: onboarding | User: ${user.uid} | Tokens: ${remaining}`);
               console.log(`Transferred ${remaining} free scans to new user account`);
@@ -92,7 +129,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
                   body: JSON.stringify({
                     uid: user.uid,
                     email: user.email,
-                    name: user.displayName || '',
+                    ...(name ? { name } : {}), // Only include name if present
                   }),
                 });
                 console.log(`Welcome email sent to ${user.email}`);
@@ -112,6 +149,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
               }
             } else {
               console.log(`[TOKEN_TRANSACTION] Context: onboarding | User: ${user.uid} | Skipped - user document already exists`);
+              
+              // Still save/update user data even if document exists (for name updates)
+              await saveUserToFirestore(user, name);
             }
             
             // Clear guest scans from localStorage regardless
@@ -120,8 +160,16 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           } catch (error) {
             console.error('Error transferring guest scans:', error);
           }
+        } else {
+          // No guest scans to transfer, but still save user data
+          await saveUserToFirestore(user, name);
         }
+      } else {
+        // User signed out, clear userName
+        setUserName(null);
       }
+      
+      setLoading(false);
     });
 
     // Check for redirect result on mount
@@ -131,6 +179,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         if (result) {
           // User signed in via redirect
           setUser(result.user);
+          
+          // Extract and set user name for redirect sign-ins
+          const name = extractUserName(result.user);
+          setUserName(name);
+          
           setIsModalOpen(false);
         }
       } catch (error: any) {
@@ -251,6 +304,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   return (
     <AuthContext.Provider value={{
       user,
+      userName, // Include userName in context
       loading,
       isModalOpen,
       modalView,

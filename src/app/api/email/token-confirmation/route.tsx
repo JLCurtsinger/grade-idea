@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { sendEmail } from '@/lib/email/resend';
 import { render } from '@react-email/render';
-import TokenConfirmationEmail from '@/emails/TokenConfirmationEmail';
+import TokenConfirmationEmail, { subject } from '@/emails/TokenConfirmationEmail';
 import { adminDb } from '@/lib/firebase-admin';
 import { logInfo, logWarn, logError } from '@/lib/log';
 import React from 'react';
@@ -16,6 +16,7 @@ const tokenConfirmationSchema = z.object({
   uid: z.string(),
   email: z.string().email(),
   tokensAdded: z.number(),
+  name: z.string().optional(),
 });
 
 export async function GET() {
@@ -44,14 +45,15 @@ export async function POST(req: NextRequest) {
       }, { status: 400 });
     }
     
-    const { sessionId, uid, email, tokensAdded } = parse.data;
+    const { sessionId, uid, email, tokensAdded, name } = parse.data;
     
     logInfo("token-confirmation email request started", { 
       route: "token-confirmation", 
       method: "POST", 
       forced, 
       uid, 
-      sessionId 
+      sessionId,
+      hasName: !!name
     });
 
     // Idempotency: check payment flag (skip if forced)
@@ -82,10 +84,10 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    const html = await render(<TokenConfirmationEmail tokensAdded={tokensAdded} />);
+    const html = await render(<TokenConfirmationEmail tokensAdded={tokensAdded} name={name} />);
     const res = await sendEmail({
       to: email,
-      subject: 'Your tokens are ready',
+      subject: subject,
       html,
     });
 
@@ -100,7 +102,8 @@ export async function POST(req: NextRequest) {
       uid, 
       sessionId, 
       emailId,
-      forced: forced || false 
+      forced: forced || false,
+      hasName: !!name
     });
 
     return NextResponse.json({ 

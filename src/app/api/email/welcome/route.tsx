@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { sendEmail } from '@/lib/email/resend';
 import { render } from '@react-email/render';
-import WelcomeEmail from '@/emails/WelcomeEmail';
+import WelcomeEmail, { subject } from '@/emails/WelcomeEmail';
 import { adminDb } from '@/lib/firebase-admin';
 import { logInfo, logWarn, logError } from '@/lib/log';
 import React from 'react';
@@ -49,7 +49,8 @@ export async function POST(req: NextRequest) {
       route: "welcome", 
       method: "POST", 
       forced, 
-      uid 
+      uid,
+      hasName: !!name
     });
 
     // Idempotency: check user flag (skip if forced)
@@ -81,7 +82,7 @@ export async function POST(req: NextRequest) {
     const html = await render(<WelcomeEmail name={name} />);
     const res = await sendEmail({
       to: email,
-      subject: 'Welcome to GradeIdea',
+      subject: subject,
       html,
     });
 
@@ -95,7 +96,8 @@ export async function POST(req: NextRequest) {
       route: "welcome", 
       uid, 
       emailId,
-      forced: forced || false 
+      forced: forced || false,
+      hasName: !!name
     });
 
     return NextResponse.json({ 

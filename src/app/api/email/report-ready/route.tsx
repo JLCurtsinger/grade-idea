@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { sendEmail } from '@/lib/email/resend';
 import { render } from '@react-email/render';
-import ReportReadyEmail from '@/emails/ReportReadyEmail';
+import ReportReadyEmail, { subject } from '@/emails/ReportReadyEmail';
 import { adminDb } from '@/lib/firebase-admin';
 import { logInfo, logWarn, logError } from '@/lib/log';
 import React from 'react';
@@ -17,6 +17,7 @@ const reportReadySchema = z.object({
   email: z.string().email(),
   ideaTitle: z.string(),
   reportUrl: z.string(),
+  name: z.string().optional(),
 });
 
 export async function GET() {
@@ -45,14 +46,15 @@ export async function POST(req: NextRequest) {
       }, { status: 400 });
     }
     
-    const { uid, ideaId, email, ideaTitle, reportUrl } = parse.data;
+    const { uid, ideaId, email, ideaTitle, reportUrl, name } = parse.data;
     
     logInfo("report-ready email request started", { 
       route: "report-ready", 
       method: "POST", 
       forced, 
       uid, 
-      ideaId 
+      ideaId,
+      hasName: !!name
     });
 
     // Idempotency: check idea flag (skip if forced)
@@ -83,10 +85,10 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    const html = await render(<ReportReadyEmail ideaTitle={ideaTitle} reportUrl={reportUrl} />);
+    const html = await render(<ReportReadyEmail ideaTitle={ideaTitle} reportUrl={reportUrl} name={name} />);
     const res = await sendEmail({
       to: email,
-      subject: 'Your GradeIdea report is ready',
+      subject: subject,
       html,
     });
 
@@ -101,7 +103,8 @@ export async function POST(req: NextRequest) {
       uid, 
       ideaId, 
       emailId,
-      forced: forced || false 
+      forced: forced || false,
+      hasName: !!name
     });
 
     return NextResponse.json({ 
