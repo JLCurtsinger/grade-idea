@@ -31,10 +31,54 @@ export const SignInModal = () => {
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [nameError, setNameError] = useState(""); // Add name-specific error state
+
+  // Validate name field
+  const validateName = (nameValue: string): string => {
+    const trimmedName = nameValue.trim();
+    if (!trimmedName) {
+      return "Full name is required";
+    }
+    if (trimmedName.length < 2) {
+      return "Full name must be at least 2 characters";
+    }
+    if (trimmedName.length > 80) {
+      return "Full name must be less than 80 characters";
+    }
+    return "";
+  };
+
+  // Handle name input change with validation
+  const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const nameValue = e.target.value;
+    setName(nameValue);
+    
+    // Clear error when user starts typing
+    if (nameError) {
+      setNameError("");
+    }
+    
+    // Validate on blur or if field is not empty
+    if (nameValue && nameValue.trim()) {
+      const validationError = validateName(nameValue);
+      if (validationError) {
+        setNameError(validationError);
+      }
+    }
+  };
+
+  // Handle name field blur
+  const handleNameBlur = () => {
+    if (name) {
+      const validationError = validateName(name);
+      setNameError(validationError);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+    setNameError("");
     setLoading(true);
 
     try {
@@ -42,15 +86,13 @@ export const SignInModal = () => {
         await signIn(email, password);
       } else if (modalView === 'signup') {
         // Validate name for signup
-        if (!name.trim()) {
-          throw new Error("Name is required");
+        const nameValidationError = validateName(name);
+        if (nameValidationError) {
+          setNameError(nameValidationError);
+          setLoading(false);
+          return;
         }
-        if (name.trim().length < 2) {
-          throw new Error("Name must be at least 2 characters");
-        }
-        if (name.trim().length > 80) {
-          throw new Error("Name must be less than 80 characters");
-        }
+        
         if (password !== confirmPassword) {
           throw new Error("Passwords don't match");
         }
@@ -90,6 +132,7 @@ export const SignInModal = () => {
 
   const switchView = (view: 'signin' | 'signup' | 'forgot-password') => {
     setError("");
+    setNameError(""); // Clear name error when switching views
     setEmail("");
     setName(""); // Clear name when switching views
     setPassword("");
@@ -147,18 +190,25 @@ export const SignInModal = () => {
             {modalView === 'signup' && (
               <div className="space-y-2">
                 <Label htmlFor="name" className="text-sm font-medium">
-                  Name <span className="text-red-500">*</span>
+                  Full Name <span className="text-red-500">*</span>
                 </Label>
                 <Input
                   id="name"
                   type="text"
                   value={name}
-                  onChange={(e) => setName(e.target.value)}
+                  onChange={handleNameChange}
+                  onBlur={handleNameBlur}
                   placeholder="Enter your full name"
                   required
                   minLength={2}
                   maxLength={80}
+                  className={nameError ? "border-red-500 focus:border-red-500" : ""}
                 />
+                {nameError && (
+                  <div className="text-sm text-red-500">
+                    {nameError}
+                  </div>
+                )}
               </div>
             )}
 

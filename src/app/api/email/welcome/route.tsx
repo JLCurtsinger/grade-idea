@@ -34,9 +34,14 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
-  console.log('[API] /api/email/welcome', { method: 'POST' });
   const { searchParams } = new URL(req.url);
   const forced = searchParams.get("force") === "true";
+  
+  console.log('[API] /api/email/welcome START', { 
+    uid: 'pending', 
+    forced, 
+    timestamp: new Date().toISOString() 
+  });
   
   try {
     const parse = welcomeSchema.safeParse(await req.json());
@@ -85,6 +90,13 @@ export async function POST(req: NextRequest) {
         
         console.log('[API] /api/email/welcome outcome: skipped', { uid, reason: 'already-sent' });
         
+        console.log('[API] /api/email/welcome END: skipped', { 
+          uid, 
+          forced, 
+          skipped: true, 
+          reason: 'already-sent' 
+        });
+        
         return NextResponse.json({ 
           ok: true, 
           skipped: true, 
@@ -125,6 +137,13 @@ export async function POST(req: NextRequest) {
 
     console.log('[API] /api/email/welcome outcome: sent', { uid, emailId, forced, hasName: !!name });
 
+    console.log('[API] /api/email/welcome END: success', { 
+      uid, 
+      forced, 
+      skipped: false, 
+      emailId 
+    });
+
     return NextResponse.json({ 
       ok: true, 
       forced: forced || false,
@@ -142,6 +161,13 @@ export async function POST(req: NextRequest) {
     
     console.log('[API] /api/email/welcome outcome: error', { 
       forced, 
+      error: error?.message || 'unknown' 
+    });
+    
+    console.log('[API] /api/email/welcome END: error', { 
+      uid: 'unknown', 
+      forced, 
+      skipped: false, 
       error: error?.message || 'unknown' 
     });
     

@@ -17,6 +17,7 @@ import {
 import { auth, db } from '@/lib/firebase';
 import { doc, setDoc, getDoc } from 'firebase/firestore';
 import { toast } from '@/hooks/use-toast';
+import { sendWelcomeEmail as sendWelcomeEmailHelper } from '@/lib/email/client';
 
 interface AuthContextType {
   user: User | null;
@@ -66,42 +67,33 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   // Helper function to send welcome email
   const sendWelcomeEmail = async (uid: string, email: string, name?: string) => {
     try {
-      const params = new URLSearchParams();
-      if (process.env.NODE_ENV !== 'production') params.set('force', 'true'); // for testing
+      const result = await sendWelcomeEmailHelper({ uid, email, name });
       
-      const res = await fetch(`/api/email/welcome?${params.toString()}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ uid, email, name }),
-      });
-      
-      console.log('[WelcomeEmail] response status', res.status);
-      const data = await res.json().catch(() => ({}));
-      console.log('[WelcomeEmail] response body', data);
-      
-      // Check for Vercel deployment protection
-      if (res.status === 401 || (data && typeof data === 'string' && data.includes('Vercel'))) {
-        console.warn("API appears protected by Vercel Deployment Protection. Use the production domain or disable protection for testing.");
-        return { success: false, protected: true };
-      }
-      
-      if (res.ok) {
-        toast({
-          title: "Welcome Email Sent",
-          description: "Welcome email sent to your inbox",
-          variant: "default",
-        });
-        return { success: true, data };
+      if (result.ok) {
+        if (result.skipped) {
+          toast({
+            title: "Welcome Email Skipped",
+            description: "Welcome email already sent previously",
+            variant: "default",
+          });
+        } else {
+          toast({
+            title: "Welcome Email Sent",
+            description: "Welcome email sent to your inbox",
+            variant: "default",
+          });
+        }
+        return { success: true, data: result };
       } else {
         toast({
           title: "Welcome Email Failed",
           description: "Failed to send welcome email",
           variant: "destructive",
         });
-        return { success: false, status: res.status, data };
+        return { success: false, error: result };
       }
     } catch (err) {
-      console.error('[WelcomeEmail] fetch error', err);
+      console.error('[WelcomeEmail] error', err);
       toast({
         title: "Welcome Email Failed",
         description: "Failed to send welcome email",
@@ -112,13 +104,28 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   };
 
   // Helper function to save user data to Firestore
-  const saveUserToFirestore = async (user: User, name: string | null) => {
+  const saveUserToFirestore = async (user: User, name: string | null, welcomeEmailSent: boolean = false) => {
     try {
       const userRef = doc(db, "users", user.uid);
+      
+      // Check existing welcomeEmailSent status to prevent overwriting true with false
+      const existingSnap = await getDoc(userRef);
+      let finalWelcomeEmailSent = welcomeEmailSent;
+      
+      if (existingSnap.exists()) {
+        const existingData = existingSnap.data();
+        // NEVER overwrite existing true welcomeEmailSent with false
+        if (existingData.welcomeEmailSent === true) {
+          finalWelcomeEmailSent = true;
+        }
+      }
+      
       const userData: any = {
+        uid: user.uid,
         email: user.email,
         createdAt: new Date(),
         updatedAt: new Date(),
+        welcomeEmailSent: finalWelcomeEmailSent,
       };
       
       // Only add name if it exists
@@ -127,9 +134,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       }
       
       await setDoc(userRef, userData, { merge: true });
-      console.log(`[USER_CREATION] User: ${user.uid} | Name: ${name || 'not provided'} | Email: ${user.email}`);
+      console.info(`[USER_CREATION] User: ${user.uid} | Name: ${name || 'not provided'} | Email: ${user.email} | WelcomeEmailSent: ${finalWelcomeEmailSent} (original: ${welcomeEmailSent})`);
     } catch (error) {
-      console.error('Error saving user to Firestore:', error);
+      console.error('[USER_CREATION] Error saving user to Firestore:', error);
     }
   };
 
@@ -185,7 +192,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             
             if (!userSnap.exists()) {
               // Save user data to Firestore first
-              await saveUserToFirestore(user, name);
+              await saveUserToFirestore(user, name, false); // New user, welcome email not sent yet
               
               // Then create user document with tokens
               await setDoc(userRef, { 
@@ -204,7 +211,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
               console.log(`[TOKEN_TRANSACTION] Context: onboarding | User: ${user.uid} | Skipped - user document already exists`);
               
               // Still save/update user data even if document exists (for name updates)
-              await saveUserToFirestore(user, name);
+              // Check existing welcome email status
+              const existingData = userSnap.data();
+              const existingWelcomeEmailSent = existingData.welcomeEmailSent === true ? true : false;
+              await saveUserToFirestore(user, name, existingWelcomeEmailSent);
             }
             
             // Clear guest scans from localStorage regardless
@@ -215,7 +225,23 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           }
         } else {
           // No guest scans to transfer, but still save user data
-          await saveUserToFirestore(user, name);
+          // Check if user document exists to determine welcome email status
+          try {
+            const userRef = doc(db, "users", user.uid);
+            const userSnap = await getDoc(userRef);
+            const existingWelcomeEmailSent = userSnap.exists() ? (userSnap.data().welcomeEmailSent === true ? true : false) : false;
+            await saveUserToFirestore(user, name, existingWelcomeEmailSent);
+          } catch (error) {
+            console.warn('[AuthStateChange] Error checking welcome email status, defaulting to false', { uid: user.uid, error });
+            // Don't set welcomeEmailSent to false - let saveUserToFirestore handle existing status
+            await saveUserToFirestore(user, name, false);
+          }
+        }
+        
+        // Handle welcome email flow for Google users who might not have gone through the sign-in flow yet
+        if (user.providerData.some(provider => provider.providerId === 'google.com')) {
+          console.info('[AuthStateChange] Google user detected, checking welcome email status', { uid: user.uid });
+          await handleGoogleSignInWelcomeEmail(user);
         }
       } else {
         // User signed out, clear userName
@@ -241,6 +267,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           
           // Backfill name if needed for redirect users
           await backfillUserName(result.user);
+          
+          // Handle welcome email flow for redirect sign-ins
+          await handleGoogleSignInWelcomeEmail(result.user);
         }
       } catch (error: any) {
         console.error('Redirect result error:', error);
@@ -277,23 +306,64 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const signUp = async (email: string, password: string, name: string) => {
     try {
+      console.info('[SIGNUP] Starting email/password signup', { email, nameLength: name.trim().length });
+      
       // Create user with email/password
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
       
+      console.info('[SIGNUP] User created successfully', { uid: user.uid, email: user.email });
+      
       // Update profile with display name
       if (name.trim()) {
-        await updateProfile(user, { displayName: name.trim() });
+        try {
+          await updateProfile(user, { displayName: name.trim() });
+          console.info('[SIGNUP] Profile updated with display name', { uid: user.uid, displayName: name.trim() });
+        } catch (profileError) {
+          console.warn('[SIGNUP] Failed to update profile (non-critical)', { uid: user.uid, error: profileError });
+          // Continue with signup even if profile update fails
+        }
       }
       
-      // Save to Firestore
-      await saveUserToFirestore(user, name.trim());
+      // Check if user document already exists to determine welcome email status
+      const userRef = doc(db, "users", user.uid);
+      const userSnap = await getDoc(userRef);
+      let existingWelcomeEmailSent = false;
       
-      // Send welcome email for new users
-      await sendWelcomeEmail(user.uid, user.email, name.trim());
+      if (userSnap.exists()) {
+        const existingData = userSnap.data();
+        existingWelcomeEmailSent = existingData.welcomeEmailSent === true ? true : false;
+        console.info('[SIGNUP] User document exists, checking welcome email status', { uid: user.uid, welcomeEmailSent: existingWelcomeEmailSent });
+      } else {
+        console.info('[SIGNUP] Creating new user document', { uid: user.uid });
+      }
       
+      // Save to Firestore with current welcome email status
+      await saveUserToFirestore(user, name.trim(), existingWelcomeEmailSent);
+      
+      // Send welcome email if not already sent
+      if (!existingWelcomeEmailSent) {
+        console.info('[SIGNUP] Sending welcome email', { uid: user.uid, email: user.email, name: name.trim() });
+        
+        const welcomeResult = await sendWelcomeEmail(user.uid, user.email, name.trim());
+        
+        if (welcomeResult.success) {
+          console.info('[SIGNUP] Welcome email sent successfully', { uid: user.uid });
+          
+          // Update welcomeEmailSent flag in Firestore
+          await setDoc(userRef, { welcomeEmailSent: true }, { merge: true });
+          console.info('[SIGNUP] Welcome email flag updated in Firestore', { uid: user.uid });
+        } else {
+          console.error('[SIGNUP] Welcome email failed', { uid: user.uid, error: welcomeResult.error });
+        }
+      } else {
+        console.info('[SIGNUP] Welcome email skipped - already sent previously', { uid: user.uid });
+      }
+      
+      console.info('[SIGNUP] Signup completed successfully', { uid: user.uid, email: user.email });
       closeModal();
     } catch (error: any) {
+      console.error('[SIGNUP] Signup failed', { email, error: error.message, code: error.code });
       throw new Error(getErrorMessage(error.code));
     }
   };
@@ -309,7 +379,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       
       // Try popup first, fallback to redirect if popup is blocked
       try {
-        await signInWithPopup(auth, provider);
+        const result = await signInWithPopup(auth, provider);
+        console.info('[GoogleSignIn] Popup sign-in successful', { uid: result.user.uid, email: result.user.email, displayName: result.user.displayName });
+        
+        // Handle welcome email flow after successful sign-in
+        await handleGoogleSignInWelcomeEmail(result.user);
+        
         closeModal();
       } catch (popupError: any) {
         if (popupError.code === 'auth/popup-blocked' || popupError.code === 'auth/popup-closed-by-user') {
@@ -328,6 +403,78 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         throw new Error('Pop-up was blocked. Please allow pop-ups for this site.');
       }
       throw new Error(getErrorMessage(error.code));
+    }
+  };
+
+  // Helper function to handle welcome email flow for Google sign-in
+  const handleGoogleSignInWelcomeEmail = async (user: User) => {
+    try {
+      console.info('[GoogleSignIn] Starting welcome email flow', { uid: user.uid, email: user.email, displayName: user.displayName });
+      
+      // Read user data from Firebase Auth
+      const { uid, email, displayName } = user;
+      
+      if (!email) {
+        console.error('[GoogleSignIn] No email available for welcome email', { uid });
+        return;
+      }
+
+      // Upsert Firestore user document
+      const userRef = doc(db, "users", uid);
+      const userData: any = {
+        uid,
+        email,
+        displayName: displayName ?? null,
+        updatedAt: new Date(),
+      };
+
+      // Get existing user document to check welcomeEmailSent status
+      const userSnap = await getDoc(userRef);
+      if (userSnap.exists()) {
+        const existingData = userSnap.data();
+        // NEVER overwrite existing true welcomeEmailSent with false
+        userData.welcomeEmailSent = existingData.welcomeEmailSent === true ? true : false;
+        
+        // Only add createdAt if it doesn't exist
+        if (!existingData.createdAt) {
+          userData.createdAt = new Date();
+        }
+        
+        console.info('[GoogleSignIn] Updating existing user document', { uid, welcomeEmailSent: userData.welcomeEmailSent });
+      } else {
+        userData.createdAt = new Date();
+        userData.welcomeEmailSent = false; // Safe for new users
+        console.info('[GoogleSignIn] Creating new user document', { uid });
+      }
+
+      // Upsert user document
+      await setDoc(userRef, userData, { merge: true });
+      console.info('[GoogleSignIn] User document upserted successfully', { uid });
+
+      // Check if welcome email should be sent
+      if (!userData.welcomeEmailSent && email) {
+        console.info('[GoogleSignIn] Sending welcome email', { uid, email, name: displayName ?? undefined });
+        
+        const welcomeResult = await sendWelcomeEmailHelper({ 
+          uid, 
+          email, 
+          name: displayName ?? undefined 
+        });
+
+        if (welcomeResult.ok) {
+          console.info('[GoogleSignIn] Welcome email sent successfully', { uid, emailId: welcomeResult.emailId });
+          
+          // Update welcomeEmailSent flag in Firestore
+          await setDoc(userRef, { welcomeEmailSent: true }, { merge: true });
+          console.info('[GoogleSignIn] Welcome email flag updated in Firestore', { uid });
+        } else {
+          console.error('[GoogleSignIn] Welcome email failed', { uid, reason: welcomeResult.reason });
+        }
+      } else {
+        console.info('[GoogleSignIn] Welcome email skipped', { uid, reason: userData.welcomeEmailSent ? 'already-sent' : 'no-email' });
+      }
+    } catch (error) {
+      console.error('[GoogleSignIn] Error in welcome email flow', { uid: user.uid, error });
     }
   };
 

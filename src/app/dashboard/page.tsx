@@ -33,6 +33,7 @@ import {
 } from "lucide-react";
 import { logTokenDisplay, logTokenError } from "@/lib/utils";
 import { getLetterGrade } from "@/lib/gradingScale";
+import { sendWelcomeEmail } from "@/lib/email/client";
 
 interface Idea {
   id: string;
@@ -429,20 +430,16 @@ export default function DashboardPage() {
     try {
       // Test welcome email
       console.log('Testing welcome email...');
-      const welcomeResponse = await fetch('/api/email/welcome', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          uid: user.uid,
-          email: user.email,
-          ...(userName ? { name: userName } : {}), // Only include name if available
-        }),
+      const welcomeResult = await sendWelcomeEmail({
+        uid: user.uid,
+        email: user.email,
+        ...(userName ? { name: userName } : {}), // Only include name if available
       });
       
-      if (welcomeResponse.ok) {
+      if (welcomeResult.ok) {
         toast({
           title: "Welcome Email Test",
-          description: "Welcome email sent successfully",
+          description: welcomeResult.skipped ? "Welcome email skipped (already sent)" : "Welcome email sent successfully",
           variant: "default",
         });
       } else {
