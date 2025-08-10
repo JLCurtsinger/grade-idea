@@ -16,7 +16,7 @@ import {
 } from "lucide-react";
 import { getLetterGrade } from "@/lib/gradingScale";
 import { useRouter } from "next/navigation";
-import { TopIdeaModal } from "@/components/TopIdeaModal";
+import Link from "next/link";
 
 interface PublicIdea {
   id: string;
@@ -49,8 +49,6 @@ export default function ExamplesPage() {
   const [publicIdeas, setPublicIdeas] = useState<PublicIdea[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const [selectedIdea, setSelectedIdea] = useState<PublicIdea | null>(null);
-  const [isModalOpen, setIsModalOpen] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
@@ -82,15 +80,7 @@ export default function ExamplesPage() {
     setIsRefreshing(false);
   };
 
-  const handleIdeaClick = (idea: PublicIdea) => {
-    setSelectedIdea(idea);
-    setIsModalOpen(true);
-  };
 
-  const handleModalClose = () => {
-    setIsModalOpen(false);
-    setSelectedIdea(null);
-  };
 
   const handleExampleClick = (prompt: string) => {
     // Encode the prompt for URL parameter
@@ -233,8 +223,8 @@ export default function ExamplesPage() {
                   <Card 
                     key={idea.id} 
                     className="p-4 cursor-pointer hover:shadow-md transition-all duration-200 hover:scale-[1.01]"
-                    onClick={() => handleIdeaClick(idea)}
                   >
+                    <Link href={`/idea/${idea.id}`} className="block">
                     <div className="space-y-3">
                       {/* Idea Text */}
                       <div>
@@ -306,6 +296,7 @@ export default function ExamplesPage() {
                         </div>
                       </div>
                     </div>
+                    </Link>
                   </Card>
                 ))}
               </div>
@@ -324,12 +315,6 @@ export default function ExamplesPage() {
         </div>
       </div>
 
-      {/* Top Idea Modal */}
-      <TopIdeaModal
-        idea={selectedIdea}
-        isOpen={isModalOpen}
-        onClose={handleModalClose}
-      />
     </div>
   );
 } 
