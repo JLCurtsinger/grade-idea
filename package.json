@@ -13,7 +13,8 @@
     "generate-blog": "node scripts/generateBlogPost.js",
     "demo-blog": "node scripts/demo-generateBlogPost.js",
     "lighthouse:dev": "next build && next start -p 3000 & sleep 2 && npx lighthouse http://localhost:3000 --quiet --only-categories=performance,accessibility,best-practices,seo --output=json --output-path=./lighthouse-report.json && pkill -f 'next start' || true",
-    "ping-sitemap": "node scripts/pingSitemap.js"
+    "ping-sitemap": "node scripts/pingSitemap.js",
+    "ping-search": "node scripts/pingSearchEngines.js"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.0",
