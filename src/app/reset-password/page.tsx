@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, Suspense } from "react";
+import Head from 'next/head';
 import { useSearchParams } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 
@@ -22,14 +23,19 @@ function ResetPasswordContent() {
   }, [searchParams, openModal]);
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center">
-      <div className="text-center space-y-4">
-        <h1 className="text-2xl font-bold text-foreground">Processing Password Reset</h1>
-        <p className="text-foreground-muted">
-          Please wait while we process your password reset request...
-        </p>
+    <>
+      <Head>
+        <link rel="canonical" href="https://gradeidea.cc/reset-password" />
+      </Head>
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center space-y-4">
+          <h1 className="text-2xl font-bold text-foreground">Processing Password Reset</h1>
+          <p className="text-foreground-muted">
+            Please wait while we process your password reset request...
+          </p>
+        </div>
       </div>
-    </div>
+    </>
   );
 }
 

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Head from 'next/head';
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -126,7 +127,11 @@ export default function ExamplesPage() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <>
+      <Head>
+        <link rel="canonical" href="https://gradeidea.cc/examples" />
+      </Head>
+      <div className="min-h-screen bg-background">
       {/* Header */}
       <section className="py-16 bg-gradient-to-br from-brand/5 via-transparent to-transparent">
         <div className="container mx-auto px-6">
@@ -361,5 +366,6 @@ export default function ExamplesPage() {
       </div>
 
     </div>
+    </>
   );
 } 

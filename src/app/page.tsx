@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Head from 'next/head';
 import { HeroSection } from "@/components/hero-section";
 import { ResultsSection } from "@/components/results-section";
 import { ConversionFooter } from "@/components/conversion-footer";
@@ -158,61 +159,66 @@ export default function HomePage() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      {!currentIdea ? (
-        <>
-          <HeroSection onSubmit={handleIdeaSubmit} tokenBalance={tokenBalance} exampleIdea={exampleIdea} isGrading={isGrading} />
-          <HowItWorks />
-          <FeaturesSection />
-          <PricingSection />
-        </>
-      ) : (
-        <>
-          <ResultsSection idea={currentIdea} analysis={analysisResult} />
-          <ConversionFooter 
-            scansRemaining={scansRemaining}
-            onTryAnother={handleTryAnother}
-          />
-        </>
-      )}
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "How does GradeIdea.cc validate my startup idea?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "GradeIdea.cc uses AI to evaluate your startup idea across market potential, monetization clarity, competitive differentiation, execution difficulty, and growth potential."
+    <>
+      <Head>
+        <link rel="canonical" href="https://gradeidea.cc/" />
+      </Head>
+      <div className="min-h-screen bg-background">
+        {!currentIdea ? (
+          <>
+            <HeroSection onSubmit={handleIdeaSubmit} tokenBalance={tokenBalance} exampleIdea={exampleIdea} isGrading={isGrading} />
+            <HowItWorks />
+            <FeaturesSection />
+            <PricingSection />
+          </>
+        ) : (
+          <>
+            <ResultsSection idea={currentIdea} analysis={analysisResult} />
+            <ConversionFooter 
+              scansRemaining={scansRemaining}
+              onTryAnother={handleTryAnother}
+            />
+          </>
+        )}
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "FAQPage",
+          "mainEntity": [
+            {
+              "@type": "Question",
+              "name": "How does GradeIdea.cc validate my startup idea?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "GradeIdea.cc uses AI to evaluate your startup idea across market potential, monetization clarity, competitive differentiation, execution difficulty, and growth potential."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Is GradeIdea.cc free to use?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Your first idea validation is free. Additional scans require tokens, which can be purchased on the site."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "What information do I need to provide?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "You only need to describe your idea in 1–3 sentences. GradeIdea.cc generates a full founder-grade report."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Will my idea be kept private?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Yes, ideas you submit are private by default unless you choose to make them public."
+              }
             }
-          },
-          {
-            "@type": "Question",
-            "name": "Is GradeIdea.cc free to use?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Your first idea validation is free. Additional scans require tokens, which can be purchased on the site."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "What information do I need to provide?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "You only need to describe your idea in 1–3 sentences. GradeIdea.cc generates a full founder-grade report."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Will my idea be kept private?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Yes, ideas you submit are private by default unless you choose to make them public."
-            }
-          }
-        ]
-      }) }} />
-    </div>
+          ]
+        }) }} />
+      </div>
+    </>
   );
 } 
