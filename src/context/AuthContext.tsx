@@ -63,6 +63,54 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     return name || null;
   };
 
+  // Helper function to send welcome email
+  const sendWelcomeEmail = async (uid: string, email: string, name?: string) => {
+    try {
+      const params = new URLSearchParams();
+      if (process.env.NODE_ENV !== 'production') params.set('force', 'true'); // for testing
+      
+      const res = await fetch(`/api/email/welcome?${params.toString()}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ uid, email, name }),
+      });
+      
+      console.log('[WelcomeEmail] response status', res.status);
+      const data = await res.json().catch(() => ({}));
+      console.log('[WelcomeEmail] response body', data);
+      
+      // Check for Vercel deployment protection
+      if (res.status === 401 || (data && typeof data === 'string' && data.includes('Vercel'))) {
+        console.warn("API appears protected by Vercel Deployment Protection. Use the production domain or disable protection for testing.");
+        return { success: false, protected: true };
+      }
+      
+      if (res.ok) {
+        toast({
+          title: "Welcome Email Sent",
+          description: "Welcome email sent to your inbox",
+          variant: "default",
+        });
+        return { success: true, data };
+      } else {
+        toast({
+          title: "Welcome Email Failed",
+          description: "Failed to send welcome email",
+          variant: "destructive",
+        });
+        return { success: false, status: res.status, data };
+      }
+    } catch (err) {
+      console.error('[WelcomeEmail] fetch error', err);
+      toast({
+        title: "Welcome Email Failed",
+        description: "Failed to send welcome email",
+        variant: "destructive",
+      });
+      return { success: false, error: err };
+    }
+  };
+
   // Helper function to save user data to Firestore
   const saveUserToFirestore = async (user: User, name: string | null) => {
     try {
@@ -151,31 +199,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
               console.log(`Transferred ${remaining} free scans to new user account`);
               
               // Send welcome email for new users
-              try {
-                await fetch('/api/email/welcome', {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({
-                    uid: user.uid,
-                    email: user.email,
-                    ...(name ? { name } : {}), // Only include name if present
-                  }),
-                });
-                console.log(`Welcome email sent to ${user.email}`);
-                toast({
-                  title: "Welcome Email Sent",
-                  description: "Welcome email sent to your inbox",
-                  variant: "default",
-                });
-              } catch (emailError) {
-                console.error('Error sending welcome email:', emailError);
-                toast({
-                  title: "Welcome Email Failed",
-                  description: "Failed to send welcome email",
-                  variant: "destructive",
-                });
-                // Don't fail user creation for email errors
-              }
+              await sendWelcomeEmail(user.uid, user.email, name);
             } else {
               console.log(`[TOKEN_TRANSACTION] Context: onboarding | User: ${user.uid} | Skipped - user document already exists`);
               
@@ -264,6 +288,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       
       // Save to Firestore
       await saveUserToFirestore(user, name.trim());
+      
+      // Send welcome email for new users
+      await sendWelcomeEmail(user.uid, user.email, name.trim());
       
       closeModal();
     } catch (error: any) {
