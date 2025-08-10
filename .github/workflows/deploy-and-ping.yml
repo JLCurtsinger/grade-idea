@@ -1,14 +1,11 @@
-name: Deploy to Vercel and Ping Search Engines
+name: Ping Search Engines
 
 on:
   push:
     branches: [ "main" ]
 
-permissions:
-  contents: read
-
 jobs:
-  deploy:
+  ping:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -22,8 +19,20 @@ jobs:
       - name: Install deps
         run: npm ci
 
-      - name: Deploy to Vercel (production)
-        run: npx vercel deploy --prod --token ${{ secrets.VERCEL_TOKEN }}
+      # Wait up to ~5 minutes for Vercel's auto-deploy to go live
+      - name: Wait for site to be live
+        run: |
+          URL="https://www.gradeidea.cc/sitemap.xml"
+          for i in {1..60}; do
+            code=$(curl -s -o /dev/null -w "%{http_code}" "$URL")
+            echo "Attempt $i: $code"
+            if [ "$code" = "200" ]; then
+              exit 0
+            fi
+            sleep 5
+          done
+          echo "Site not live yet (sitemap still not 200)."
+          exit 1
 
       - name: Ping Google/Bing/IndexNow
         run: npm run ping-search
