@@ -69,6 +69,7 @@ interface Idea {
 interface UserProfile {
   id: string;
   email: string;
+  displayName?: string; // Add displayName field
   token_balance: number;
   totalIdeasSubmitted?: number;
 }
@@ -161,6 +162,7 @@ export default function DashboardPage() {
         const profile: UserProfile = {
           id: user.uid,
           email: user.email || '',
+          displayName: user.displayName, // Include displayName
           token_balance: tokenBalance,
           totalIdeasSubmitted: totalIdeasSubmitted
         };

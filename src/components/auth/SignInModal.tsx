@@ -23,6 +23,7 @@ export const SignInModal = () => {
   } = useAuth();
 
   const [email, setEmail] = useState("");
+  const [name, setName] = useState(""); // Add name state
   const [password, setPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -40,10 +41,20 @@ export const SignInModal = () => {
       if (modalView === 'signin') {
         await signIn(email, password);
       } else if (modalView === 'signup') {
+        // Validate name for signup
+        if (!name.trim()) {
+          throw new Error("Name is required");
+        }
+        if (name.trim().length < 2) {
+          throw new Error("Name must be at least 2 characters");
+        }
+        if (name.trim().length > 80) {
+          throw new Error("Name must be less than 80 characters");
+        }
         if (password !== confirmPassword) {
           throw new Error("Passwords don't match");
         }
-        await signUp(email, password);
+        await signUp(email, password, name.trim());
       } else if (modalView === 'forgot-password') {
         await resetPassword(email);
         setError("Password reset email sent! Check your inbox.");
@@ -80,6 +91,7 @@ export const SignInModal = () => {
   const switchView = (view: 'signin' | 'signup' | 'forgot-password') => {
     setError("");
     setEmail("");
+    setName(""); // Clear name when switching views
     setPassword("");
     setNewPassword("");
     setConfirmPassword("");
@@ -130,6 +142,25 @@ export const SignInModal = () => {
                 />
               </div>
             </div>
+
+            {/* Name Field for Sign Up */}
+            {modalView === 'signup' && (
+              <div className="space-y-2">
+                <Label htmlFor="name" className="text-sm font-medium">
+                  Name <span className="text-red-500">*</span>
+                </Label>
+                <Input
+                  id="name"
+                  type="text"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="Enter your full name"
+                  required
+                  minLength={2}
+                  maxLength={80}
+                />
+              </div>
+            )}
 
             {/* Password Fields */}
             {(modalView === 'signin' || modalView === 'signup') && (

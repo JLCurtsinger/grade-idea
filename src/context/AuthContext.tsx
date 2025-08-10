@@ -11,7 +11,8 @@ import {
   GoogleAuthProvider, 
   sendPasswordResetEmail,
   signOut,
-  onAuthStateChanged
+  onAuthStateChanged,
+  updateProfile
 } from 'firebase/auth';
 import { auth, db } from '@/lib/firebase';
 import { doc, setDoc, getDoc } from 'firebase/firestore';
@@ -19,7 +20,7 @@ import { toast } from '@/hooks/use-toast';
 
 interface AuthContextType {
   user: User | null;
-  userName: string | null; // Add userName to context
+  userName: string | null;
   loading: boolean;
   isModalOpen: boolean;
   modalView: 'signin' | 'signup' | 'forgot-password' | 'reset-password';
@@ -27,7 +28,7 @@ interface AuthContextType {
   openModal: (view?: 'signin' | 'signup' | 'forgot-password' | 'reset-password', code?: string) => void;
   closeModal: () => void;
   signIn: (email: string, password: string) => Promise<void>;
-  signUp: (email: string, password: string) => Promise<void>;
+  signUp: (email: string, password: string, name: string) => Promise<void>;
   signInWithGoogle: () => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
   logout: () => Promise<void>;
@@ -49,7 +50,7 @@ interface AuthProviderProps {
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
-  const [userName, setUserName] = useState<string | null>(null); // Add userName state
+  const [userName, setUserName] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalView, setModalView] = useState<'signin' | 'signup' | 'forgot-password' | 'reset-password'>('signin');
@@ -74,13 +75,38 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       
       // Only add name if it exists
       if (name) {
-        userData.name = name;
+        userData.displayName = name;
       }
       
       await setDoc(userRef, userData, { merge: true });
       console.log(`[USER_CREATION] User: ${user.uid} | Name: ${name || 'not provided'} | Email: ${user.email}`);
     } catch (error) {
       console.error('Error saving user to Firestore:', error);
+    }
+  };
+
+  // Helper function to backfill missing names from Auth to Firestore
+  const backfillUserName = async (user: User) => {
+    try {
+      const userRef = doc(db, "users", user.uid);
+      const userSnap = await getDoc(userRef);
+      
+      if (userSnap.exists()) {
+        const userData = userSnap.data();
+        const firestoreName = userData.displayName;
+        const authName = user.displayName;
+        
+        // Only backfill if Firestore has no name but Auth does
+        if (!firestoreName && authName) {
+          await setDoc(userRef, { 
+            displayName: authName,
+            updatedAt: new Date()
+          }, { merge: true });
+          console.log(`[NAME_BACKFILL] User: ${user.uid} | Backfilled name: ${authName}`);
+        }
+      }
+    } catch (error) {
+      console.error('Error backfilling user name:', error);
     }
   };
 
@@ -94,6 +120,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         setUserName(name);
         
         setIsModalOpen(false);
+        
+        // Backfill name if needed (non-breaking)
+        await backfillUserName(user);
         
         // Transfer guest scans to user account - ONLY if user document doesn't exist
         const guestScansUsed = parseInt(localStorage.getItem("guestScansUsed") || "0", 10);
@@ -185,6 +214,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           setUserName(name);
           
           setIsModalOpen(false);
+          
+          // Backfill name if needed for redirect users
+          await backfillUserName(result.user);
         }
       } catch (error: any) {
         console.error('Redirect result error:', error);
@@ -219,9 +251,20 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
-  const signUp = async (email: string, password: string) => {
+  const signUp = async (email: string, password: string, name: string) => {
     try {
-      await createUserWithEmailAndPassword(auth, email, password);
+      // Create user with email/password
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      const user = userCredential.user;
+      
+      // Update profile with display name
+      if (name.trim()) {
+        await updateProfile(user, { displayName: name.trim() });
+      }
+      
+      // Save to Firestore
+      await saveUserToFirestore(user, name.trim());
+      
       closeModal();
     } catch (error: any) {
       throw new Error(getErrorMessage(error.code));
@@ -304,7 +347,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   return (
     <AuthContext.Provider value={{
       user,
-      userName, // Include userName in context
+      userName,
       loading,
       isModalOpen,
       modalView,
