@@ -12,3 +12,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${SITE}/founders-hub`, lastModified: today },
   ]
 }
+
+export const dynamic = 'force-static'
+export const revalidate = 3600
