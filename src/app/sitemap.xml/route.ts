@@ -1,9 +1,9 @@
 import { NextResponse } from 'next/server'
 
-const SITE = 'https://gradeidea.cc'
+const SITE = 'https://www.gradeidea.cc' // www is primary
 
 function xml(strings: TemplateStringsArray, ...vals: any[]) {
-  return strings.reduce((out, s, i) => out + s + (vals[i] ?? ''), '')
+  return strings.reduce((o, s, i) => o + s + (vals[i] ?? ''), '')
 }
 
 export async function GET() {
@@ -16,7 +16,6 @@ export async function GET() {
     <url><loc>${SITE}/examples</loc><lastmod>${today}</lastmod></url>
     <url><loc>${SITE}/founders-hub</loc><lastmod>${today}</lastmod></url>
   </urlset>`
-
   return new NextResponse(body, {
     headers: {
       'Content-Type': 'application/xml; charset=UTF-8',
