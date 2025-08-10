@@ -1,5 +1,7 @@
 import type { MetadataRoute } from 'next'
 
+console.log('[sitemap] metadata route included in build')
+
 const SITE = 'https://gradeidea.cc'
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
