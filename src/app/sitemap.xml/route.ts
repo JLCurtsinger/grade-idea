@@ -2,6 +2,7 @@
 import { NextResponse } from 'next/server';
 import fs from 'node:fs';
 import path from 'node:path';
+import { adminDb } from '@/lib/firebase-admin';
 // If you have a Firestore util, import it; otherwise stub getPublicIdeas()
 /* import { getPublicIdeas } from '@/lib/db'; */
 
@@ -27,18 +28,36 @@ function getPosts(): PostMeta[] {
 
 async function getPublicIdeas(): Promise<{ id: string; updatedAt?: string }[]> {
   try {
-    const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/public-ideas`, {
-      cache: 'no-store'
-    });
-    const data = await response.json();
-    
-    if (data.success) {
-      return data.ideas.map((idea: any) => ({
-        id: idea.id,
-        updatedAt: idea.createdAt ? new Date(idea.createdAt.seconds * 1000).toISOString().slice(0, 10) : undefined
-      }));
+    // Get all ideas from all users where public is true
+    const ideasSnapshot = await adminDb
+      .collectionGroup('ideas')
+      .where('public', '==', true)
+      .orderBy('createdAt', 'desc')
+      .limit(5000)
+      .get();
+
+    const ideas: { id: string; updatedAt?: string }[] = [];
+
+    for (const doc of ideasSnapshot.docs) {
+      const data = doc.data();
+      
+      // Only include ideas that have ideaText
+      if (!data.ideaText) {
+        continue;
+      }
+
+      // Convert Timestamp to ISO string
+      const updatedAt = data.updatedAt?.toDate?.()?.toISOString() || 
+                       data.createdAt?.toDate?.()?.toISOString() || 
+                       undefined;
+
+      ideas.push({
+        id: doc.id,
+        updatedAt
+      });
     }
-    return [];
+
+    return ideas;
   } catch (error) {
     console.error('Error fetching public ideas for sitemap:', error);
     return [];
