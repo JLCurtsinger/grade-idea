@@ -1,6 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import Link from 'next/link';
+import { Metadata } from 'next';
 
 type PostMeta = { title: string; description: string; date: string; slug: string };
 
@@ -26,6 +27,14 @@ function readPosts(): PostMeta[] {
       slug,
     };
   }).sort((a, b) => (a.date < b.date ? 1 : -1));
+}
+
+export async function generateMetadata(): Promise<Metadata> {
+  return {
+    title: "Founders' Learning Hub – Startup Validation Guides | GradeIdea.cc",
+    description: "Actionable guides, strategies, and insights for validating and growing your startup idea. Learn from proven frameworks and real-world examples.",
+    alternates: { canonical: 'https://gradeidea.cc/founders-hub' },
+  };
 }
 
 export default function FoundersHubPage() {
