@@ -12,10 +12,25 @@ import { Toaster } from "@/components/ui/toaster";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "GradeIdea - AI-Powered Business Idea Validation",
-  description: "Validate your business ideas with our AI-powered scoring system. Get instant feedback on market potential, feasibility, and growth opportunities.",
-  icons: {
-    icon: "/favicon.ico",
+  title: 'Validate Your Startup Idea in Minutes – GradeIdea.cc',
+  description:
+    "Get an AI-powered, founder-grade validation report for your startup idea. Score market potential, monetization, and growth – instantly.",
+  alternates: {
+    canonical: 'https://gradeidea.cc',
+  },
+  openGraph: {
+    type: 'website',
+    url: 'https://gradeidea.cc',
+    title: 'Validate Your Startup Idea in Minutes – GradeIdea.cc',
+    description:
+      "Get an AI-powered, founder-grade validation report for your startup idea. Score market potential, monetization, and growth – instantly.",
+    siteName: 'GradeIdea.cc',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Validate Your Startup Idea in Minutes – GradeIdea.cc',
+    description:
+      "Get an AI-powered, founder-grade validation report for your startup idea. Score market potential, monetization, and growth – instantly.",
   },
 };
 

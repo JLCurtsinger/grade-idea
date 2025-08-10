@@ -94,11 +94,6 @@ export const HeroSection = ({ onSubmit, tokenBalance, exampleIdea, isGrading = f
       const textareaPaddingBottom = parseFloat(textareaStyles.paddingBottom);
       const textareaLineHeight = parseFloat(textareaStyles.lineHeight);
       
-      console.log('Baseline measurements:', {
-        CH, BH, containerPaddingTop, containerPaddingBottom,
-        textareaPaddingTop, textareaPaddingBottom, textareaLineHeight
-      }); 
-
       // Calculate content box height (excluding borders)
       const contentBoxHeight = CH - parseFloat(containerStyles.borderTopWidth) - parseFloat(containerStyles.borderBottomWidth);
       
@@ -107,8 +102,6 @@ export const HeroSection = ({ onSubmit, tokenBalance, exampleIdea, isGrading = f
       
       // Apply fixed top offset
       btn.style.top = `${topOffset}px`;
-      
-      console.log('CTA positioning:', { contentBoxHeight, topOffset });
     };
 
     measureAndPosition();
@@ -163,7 +156,7 @@ export const HeroSection = ({ onSubmit, tokenBalance, exampleIdea, isGrading = f
           <div className="space-y-8 animate-fade-in">
             {/* Badge */}
             <div className="inline-flex items-center gap-2 px-4 py-2 bg-surface-elevated border border-border-elevated rounded-full">
-              <Sparkles className="w-4 h-4 text-brand" />
+              <Sparkles size={16} strokeWidth={2} aria-hidden="true" className="text-brand" />
               <span className="text-sm font-medium text-foreground-muted">
                 Trusted by 10,000+ founders
               </span>
@@ -171,9 +164,8 @@ export const HeroSection = ({ onSubmit, tokenBalance, exampleIdea, isGrading = f
 
             {/* Headline */}
             <div className="space-y-4">
-              <h1 className="text-hero">
-                Validate your startup idea {" "}
-                <span className="accent-text-gradient">in seconds</span>
+              <h1 className="text-3xl md:text-5xl font-bold">
+                AI-Powered Startup Idea Validation
               </h1>
               <p className="text-subhero max-w-lg">
                 Founder-grade insights to help you decide what&apos;s worth building.
@@ -236,7 +228,7 @@ export const HeroSection = ({ onSubmit, tokenBalance, exampleIdea, isGrading = f
                   ) : (
                     <>
                       Grade My Idea
-                      <ArrowRight className="w-4 h-4 ml-2" />
+                      <ArrowRight size={16} strokeWidth={2} aria-hidden="true" className="ml-2" />
                     </>
                   )}
                 </Button>
@@ -245,7 +237,7 @@ export const HeroSection = ({ onSubmit, tokenBalance, exampleIdea, isGrading = f
               {/* Loading Dots Overlay */}
               {isGrading && (
                 <div className="fixed inset-0 bg-background/80 backdrop-blur-sm flex items-center justify-center z-50">
-                  <div className="bg-surface border border-border rounded-lg p-8 shadow-lg max-w-md mx-4">
+                  <div className="bg-surface border border-border rounded-lg p-8 shadow-lg max-w-md mx-4 min-h-[120px]">
                     <div className="text-center space-y-4">
                       <div className="flex items-center justify-center space-x-2">
                         <div className="w-3 h-3 bg-brand rounded-full animate-loading-dots"></div>
@@ -259,14 +251,16 @@ export const HeroSection = ({ onSubmit, tokenBalance, exampleIdea, isGrading = f
               )}
 
               {/* Token Balance Display */}
-              {tokenBalance !== null && (
-                <p className="text-sm text-foreground-muted text-center">
-                  You have {tokenBalance} tokens remaining
-                </p>
-              )}
+              <div className="min-h-[20px] flex items-center justify-center">
+                {tokenBalance !== null && (
+                  <p className="text-sm text-foreground-muted text-center">
+                    You have {tokenBalance} tokens remaining
+                  </p>
+                )}
+              </div>
 
               {/* Suggestion Chips */}
-              <div className="flex flex-wrap gap-2">
+              <div className="flex flex-wrap gap-2 min-h-[32px]">
                 <span className="text-sm text-foreground-subtle">Try:</span>
                 {suggestionChips.map((chip) => (
                   <button
@@ -282,7 +276,7 @@ export const HeroSection = ({ onSubmit, tokenBalance, exampleIdea, isGrading = f
             </form>
 
             {/* Trust Indicators */}
-            <div className="flex items-center gap-6 text-sm text-foreground-subtle">
+            <div className="flex items-center gap-6 text-sm text-foreground-subtle min-h-[20px]">
               <div className="flex items-center gap-2">
                 <div className="w-2 h-2 bg-success rounded-full animate-pulse" />
                 <span>Real-time analysis</span>

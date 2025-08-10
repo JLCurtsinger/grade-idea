@@ -1,14 +1,9 @@
-"use client";
-
-import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Check, Star } from "lucide-react";
 import { PricingButton } from "@/components/pricing-button";
 
 export const PricingSection = () => {
-  const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
-
   const subscriptionPlans = [
     {
       name: "Basic",
@@ -95,7 +90,7 @@ export const PricingSection = () => {
             </p>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-8">
+          <div className="grid md:grid-cols-3 gap-8 min-h-[500px]">
             {subscriptionPlans.map((plan, index) => (
               <Card 
                 key={plan.name}
@@ -108,7 +103,7 @@ export const PricingSection = () => {
                 {plan.popular && (
                   <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
                     <Badge className="bg-brand text-brand-foreground px-3 py-1 text-sm font-medium">
-                      <Star className="w-3 h-3 mr-1" />
+                      <Star size={12} strokeWidth={2} aria-hidden="true" className="mr-1" />
                       Most Popular
                     </Badge>
                   </div>
@@ -144,7 +139,7 @@ export const PricingSection = () => {
                   <div className="space-y-3">
                     {plan.features.map((feature, featureIndex) => (
                       <div key={featureIndex} className="flex items-center gap-3">
-                        <Check className="w-4 h-4 text-success flex-shrink-0" />
+                        <Check size={16} strokeWidth={2} aria-hidden="true" className="text-success flex-shrink-0" />
                         <span className="text-sm text-foreground-muted">
                           {feature}
                         </span>
@@ -179,7 +174,7 @@ export const PricingSection = () => {
             </p>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-8">
+          <div className="grid md:grid-cols-3 gap-8 min-h-[400px]">
             {topUpPlans.map((plan, index) => (
               <Card 
                 key={plan.name}
@@ -226,36 +221,36 @@ export const PricingSection = () => {
 
         {/* Additional Info */}
         <div className="mt-16 text-center">
-          <div className="max-w-2xl mx-auto p-6 bg-surface-elevated rounded-lg border border-border">
+          <div className="max-w-2xl mx-auto p-6 bg-surface-elevated rounded-lg border border-border min-h-[200px]">
             <h4 className="text-lg font-semibold text-foreground mb-3">
               What's included with every plan?
             </h4>
             <div className="grid md:grid-cols-2 gap-4 text-sm text-foreground-muted">
               <div className="space-y-2">
                 <div className="flex items-center gap-2">
-                  <Check className="w-4 h-4 text-success" />
+                  <Check size={16} strokeWidth={2} aria-hidden="true" className="text-success" />
                   <span>Unlimited idea submissions</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Check className="w-4 h-4 text-success" />
+                  <Check size={16} strokeWidth={2} aria-hidden="true" className="text-success" />
                   <span>Detailed scoring breakdown</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Check className="w-4 h-4 text-success" />
+                  <Check size={16} strokeWidth={2} aria-hidden="true" className="text-success" />
                   <span>Competitor analysis</span>
                 </div>
               </div>
               <div className="space-y-2">
                 <div className="flex items-center gap-2">
-                  <Check className="w-4 h-4 text-success" />
+                  <Check size={16} strokeWidth={2} aria-hidden="true" className="text-success" />
                   <span>Monetization guidance</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Check className="w-4 h-4 text-success" />
+                  <Check size={16} strokeWidth={2} aria-hidden="true" className="text-success" />
                   <span>Go-to-market strategies</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Check className="w-4 h-4 text-success" />
+                  <Check size={16} strokeWidth={2} aria-hidden="true" className="text-success" />
                   <span>Email support</span>
                 </div>
               </div>

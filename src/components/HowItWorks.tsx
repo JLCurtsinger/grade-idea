@@ -1,96 +1,37 @@
-"use client";
-
-import { useEffect, useMemo, useRef, useState } from "react";
-import { motion, useReducedMotion } from "framer-motion";
 import { Lightbulb, Gauge, ClipboardCheck } from "lucide-react";
 
 export default function HowItWorks() {
-  const prefersReducedMotion = useReducedMotion();
-  const [hasAnimated, setHasAnimated] = useState(false);
-  const sectionRef = useRef<HTMLElement | null>(null);
-
-  // One-time-per-visit guard
-  useEffect(() => {
-    try {
-      if (sessionStorage.getItem("hiw-animated") === "1") setHasAnimated(true);
-    } catch {}
-  }, []);
-
-  useEffect(() => {
-    if (!sectionRef.current || prefersReducedMotion) return;
-    const node = sectionRef.current;
-    let revealed = false;
-    const io = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((e) => {
-          if (e.isIntersecting && !revealed) {
-            setHasAnimated(true);
-            revealed = true;
-            try {
-              sessionStorage.setItem("hiw-animated", "1");
-            } catch {}
-          }
-        });
-      },
-      { threshold: 0.2 }
-    );
-    io.observe(node);
-    return () => io.disconnect();
-  }, [prefersReducedMotion]);
-
-  const steps = useMemo(
-    () => [
-      {
-        icon: Lightbulb,
-        title: "Describe Your Idea",
-        body:
-          "Type your startup idea in one or two sentences. Guests can try two free mock analyses; signed-in users spend one token per real scan.",
-        chipClasses: "bg-[#95FC0F]/15 ring-[#95FC0F]/30",
-        iconClasses: "text-[#95FC0F]",
-      },
-      {
-        icon: Gauge,
-        title: "Get a Founder‑Grade Review",
-        body:
-          "Our AI evaluates market potential, differentiation, monetization clarity, and execution difficulty, then returns scores and a clear summary in about a minute.",
-        chipClasses: "bg-green-500/15 ring-green-500/30",
-        iconClasses: "text-green-400",
-      },
-      {
-        icon: ClipboardCheck,
-        title: "Improve with a Checklist",
-        body:
-          "You'll get actionable steps to raise your score, suggested monetization models and channels, and everything is saved to your dashboard for later.",
-        chipClasses: "bg-amber-500/15 ring-amber-500/30",
-        iconClasses: "text-amber-400",
-      },
-    ],
-    []
-  );
-
-  const useMotion = !prefersReducedMotion && !hasAnimated;
-
-  const containerVariants = {
-    hidden: {},
-    shown: { transition: { staggerChildren: 0.08 } },
-  };
-  const cardVariants = {
-    hidden: { opacity: 0, y: 12 },
-    shown: { opacity: 1, y: 0, transition: { duration: 0.4, ease: "easeOut" } },
-  };
-
-  const Section: any = useMotion ? motion.section : "section";
-  const Grid: any = useMotion ? motion.div : "div";
-  const Card: any = useMotion ? motion.div : "div";
+  const steps = [
+    {
+      icon: Lightbulb,
+      title: "Describe Your Idea",
+      body:
+        "Type your startup idea in one or two sentences. Guests can try two free mock analyses; signed-in users spend one token per real scan.",
+      chipClasses: "bg-[#95FC0F]/15 ring-[#95FC0F]/30",
+      iconClasses: "text-[#95FC0F]",
+    },
+    {
+      icon: Gauge,
+      title: "Get a Founder‑Grade Review",
+      body:
+        "Our AI evaluates market potential, differentiation, monetization clarity, and execution difficulty, then returns scores and a clear summary in about a minute.",
+      chipClasses: "bg-green-500/15 ring-green-500/30",
+      iconClasses: "text-green-400",
+    },
+    {
+      icon: ClipboardCheck,
+      title: "Improve with a Checklist",
+      body:
+        "You'll get actionable steps to raise your score, suggested monetization models and channels, and everything is saved to your dashboard for later.",
+      chipClasses: "bg-amber-500/15 ring-amber-500/30",
+      iconClasses: "text-amber-400",
+    },
+  ];
 
   return (
-    <Section
+    <section
       id="how-it-works"
-      ref={sectionRef}
       className="scroll-mt-24 md:scroll-mt-28 lg:scroll-mt-32 py-16 md:py-24"
-      {...(useMotion
-        ? { initial: "hidden", whileInView: "shown", viewport: { once: true, margin: "0px 0px -10% 0px" } }
-        : {})}
       aria-labelledby="how-it-works-title"
     >
       <div className="container mx-auto px-4 md:px-6">
@@ -99,24 +40,20 @@ export default function HowItWorks() {
             id="how-it-works-title"
             className="text-3xl md:text-4xl font-semibold tracking-tight"
           >
-            How It Works
+            How to Validate a Startup Idea
           </h2>
         </header>
 
-        <Grid
-          className="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8"
-          {...(useMotion ? { variants: containerVariants } : {})}
-        >
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8 min-h-[400px]">
           {steps.map(({ icon: Icon, title, body, chipClasses, iconClasses }, i) => (
-            <Card
+            <div
               key={i}
               className="group rounded-2xl border bg-card/60 backdrop-blur-sm p-6 md:p-8 shadow-sm transition-colors hover:bg-accent/5"
-              {...(useMotion ? { variants: cardVariants } : {})}
             >
               <div className="flex flex-col">
                 {/* Icon chip on top, left-aligned */}
                 <div className={`h-10 w-10 rounded-xl ring-1 ${chipClasses} flex items-center justify-center shrink-0`}>
-                  <Icon className={`h-5 w-5 ${iconClasses}`} aria-hidden="true" />
+                  <Icon size={20} strokeWidth={2} aria-hidden="true" className={iconClasses} />
                 </div>
 
                 {/* Title */}
@@ -129,10 +66,10 @@ export default function HowItWorks() {
                   {body}
                 </p>
               </div>
-            </Card>
+            </div>
           ))}
-        </Grid>
+        </div>
       </div>
-    </Section>
+    </section>
   );
 }

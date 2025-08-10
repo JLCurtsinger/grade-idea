@@ -1,5 +1,3 @@
-"use client";
-
 import { Card } from "@/components/ui/card";
 import { 
   Clock, 
@@ -67,15 +65,18 @@ export const FeaturesSection = () => {
         {/* Section Header */}
         <div className="text-center mb-16">
           <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
-            Fast clarity. Real guidance.
+            AI Business Idea Scoring
           </h2>
+          <h3 className="text-xl md:text-2xl font-semibold text-foreground mb-4">
+            Founder-Grade Startup Validation Reports
+          </h3>
           <p className="text-lg text-foreground-muted max-w-2xl mx-auto">
             How GradeIdea helps you decide what's worth building
           </p>
         </div>
 
         {/* Features Grid */}
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 min-h-[600px]">
           {features.map((feature, index) => {
             const Icon = feature.icon;
             
@@ -88,7 +89,7 @@ export const FeaturesSection = () => {
                 <div className="space-y-6">
                   {/* Icon */}
                   <div className={`inline-flex p-3 rounded-lg ${getIconBgColor(feature.color)}`}>
-                    <Icon className={`w-6 h-6 ${getIconColor(feature.color)}`} />
+                    <Icon size={24} strokeWidth={2} aria-hidden="true" className={getIconColor(feature.color)} />
                   </div>
 
                   {/* Content */}
