@@ -31,6 +31,25 @@ interface PublicIdea {
   recommendation?: string | null;
 }
 
+interface RelatedIdea {
+  id: string;
+  title: string;
+  ideaText: string;
+  baseScores: {
+    market: number;
+    differentiation: number;
+    monetization: number;
+    execution: number;
+    growth: number;
+    overall: number;
+  };
+  createdAt: {
+    seconds: number;
+    nanoseconds: number;
+  };
+  recommendation?: string | null;
+}
+
 async function getIdea(id: string): Promise<PublicIdea | null> {
   try {
     const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/public-idea/${id}`, {
@@ -46,6 +65,24 @@ async function getIdea(id: string): Promise<PublicIdea | null> {
   } catch (error) {
     console.error('Error fetching idea:', error);
     return null;
+  }
+}
+
+async function getRelatedIdeas(currentIdeaId: string): Promise<RelatedIdea[]> {
+  try {
+    const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/related-ideas/${currentIdeaId}`, {
+      cache: 'no-store'
+    });
+    
+    if (!response.ok) {
+      return [];
+    }
+    
+    const data = await response.json();
+    return data.success ? data.relatedIdeas : [];
+  } catch (error) {
+    console.error('Error fetching related ideas:', error);
+    return [];
   }
 }
 
@@ -72,6 +109,7 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
 export default async function IdeaPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const idea = await getIdea(id);
+  const relatedIdeas = await getRelatedIdeas(id);
   
   if (!idea) {
     notFound();
@@ -247,6 +285,22 @@ export default async function IdeaPage({ params }: { params: Promise<{ id: strin
                 </div>
               </div>
             </Card>
+
+            {/* Related Ideas Section */}
+            {relatedIdeas.length > 0 && (
+              <Card className="p-6">
+                <h2 className="text-2xl font-semibold text-foreground mb-4">Related Startup Ideas</h2>
+                <ul className="space-y-2">
+                  {relatedIdeas.map((related) => (
+                    <li key={related.id}>
+                      <Link href={`/idea/${related.id}`} className="text-brand hover:underline">
+                        {related.title}
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </Card>
+            )}
           </div>
 
           {/* Sidebar */}
@@ -303,6 +357,13 @@ export default async function IdeaPage({ params }: { params: Promise<{ id: strin
               </div>
             </Card>
           </div>
+        </div>
+
+        {/* Back to List Link */}
+        <div className="mt-8 text-center">
+          <Link href="/examples" className="text-brand hover:underline block">
+            View All Public Startup Ideas
+          </Link>
         </div>
       </div>
     </div>
