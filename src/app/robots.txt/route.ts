@@ -15,7 +15,7 @@ Noindex: /dashboard/
 Noindex: /success/
 Noindex: /reset-password/
 
-Sitemap: https://gradeidea.cc/sitemap.xml
+Sitemap: https://www.gradeidea.cc/sitemap.xml
 `;
   return new NextResponse(body, {
     headers: {
