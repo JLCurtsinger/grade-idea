@@ -1,9 +1,9 @@
-// src/app/api/email/welcome/route.ts
+// src/app/api/email/report-ready/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { sendEmail } from '@/lib/email/resend';
 import { render } from '@react-email/render';
-import WelcomeEmail from '@/emails/WelcomeEmail';
+import ReportReadyEmail from '@/emails/ReportReadyEmail';
 import { adminDb } from '@/lib/firebase-admin';
 import { logInfo, logWarn, logError } from '@/lib/log';
 import React from 'react';
@@ -11,15 +11,17 @@ import React from 'react';
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-const welcomeSchema = z.object({
+const reportReadySchema = z.object({
   uid: z.string(),
+  ideaId: z.string(),
   email: z.string().email(),
-  name: z.string().optional(),
+  ideaTitle: z.string(),
+  reportUrl: z.string(),
 });
 
 export async function GET() {
-  console.log('GET /api/email/welcome invoked');
-  return NextResponse.json({ ok: true, route: 'welcome' });
+  console.log('GET /api/email/report-ready invoked');
+  return NextResponse.json({ ok: true, route: 'report-ready' });
 }
 
 export async function POST(req: NextRequest) {
@@ -27,10 +29,10 @@ export async function POST(req: NextRequest) {
   const forced = searchParams.get("force") === "true";
   
   try {
-    const parse = welcomeSchema.safeParse(await req.json());
+    const parse = reportReadySchema.safeParse(await req.json());
     if (!parse.success) {
-      logError("welcome email validation failed", { 
-        route: "welcome", 
+      logError("report-ready email validation failed", { 
+        route: "report-ready", 
         method: "POST", 
         forced, 
         details: parse.error.issues 
@@ -39,27 +41,29 @@ export async function POST(req: NextRequest) {
         ok: false, 
         reason: "validation-failed", 
         details: parse.error.issues,
-        route: "welcome" 
+        route: "report-ready" 
       }, { status: 400 });
     }
     
-    const { uid, email, name } = parse.data;
+    const { uid, ideaId, email, ideaTitle, reportUrl } = parse.data;
     
-    logInfo("welcome email request started", { 
-      route: "welcome", 
+    logInfo("report-ready email request started", { 
+      route: "report-ready", 
       method: "POST", 
       forced, 
-      uid 
+      uid, 
+      ideaId 
     });
 
-    // Idempotency: check user flag (skip if forced)
+    // Idempotency: check idea flag (skip if forced)
     if (!forced) {
-      const userRef = adminDb.collection('users').doc(uid);
-      const snap = await userRef.get();
-      if (snap.exists && snap.data()?.welcomeEmailSent) {
-        logInfo("welcome email skipped - already sent", { 
-          route: "welcome", 
+      const ideaRef = adminDb.collection('users').doc(uid).collection('ideas').doc(ideaId);
+      const snap = await ideaRef.get();
+      if (snap.exists && snap.data()?.reportReadyEmailSent) {
+        logInfo("report-ready email skipped - already sent", { 
+          route: "report-ready", 
           uid, 
+          ideaId, 
           skipped: true, 
           reason: "already-sent" 
         });
@@ -67,32 +71,35 @@ export async function POST(req: NextRequest) {
           ok: true, 
           skipped: true, 
           reason: "already-sent",
-          route: "welcome" 
+          route: "report-ready" 
         });
       }
     } else {
-      logWarn("welcome email forced send", { 
-        route: "welcome", 
+      logWarn("report-ready email forced send", { 
+        route: "report-ready", 
         uid, 
+        ideaId, 
         forced: true 
       });
     }
 
+    const html = await render(<ReportReadyEmail ideaTitle={ideaTitle} reportUrl={reportUrl} />);
     const res = await sendEmail({
       to: email,
-      subject: 'Welcome to GradeIdea',
-      html: render(<WelcomeEmail name={name} />),
+      subject: 'Your GradeIdea report is ready',
+      html,
     });
 
     const emailId = (res as any)?.id || null;
     
     // Set idempotency flag
-    const userRef = adminDb.collection('users').doc(uid);
-    await userRef.set({ welcomeEmailSent: true }, { merge: true });
+    const ideaRef = adminDb.collection('users').doc(uid).collection('ideas').doc(ideaId);
+    await ideaRef.set({ reportReadyEmailSent: true }, { merge: true });
 
-    logInfo("welcome email sent successfully", { 
-      route: "welcome", 
+    logInfo("report-ready email sent successfully", { 
+      route: "report-ready", 
       uid, 
+      ideaId, 
       emailId,
       forced: forced || false 
     });
@@ -101,11 +108,11 @@ export async function POST(req: NextRequest) {
       ok: true, 
       forced: forced || false,
       emailId,
-      route: "welcome" 
+      route: "report-ready" 
     });
   } catch (error: any) {
-    logError("welcome email error", { 
-      route: "welcome", 
+    logError("report-ready email error", { 
+      route: "report-ready", 
       method: "POST", 
       forced, 
       error: error?.message || 'unknown',
@@ -115,7 +122,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ 
       ok: false, 
       reason: "send-error",
-      route: "welcome" 
+      route: "report-ready" 
     }, { status: 500 });
   }
 }

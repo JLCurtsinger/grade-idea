@@ -78,10 +78,11 @@ export async function POST(req: NextRequest) {
       });
     }
 
+    const html = await render(<WelcomeEmail name={name} />);
     const res = await sendEmail({
       to: email,
       subject: 'Welcome to GradeIdea',
-      html: render(<WelcomeEmail name={name} />),
+      html,
     });
 
     const emailId = (res as any)?.id || null;

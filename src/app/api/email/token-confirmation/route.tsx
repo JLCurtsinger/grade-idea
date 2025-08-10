@@ -1,9 +1,9 @@
-// src/app/api/email/welcome/route.ts
+// src/app/api/email/token-confirmation/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { sendEmail } from '@/lib/email/resend';
 import { render } from '@react-email/render';
-import WelcomeEmail from '@/emails/WelcomeEmail';
+import TokenConfirmationEmail from '@/emails/TokenConfirmationEmail';
 import { adminDb } from '@/lib/firebase-admin';
 import { logInfo, logWarn, logError } from '@/lib/log';
 import React from 'react';
@@ -11,15 +11,16 @@ import React from 'react';
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-const welcomeSchema = z.object({
+const tokenConfirmationSchema = z.object({
+  sessionId: z.string(),
   uid: z.string(),
   email: z.string().email(),
-  name: z.string().optional(),
+  tokensAdded: z.number(),
 });
 
 export async function GET() {
-  console.log('GET /api/email/welcome invoked');
-  return NextResponse.json({ ok: true, route: 'welcome' });
+  console.log('GET /api/email/token-confirmation invoked');
+  return NextResponse.json({ ok: true, route: 'token-confirmation' });
 }
 
 export async function POST(req: NextRequest) {
@@ -27,10 +28,10 @@ export async function POST(req: NextRequest) {
   const forced = searchParams.get("force") === "true";
   
   try {
-    const parse = welcomeSchema.safeParse(await req.json());
+    const parse = tokenConfirmationSchema.safeParse(await req.json());
     if (!parse.success) {
-      logError("welcome email validation failed", { 
-        route: "welcome", 
+      logError("token-confirmation email validation failed", { 
+        route: "token-confirmation", 
         method: "POST", 
         forced, 
         details: parse.error.issues 
@@ -39,27 +40,29 @@ export async function POST(req: NextRequest) {
         ok: false, 
         reason: "validation-failed", 
         details: parse.error.issues,
-        route: "welcome" 
+        route: "token-confirmation" 
       }, { status: 400 });
     }
     
-    const { uid, email, name } = parse.data;
+    const { sessionId, uid, email, tokensAdded } = parse.data;
     
-    logInfo("welcome email request started", { 
-      route: "welcome", 
+    logInfo("token-confirmation email request started", { 
+      route: "token-confirmation", 
       method: "POST", 
       forced, 
-      uid 
+      uid, 
+      sessionId 
     });
 
-    // Idempotency: check user flag (skip if forced)
+    // Idempotency: check payment flag (skip if forced)
     if (!forced) {
-      const userRef = adminDb.collection('users').doc(uid);
-      const snap = await userRef.get();
-      if (snap.exists && snap.data()?.welcomeEmailSent) {
-        logInfo("welcome email skipped - already sent", { 
-          route: "welcome", 
+      const payRef = adminDb.collection('payments').doc(sessionId);
+      const snap = await payRef.get();
+      if (snap.exists && snap.data()?.tokenEmailSent) {
+        logInfo("token-confirmation email skipped - already sent", { 
+          route: "token-confirmation", 
           uid, 
+          sessionId, 
           skipped: true, 
           reason: "already-sent" 
         });
@@ -67,32 +70,35 @@ export async function POST(req: NextRequest) {
           ok: true, 
           skipped: true, 
           reason: "already-sent",
-          route: "welcome" 
+          route: "token-confirmation" 
         });
       }
     } else {
-      logWarn("welcome email forced send", { 
-        route: "welcome", 
+      logWarn("token-confirmation email forced send", { 
+        route: "token-confirmation", 
         uid, 
+        sessionId, 
         forced: true 
       });
     }
 
+    const html = await render(<TokenConfirmationEmail tokensAdded={tokensAdded} />);
     const res = await sendEmail({
       to: email,
-      subject: 'Welcome to GradeIdea',
-      html: render(<WelcomeEmail name={name} />),
+      subject: 'Your tokens are ready',
+      html,
     });
 
     const emailId = (res as any)?.id || null;
     
     // Set idempotency flag
-    const userRef = adminDb.collection('users').doc(uid);
-    await userRef.set({ welcomeEmailSent: true }, { merge: true });
+    const payRef = adminDb.collection('payments').doc(sessionId);
+    await payRef.set({ tokenEmailSent: true }, { merge: true });
 
-    logInfo("welcome email sent successfully", { 
-      route: "welcome", 
+    logInfo("token-confirmation email sent successfully", { 
+      route: "token-confirmation", 
       uid, 
+      sessionId, 
       emailId,
       forced: forced || false 
     });
@@ -101,11 +107,11 @@ export async function POST(req: NextRequest) {
       ok: true, 
       forced: forced || false,
       emailId,
-      route: "welcome" 
+      route: "token-confirmation" 
     });
   } catch (error: any) {
-    logError("welcome email error", { 
-      route: "welcome", 
+    logError("token-confirmation email error", { 
+      route: "token-confirmation", 
       method: "POST", 
       forced, 
       error: error?.message || 'unknown',
@@ -115,7 +121,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ 
       ok: false, 
       reason: "send-error",
-      route: "welcome" 
+      route: "token-confirmation" 
     }, { status: 500 });
   }
 }

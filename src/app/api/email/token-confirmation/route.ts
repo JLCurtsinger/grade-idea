@@ -2,9 +2,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { sendEmail } from '@/lib/email/resend';
-import { tokenPurchaseTemplate } from '@/lib/email/templates';
+import { render } from '@react-email/render';
+import TokenConfirmationEmail from '@/emails/TokenConfirmationEmail';
 import { adminDb } from '@/lib/firebase-admin';
 import { logInfo, logWarn, logError } from '@/lib/log';
+import React from 'react';
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -83,7 +85,7 @@ export async function POST(req: NextRequest) {
     const res = await sendEmail({
       to: email,
       subject: 'Your tokens are ready',
-      html: tokenPurchaseTemplate({ tokensAdded }),
+      html: render(<TokenConfirmationEmail tokensAdded={tokensAdded} />),
     });
 
     const emailId = (res as any)?.id || null;

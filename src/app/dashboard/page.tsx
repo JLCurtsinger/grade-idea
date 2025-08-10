@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
+import { useToast } from "@/hooks/use-toast";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -75,6 +76,7 @@ interface UserProfile {
 export default function DashboardPage() {
   const { user } = useAuth();
   const router = useRouter();
+  const { toast } = useToast();
   const [ideas, setIdeas] = useState<Idea[]>([]);
   const [archivedIdeas, setArchivedIdeas] = useState<Idea[]>([]);
   const [profile, setProfile] = useState<UserProfile | null>(null);
@@ -397,6 +399,92 @@ export default function DashboardPage() {
     }
   };
 
+  const handleTestEmails = async () => {
+    if (!user) return;
+
+    try {
+      // Test welcome email
+      console.log('Testing welcome email...');
+      const welcomeResponse = await fetch('/api/email/welcome', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          uid: user.uid,
+          email: user.email,
+          name: user.displayName || '',
+        }),
+      });
+      
+      if (welcomeResponse.ok) {
+        toast({
+          title: "Welcome Email Test",
+          description: "Welcome email sent successfully",
+          variant: "default",
+        });
+      } else {
+        throw new Error('Welcome email failed');
+      }
+
+      // Test report ready email (using first idea if available)
+      if (ideas.length > 0) {
+        console.log('Testing report ready email...');
+        const reportResponse = await fetch('/api/email/report-ready', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            uid: user.uid,
+            ideaId: ideas[0].id,
+            email: user.email,
+            ideaTitle: ideas[0].ideaText.substring(0, 100),
+            reportUrl: `${window.location.origin}/dashboard/idea/${ideas[0].id}`,
+          }),
+        });
+        
+        if (reportResponse.ok) {
+          toast({
+            title: "Report Ready Email Test",
+            description: "Report ready email sent successfully",
+            variant: "default",
+          });
+        } else {
+          throw new Error('Report ready email failed');
+        }
+      }
+
+      // Test token confirmation email
+      console.log('Testing token confirmation email...');
+      const tokenResponse = await fetch('/api/email/token-confirmation', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          uid: user.uid,
+          email: user.email,
+          tokensAdded: 10,
+          sessionId: "test-session-id"
+        }),
+      });
+      
+      if (tokenResponse.ok) {
+        toast({
+          title: "Token Confirmation Email Test",
+          description: "Token confirmation email sent successfully",
+          variant: "default",
+        });
+      } else {
+        throw new Error('Token confirmation email failed');
+      }
+
+      console.log('All email tests completed successfully');
+    } catch (error) {
+      console.error('Error testing emails:', error);
+      toast({
+        title: "Email Test Failed",
+        description: error instanceof Error ? error.message : "Failed to test emails",
+        variant: "destructive",
+      });
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -433,6 +521,17 @@ export default function DashboardPage() {
               <Coins className="w-4 h-4 mr-2" />
               Buy Tokens
             </Button>
+            {/* Development-only test emails button */}
+            {process.env.NODE_ENV !== 'production' && (
+              <Button 
+                onClick={handleTestEmails}
+                variant="outline"
+                size="sm"
+                className="border-orange-500 text-orange-500 hover:bg-orange-500/10"
+              >
+                Test Emails
+              </Button>
+            )}
           </div>
         </div>
 

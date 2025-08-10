@@ -2,9 +2,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { sendEmail } from '@/lib/email/resend';
-import { reportReadyTemplate } from '@/lib/email/templates';
+import { render } from '@react-email/render';
+import ReportReadyEmail from '@/emails/ReportReadyEmail';
 import { adminDb } from '@/lib/firebase-admin';
 import { logInfo, logWarn, logError } from '@/lib/log';
+import React from 'react';
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -84,7 +86,7 @@ export async function POST(req: NextRequest) {
     const res = await sendEmail({
       to: email,
       subject: 'Your GradeIdea report is ready',
-      html: reportReadyTemplate({ ideaTitle, dashboardPath: reportUrl }),
+      html: render(<ReportReadyEmail ideaTitle={ideaTitle} reportUrl={reportUrl} />),
     });
 
     const emailId = (res as any)?.id || null;

@@ -350,7 +350,7 @@ export async function POST(request: NextRequest) {
           ideaTitle: ideaText.substring(0, 100), // Use first 100 chars as title
           uid,
           email: decoded.email || '',
-          dashboardPath: '/dashboard',
+          reportUrl: `${process.env.APP_BASE_URL}/dashboard/idea/${ideaId}`,
         }),
       });
       console.log(`Report-ready email sent for idea ${ideaId}`);

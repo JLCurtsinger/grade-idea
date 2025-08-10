@@ -15,6 +15,7 @@ import {
 } from 'firebase/auth';
 import { auth, db } from '@/lib/firebase';
 import { doc, setDoc, getDoc } from 'firebase/firestore';
+import { toast } from '@/hooks/use-toast';
 
 interface AuthContextType {
   user: User | null;
@@ -95,8 +96,18 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
                   }),
                 });
                 console.log(`Welcome email sent to ${user.email}`);
+                toast({
+                  title: "Welcome Email Sent",
+                  description: "Welcome email sent to your inbox",
+                  variant: "default",
+                });
               } catch (emailError) {
                 console.error('Error sending welcome email:', emailError);
+                toast({
+                  title: "Welcome Email Failed",
+                  description: "Failed to send welcome email",
+                  variant: "destructive",
+                });
                 // Don't fail user creation for email errors
               }
             } else {
