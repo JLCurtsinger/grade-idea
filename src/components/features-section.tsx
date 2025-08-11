@@ -14,7 +14,7 @@ export const FeaturesSection = () => {
     {
       icon: Clock,
       title: "Validate in 60 Seconds",
-      titleWithCountUp: () => <>Validate in <CountUp to={60} /> Seconds</>,
+      titleWithCountUp: () => <>Validate in Seconds</>,
       description: "Avoid weeks of guesswork. Enter your idea and get instant, founder-grade feedback across market size, competition, monetization, and execution.",
       color: "brand"
     },
