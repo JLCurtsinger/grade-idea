@@ -188,21 +188,21 @@ export const Header = () => {
                 Features
               </a>
               <a 
-                href="#pricing" 
-                onClick={handlePricingClick}
-                className="text-sm font-medium text-foreground-muted hover:text-foreground transition-colors"
-              >
-                Pricing
-              </a>
-              <a href="/examples" className="text-sm font-medium text-foreground-muted hover:text-foreground transition-colors">
-                Examples
-              </a>
-              <a 
                 href="#how-it-works" 
                 onClick={handleHowItWorksClick}
                 className="text-sm font-medium text-foreground-muted hover:text-foreground transition-colors"
               >
                 How It Works
+              </a>
+              <a href="/examples" className="text-sm font-medium text-foreground-muted hover:text-foreground transition-colors">
+                Examples
+              </a>
+              <a 
+                href="#pricing" 
+                onClick={handlePricingClick}
+                className="text-sm font-medium text-foreground-muted hover:text-foreground transition-colors"
+              >
+                Pricing
               </a>
             </nav>
 
