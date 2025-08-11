@@ -65,7 +65,7 @@ export const FeaturesSection = () => {
         {/* Section Header */}
         <div className="text-center mb-16">
           <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
-            AI Business Idea Scoring
+            Business <span className="accent-text-gradient">idea grading</span>
           </h2>
           <h3 className="text-xl md:text-2xl font-semibold text-foreground mb-4">
             Founder-Grade Startup Validation Reports

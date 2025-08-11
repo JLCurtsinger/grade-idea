@@ -98,7 +98,7 @@ export const BuyTokensModal = ({ isOpen, onClose }: BuyTokensModalProps) => {
                       {plan.price}
                     </div>
                     <div className="text-sm text-foreground-muted">
-                      {plan.tokens} tokens
+                      <span className="accent-text-gradient">{plan.tokens} tokens</span>
                     </div>
                     <div className="text-xs text-foreground-subtle">
                       {plan.costPerToken} per token

@@ -72,7 +72,7 @@ export const PricingSection = () => {
         {/* Section Header */}
         <div className="text-center mb-16">
           <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
-            Simple, transparent pricing
+            Simple, <span className="accent-text-gradient">transparent</span> pricing
           </h2>
           <p className="text-lg text-foreground-muted max-w-2xl mx-auto">
             Choose the plan that fits your building rhythm
@@ -128,7 +128,7 @@ export const PricingSection = () => {
                   {/* Token Info */}
                   <div className="text-center p-4 bg-surface rounded-lg">
                     <div className="text-2xl font-bold text-foreground mb-1">
-                      {plan.tokens} tokens
+                      <span className="accent-text-gradient">{plan.tokens} tokens</span>
                     </div>
                     <div className="text-sm text-foreground-muted">
                       {plan.costPerToken} per token
@@ -197,7 +197,7 @@ export const PricingSection = () => {
                   {/* Token Info */}
                   <div className="text-center p-4 bg-surface-elevated rounded-lg">
                     <div className="text-2xl font-bold text-foreground mb-1">
-                      {plan.tokens} tokens
+                      <span className="accent-text-gradient">{plan.tokens} tokens</span>
                     </div>
                     <div className="text-sm text-foreground-muted">
                       {plan.costPerToken} per token

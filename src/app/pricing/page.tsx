@@ -82,7 +82,7 @@ export default function PricingPage() {
         <div className="container mx-auto px-6">
           <div className="text-center space-y-4">
             <h1 className="text-4xl md:text-5xl font-bold text-foreground">
-              Simple, Transparent Pricing
+              Simple, <span className="accent-text-gradient">Transparent</span> Pricing
             </h1>
             <p className="text-lg text-foreground-muted max-w-3xl mx-auto">
               Choose the plan that fits your startup validation needs. No monthly fees, no hidden costs - just powerful AI insights when you need them.
@@ -124,7 +124,7 @@ export default function PricingPage() {
                 </div>
 
                 <div className="text-center">
-                  <span className="text-3xl font-bold text-brand">{plan.tokens}</span>
+                  <span className="text-3xl font-bold accent-text-gradient">{plan.tokens}</span>
                   <p className="text-sm text-foreground-muted">AI Validations</p>
                 </div>
 
