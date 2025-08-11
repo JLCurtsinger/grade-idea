@@ -304,4 +304,44 @@
 
 .animate-loading-dots:nth-child(3) {
   animation-delay: 0.4s;
+}
+
+/* Premium Navbar Styles */
+.navglass {
+  background: color-mix(in oklab, hsl(var(--background)) 85%, black 8%);
+  -webkit-backdrop-filter: saturate(140%) blur(10px);
+  backdrop-filter: saturate(140%) blur(10px);
+}
+
+/* Hairline separator tuned for dark */
+:root { --nav-hairline: color-mix(in oklab, hsl(var(--border)) 65%, transparent); }
+.nav-hairline { border-bottom: 1px solid var(--nav-hairline); }
+
+/* Shadow on scroll */
+.navshadow {
+  box-shadow: 0 6px 24px rgba(0,0,0,.10);
+}
+
+/* Link underline animation */
+.link-underline {
+  position: relative;
+}
+.link-underline::after {
+  content: "";
+  position: absolute;
+  left: 0; right: 0; bottom: -0.25rem;
+  height: 2px;
+  background: linear-gradient(90deg, #1FCF8C 0%, #95FC0F 50%, #00A5B4 100%);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform .22s ease-out;
+}
+.link-underline:hover::after,
+.link-underline[aria-current="page"]::after {
+  transform: scaleX(1);
+}
+
+/* Reduced motion: kill fancy bits */
+@media (prefers-reduced-motion: reduce) {
+  .link-underline::after { transition: none; }
 } 

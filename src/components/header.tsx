@@ -11,6 +11,7 @@ import { useAuth } from "@/context/AuthContext";
 
 export const Header = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
   const router = useRouter();
   const pathname = usePathname();
   const { setCurrentIdea } = useCurrentIdea();
@@ -18,6 +19,14 @@ export const Header = () => {
   
   // Check if we're on the landing page
   const isLandingPage = pathname === '/';
+
+  // Handle scroll for shadow effect
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 8);
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
 
   // Handle escape key and body scroll
   useEffect(() => {
@@ -147,98 +156,99 @@ export const Header = () => {
 
   return (
     <>
-      <header className="sticky top-0 z-40 bg-background/80 backdrop-blur-lg border-b border-border">
-        <div className="container mx-auto px-6 py-4">
-          <div className="flex items-center justify-between">
-            {/* Logo */}
-            <div className="flex items-center gap-3">
-              <div 
-                onClick={handleLogoClick}
-                className="flex items-center gap-2 cursor-pointer"
-              >
-                <div className="p-2 bg-brand/20 rounded-lg">
-                  <Image
-                    src="/logo.svg"
-                    alt="GradeIdea logo"
-                    width={24}
-                    height={24}
-                    className="w-6 h-6"
-                    aria-hidden="true"
-                  />
-                </div>
-                <div>
-                  <h1 className="text-xl font-bold tracking-tight sm:tracking-normal">
-                    <span className="tropical-logo-gradient">GradeIdea</span>
-                  </h1>
-                  <div className="text-xs text-foreground-subtle">.cc</div>
-                </div>
+      <header className={`w-full sticky top-0 z-50 navglass nav-hairline transition-shadow ${scrolled ? "navshadow" : ""}`}>
+        <div className="mx-auto flex h-14 md:h-16 items-center justify-between px-3 sm:px-4 md:px-6 lg:px-8">
+          {/* Logo */}
+          <div className="flex items-center gap-3">
+            <div 
+              onClick={handleLogoClick}
+              className="flex items-center gap-2 cursor-pointer"
+            >
+              <div className="p-2 bg-brand/20 rounded-lg">
+                <Image
+                  src="/logo.svg"
+                  alt="GradeIdea logo"
+                  width={24}
+                  height={24}
+                  className="w-6 h-6"
+                  aria-hidden="true"
+                />
               </div>
-              <Badge variant="secondary" className="bg-brand/10 text-brand border-brand/20 text-xs">
-                V1
-              </Badge>
+              <div>
+                <h1 className="text-lg sm:text-xl font-bold tracking-tight sm:tracking-normal">
+                  <span className="tropical-logo-gradient">GradeIdea</span>
+                </h1>
+                <div className="text-xs text-foreground-subtle">.cc</div>
+              </div>
             </div>
+            <Badge variant="secondary" className="bg-brand/10 text-brand border-brand/20 text-xs">
+              V1
+            </Badge>
+          </div>
 
-            {/* Desktop Navigation */}
-            <nav className="hidden md:flex items-center gap-8">
-              <a 
-                href="#features" 
-                onClick={handleFeaturesClick}
-                className="text-sm font-medium text-foreground-muted hover:text-foreground transition-colors"
-              >
-                Features
-              </a>
-              <a 
-                href="#how-it-works" 
-                onClick={handleHowItWorksClick}
-                className="text-sm font-medium text-foreground-muted hover:text-foreground transition-colors"
-              >
-                How It Works
-              </a>
-              <a href="/examples" className="text-sm font-medium text-foreground-muted hover:text-foreground transition-colors">
-                Examples
-              </a>
-              <a 
-                href="#pricing" 
-                onClick={handlePricingClick}
-                className="text-sm font-medium text-foreground-muted hover:text-foreground transition-colors"
-              >
-                Pricing
-              </a>
-            </nav>
+          {/* Desktop Navigation */}
+          <nav className="hidden md:flex items-center gap-6 overflow-x-auto">
+            <a 
+              href="#features" 
+              onClick={handleFeaturesClick}
+              className="link-underline text-sm md:text-[0.95rem] text-foreground/80 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--brand))] focus-visible:ring-offset-2 focus-visible:ring-offset-transparent rounded-sm transition-colors"
+            >
+              Features
+            </a>
+            <a 
+              href="#how-it-works" 
+              onClick={handleHowItWorksClick}
+              className="link-underline text-sm md:text-[0.95rem] text-foreground/80 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--brand))] focus-visible:ring-offset-2 focus-visible:ring-offset-transparent rounded-sm transition-colors"
+            >
+              How It Works
+            </a>
+            <a 
+              href="/examples" 
+              className="link-underline text-sm md:text-[0.95rem] text-foreground/80 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--brand))] focus-visible:ring-offset-2 focus-visible:ring-offset-transparent rounded-sm transition-colors"
+            >
+              Examples
+            </a>
+            <a 
+              href="#pricing" 
+              onClick={handlePricingClick}
+              className="link-underline text-sm md:text-[0.95rem] text-foreground/80 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--brand))] focus-visible:ring-offset-2 focus-visible:ring-offset-transparent rounded-sm transition-colors"
+            >
+              Pricing
+            </a>
+          </nav>
 
-            {/* Desktop Actions */}
-            <div className="hidden md:flex items-center gap-4">
-              <Button 
-                variant="ghost" 
-                className="text-foreground-muted hover:text-foreground"
-                onClick={handleAuthClick}
-              >
-                {user ? 'Sign Out' : 'Sign In'}
-              </Button>
-              <Button 
-                className="btn-primary"
-                onClick={handleGetStartedClick}
-              >
-                {user ? 'Dashboard' : 'Get Started'}
-              </Button>
-            </div>
-
-            {/* Mobile Menu Button */}
+          {/* Desktop Actions */}
+          <div className="hidden md:flex items-center gap-4">
             <Button 
               variant="ghost" 
-              size="icon" 
-              className="md:hidden"
-              onClick={toggleMobileMenu}
-              aria-label="Toggle mobile menu"
-              aria-expanded={isMobileMenuOpen}
+              className="text-foreground-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--brand))] focus-visible:ring-offset-2 focus-visible:ring-offset-transparent rounded-sm transition-colors"
+              onClick={handleAuthClick}
             >
-              {isMobileMenuOpen ? (
-                <X className="w-5 h-5" />
-              ) : (
-                <Menu className="w-5 h-5" />
-              )}
+              {user ? 'Sign Out' : 'Sign In'}
+            </Button>
+            <Button 
+              className="shadow-md active:scale-[0.98] transition-transform duration-150"
+              onClick={handleGetStartedClick}
+            >
+              {user ? 'Dashboard' : 'Get Started'}
             </Button>
           </div>
+
+          {/* Mobile Menu Button */}
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            className="md:hidden inline-flex h-10 w-10 items-center justify-center rounded-xl border border-border hover:bg-foreground/5 active:scale-[0.98] transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--brand))] focus-visible:ring-offset-2 focus-visible:ring-offset-transparent"
+            onClick={toggleMobileMenu}
+            aria-label="Open menu"
+            aria-expanded={isMobileMenuOpen}
+          >
+            {isMobileMenuOpen ? (
+              <X className="w-5 h-5" />
+            ) : (
+              <Menu className="w-5 h-5" />
+            )}
+          </Button>
         </div>
       </header>
 
