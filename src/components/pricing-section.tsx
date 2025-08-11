@@ -104,7 +104,7 @@ export const PricingSection = () => {
                   <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
                     <Badge className="bg-brand text-brand-foreground px-3 py-1 text-sm font-medium">
                       <Star size={12} strokeWidth={2} aria-hidden="true" className="mr-1" />
-                      Most Popular
+                      Popular
                     </Badge>
                   </div>
                 )}

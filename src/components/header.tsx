@@ -167,12 +167,14 @@ export const Header = () => {
                   />
                 </div>
                 <div>
-                  <h1 className="text-xl font-bold">GradeIdea</h1>
+                  <h1 className="text-xl font-bold tracking-tight sm:tracking-normal">
+                    <span className="tropical-logo-gradient">GradeIdea</span>
+                  </h1>
                   <div className="text-xs text-foreground-subtle">.cc</div>
                 </div>
               </div>
               <Badge variant="secondary" className="bg-brand/10 text-brand border-brand/20 text-xs">
-                V1.0
+                V1
               </Badge>
             </div>
 
