@@ -3,6 +3,7 @@
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Zap, RefreshCw, Rocket } from "lucide-react";
+import Reveal from "@/components/ui/Reveal";
 
 interface ConversionFooterProps {
   scansRemaining: number;
@@ -15,51 +16,57 @@ export const ConversionFooter = ({ scansRemaining, onTryAnother }: ConversionFoo
       <div className="container mx-auto">
         <div className="flex flex-col md:flex-row items-center justify-between gap-6">
           {/* Scan Balance */}
-          <div className="flex items-center gap-3">
-            <div className="flex items-center gap-2 px-3 py-2 bg-surface border border-border rounded-lg">
-              <Zap className="w-4 h-4 text-brand" />
-              <span className="text-sm font-medium">
-                {scansRemaining} free scans remaining
-              </span>
+          <Reveal>
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2 px-3 py-2 bg-surface border border-border rounded-lg">
+                <Zap className="w-4 h-4 text-brand" />
+                <span className="text-sm font-medium">
+                  {scansRemaining} free scans remaining
+                </span>
+              </div>
             </div>
-          </div>
+          </Reveal>
 
           {/* Action Buttons */}
-          <div className="flex items-center gap-4">
-            <Button 
-              variant="outline" 
-              onClick={onTryAnother}
-              className="btn-secondary"
-            >
-              <RefreshCw className="w-4 h-4 mr-2" />
-              Try Another Idea
-            </Button>
-            
-            <Button className="btn-primary">
-              <Zap className="w-4 h-4 mr-2" />
-              Buy More Tokens
-            </Button>
-          </div>
+          <Reveal delay={0.06}>
+            <div className="flex items-center gap-4">
+              <Button 
+                variant="outline" 
+                onClick={onTryAnother}
+                className="btn-secondary"
+              >
+                <RefreshCw className="w-4 h-4 mr-2" />
+                Try Another Idea
+              </Button>
+              
+              <Button className="btn-primary">
+                <Zap className="w-4 h-4 mr-2" />
+                Buy More Tokens
+              </Button>
+            </div>
+          </Reveal>
         </div>
 
         {/* Upsell Card - Only show when scans are low */}
         {scansRemaining <= 1 && (
-          <Card className="card-glow p-6 mt-6 animate-scale-in">
-            <div className="flex flex-col md:flex-row items-center gap-6">
-              <div className="flex-1">
-                <div className="flex items-center gap-2 mb-2">
-                  <Rocket className="w-5 h-5 text-brand" />
-                  <h3 className="text-lg font-semibold">Ready to build?</h3>
+          <Reveal delay={0.12}>
+            <Card className="card-glow p-6 mt-6 animate-scale-in">
+              <div className="flex flex-col md:flex-row items-center gap-6">
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Rocket className="w-5 h-5 text-brand" />
+                    <h3 className="text-lg font-semibold">Ready to build?</h3>
+                  </div>
+                  <p className="text-foreground-muted">
+                    Generate a complete MVP plan with market analysis, feature roadmap, and technical requirements.
+                  </p>
                 </div>
-                <p className="text-foreground-muted">
-                  Generate a complete MVP plan with market analysis, feature roadmap, and technical requirements.
-                </p>
+                <Button className="btn-primary text-lg px-8 py-4">
+                  Coming Soon!
+                </Button>
               </div>
-              <Button className="btn-primary text-lg px-8 py-4">
-                Coming Soon!
-              </Button>
-            </div>
-          </Card>
+            </Card>
+          </Reveal>
         )}
       </div>
     </div>

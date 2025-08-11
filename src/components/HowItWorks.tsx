@@ -1,4 +1,5 @@
 import { Lightbulb, Gauge, ClipboardCheck } from "lucide-react";
+import Reveal from "@/components/ui/Reveal";
 
 export default function HowItWorks() {
   const steps = [
@@ -36,20 +37,22 @@ export default function HowItWorks() {
     >
       <div className="container mx-auto px-4 md:px-6">
         <header className="mb-8 md:mb-12">
-          <h2
-            id="how-it-works-title"
-            className="text-3xl md:text-4xl font-semibold tracking-tight"
-          >
-            How to <span className="accent-text-gradient">validate a startup idea</span>
-          </h2>
+          <Reveal>
+            <h2
+              id="how-it-works-title"
+              className="text-3xl md:text-4xl font-semibold tracking-tight"
+            >
+              How to <span className="accent-text-gradient">validate a startup idea</span>
+            </h2>
+          </Reveal>
         </header>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8 min-h-[400px]">
           {steps.map(({ icon: Icon, title, body, chipClasses, iconClasses }, i) => (
-            <div
-              key={i}
-              className="group rounded-2xl border bg-card/60 backdrop-blur-sm p-6 md:p-8 shadow-sm transition-colors hover:bg-accent/5"
-            >
+            <Reveal key={i} delay={0.12 + (i * 0.06)}>
+              <div
+                className="group rounded-2xl border bg-card/60 backdrop-blur-sm p-6 md:p-8 shadow-sm transition-colors hover:bg-accent/5"
+              >
               <div className="flex flex-col">
                 {/* Icon chip on top, left-aligned */}
                 <div className={`h-10 w-10 rounded-xl ring-1 ${chipClasses} flex items-center justify-center shrink-0`}>
@@ -65,8 +68,9 @@ export default function HowItWorks() {
                 <p className="mt-2 text-sm md:text-base leading-relaxed text-foreground/80">
                   {body}
                 </p>
+                              </div>
               </div>
-            </div>
+            </Reveal>
           ))}
         </div>
       </div>

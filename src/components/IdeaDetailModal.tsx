@@ -40,6 +40,7 @@ import {
 import { IdeaChecklist } from "./IdeaChecklist";
 import { calculateDynamicScores } from "@/lib/scoring";
 import { RegradeConfirmationModal } from "./RegradeConfirmationModal";
+import Reveal from "@/components/ui/Reveal";
 
 interface Idea {
   id: string;
@@ -1298,105 +1299,121 @@ export function IdeaDetailModal({ idea, isOpen, onClose, onScoreUpdate, googleTr
         <DialogHeader>
           <div className="flex items-center justify-between">
             <div>
-              <DialogTitle className="text-xl font-bold text-foreground">
-                Idea Analysis Details
-              </DialogTitle>
-              <DialogDescription className="text-foreground-muted">
-                Detailed breakdown of your idea evaluation
-              </DialogDescription>
+              <Reveal>
+                <DialogTitle className="text-xl font-bold text-foreground">
+                  Idea Analysis Details
+                </DialogTitle>
+              </Reveal>
+              <Reveal delay={0.06}>
+                <DialogDescription className="text-foreground-muted">
+                  Detailed breakdown of your idea evaluation
+                </DialogDescription>
+              </Reveal>
             </div>
             {user && (
-              <Button
-                onClick={handleRegradeClick}
-                className="btn-primary"
-                size="sm"
-              >
-                <RefreshCw className="w-4 h-4 mr-2" />
-                Regrade Idea
-                <div className="ml-2 flex items-center gap-1">
-                  <Coins className="w-3 h-3" />
-                  <span className="text-xs">1</span>
-                </div>
-              </Button>
+              <Reveal delay={0.12}>
+                <Button
+                  onClick={handleRegradeClick}
+                  className="btn-primary"
+                  size="sm"
+                >
+                  <RefreshCw className="w-4 h-4 mr-2" />
+                  Regrade Idea
+                  <div className="ml-2 flex items-center gap-1">
+                    <Coins className="w-3 h-3" />
+                    <span className="text-xs">1</span>
+                  </div>
+                </Button>
+              </Reveal>
             )}
           </div>
         </DialogHeader>
 
         <div className="space-y-6">
           {/* Idea Text */}
-          <div className="space-y-3">
-            <h3 className="text-lg font-semibold text-foreground">Your Idea</h3>
-            <Card className="p-4 bg-surface">
-              <p className="text-foreground leading-relaxed">{idea.ideaText}</p>
-            </Card>
-          </div>
+          <Reveal delay={0.18}>
+            <div className="space-y-3">
+              <h3 className="text-lg font-semibold text-foreground">Your Idea</h3>
+              <Card className="p-4 bg-surface">
+                <p className="text-foreground leading-relaxed">{idea.ideaText}</p>
+              </Card>
+            </div>
+          </Reveal>
 
           {/* AI Analysis */}
           {idea.summary_analysis && (
-            <div className="space-y-3">
-              <h3 className="text-lg font-semibold text-foreground">AI Analysis</h3>
-              <Card className="p-4 bg-surface">
-                <p className="text-foreground-muted leading-relaxed">{idea.summary_analysis}</p>
-              </Card>
-            </div>
+            <Reveal delay={0.24}>
+              <div className="space-y-3">
+                <h3 className="text-lg font-semibold text-foreground">AI Analysis</h3>
+                <Card className="p-4 bg-surface">
+                  <p className="text-foreground-muted leading-relaxed">{idea.summary_analysis}</p>
+                </Card>
+              </div>
+            </Reveal>
           )}
 
           {/* Updated Summary from Regrade */}
           {typeof idea.summary_analysis === 'string' && idea.summary_analysis.trim() && idea.last_regraded_at && (
-            <div className="space-y-3">
-              <div className="flex items-center gap-2">
-                <h3 className="text-lg font-semibold text-foreground">Updated Summary</h3>
-                <Badge variant="secondary" className="bg-brand/10 text-brand border-brand/20 text-xs">
-                  From Regrade
-                </Badge>
-              </div>
-              <Card className="p-4 bg-surface">
-                <p className="text-foreground-muted leading-relaxed">{idea.summary_analysis}</p>
-                <div className="mt-3 pt-3 border-t border-border">
-                  <p className="text-xs text-foreground-muted">
-                    Updated on {formatDate(idea.last_regraded_at)}
-                  </p>
+            <Reveal delay={0.30}>
+              <div className="space-y-3">
+                <div className="flex items-center gap-2">
+                  <h3 className="text-lg font-semibold text-foreground">Updated Summary</h3>
+                  <Badge variant="secondary" className="bg-brand/10 text-brand border-brand/20 text-xs">
+                    From Regrade
+                  </Badge>
                 </div>
-              </Card>
-            </div>
+                <Card className="p-4 bg-surface">
+                  <p className="text-foreground-muted leading-relaxed">{idea.summary_analysis}</p>
+                  <div className="mt-3 pt-3 border-t border-border">
+                    <p className="text-xs text-foreground-muted">
+                      Updated on {formatDate(idea.last_regraded_at)}
+                    </p>
+                  </div>
+                </Card>
+              </div>
+            </Reveal>
           )}
 
           {/* Metadata */}
-          <div className="flex flex-wrap gap-4 text-sm text-foreground-muted">
-            <div className="flex items-center gap-2">
-              <Calendar className="w-4 h-4" />
-              {formatDate(idea.createdAt)}
+          <Reveal delay={0.36}>
+            <div className="flex flex-wrap gap-4 text-sm text-foreground-muted">
+              <div className="flex items-center gap-2">
+                <Calendar className="w-4 h-4" />
+                {formatDate(idea.createdAt)}
+              </div>
+              <div className="flex items-center gap-2">
+                <Coins className="w-4 h-4" />
+                {idea.tokensUsed} token{idea.tokensUsed !== 1 ? 's' : ''} used
+              </div>
             </div>
-            <div className="flex items-center gap-2">
-              <Coins className="w-4 h-4" />
-              {idea.tokensUsed} token{idea.tokensUsed !== 1 ? 's' : ''} used
-            </div>
-          </div>
+          </Reveal>
 
           {/* Public Toggle */}
           {user && (
-            <div className="flex items-center justify-between p-3 bg-surface-elevated rounded-lg border border-border">
-              <div className="flex items-center gap-3">
-                {isPublic ? (
-                  <Globe className="w-4 h-4 text-brand" />
-                ) : (
-                  <Lock className="w-4 h-4 text-foreground-muted" />
-                )}
-                <div>
-                  <p className="text-sm font-medium text-foreground">
-                    Make this idea public?
-                  </p>
-                  <p className="text-xs text-foreground-muted">
-                    {isPublic ? 'This idea is visible to other users' : 'This idea is private'}
-                  </p>
+            <Reveal delay={0.42}>
+              <div className="flex items-center justify-between p-3 bg-surface-elevated rounded-lg border border-border">
+                <div className="flex items-center gap-3">
+                  {isPublic ? (
+                    <Globe className="w-4 h-4 text-brand" />
+                  ) : (
+                    <Lock className="w-4 h-4 text-foreground-muted" />
+                  )}
+                  <div>
+                    <p className="text-sm font-medium text-foreground">
+                      Make this idea public?
+                    </p>
+                    <p className="text-xs text-foreground-muted">
+                      {isPublic ? 'This idea is visible to other users' : 'This idea is private'}
+                    </p>
+                  </div>
                 </div>
+                <Switch
+                  checked={isPublic}
+                  onCheckedChange={handlePublicToggle}
+                  disabled={isToggling}
+                />
               </div>
-              <Switch
-                checked={isPublic}
-                onCheckedChange={handlePublicToggle}
-                disabled={isToggling}
-              />
-            </div>
+            </Reveal>
           )}
 
           {/* Overall Recommendation */}

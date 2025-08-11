@@ -2,6 +2,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Check, Star } from "lucide-react";
 import { PricingButton } from "@/components/pricing-button";
+import Reveal from "@/components/ui/Reveal";
 
 export const PricingSection = () => {
   const subscriptionPlans = [
@@ -71,34 +72,41 @@ export const PricingSection = () => {
       <div className="container mx-auto px-6">
         {/* Section Header */}
         <div className="text-center mb-16">
-          <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
-            Simple, <span className="accent-text-gradient">transparent</span> pricing
-          </h2>
-          <p className="text-lg text-foreground-muted max-w-2xl mx-auto">
-            Choose the plan that fits your building rhythm
-          </p>
+          <Reveal>
+            <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
+              Simple, <span className="accent-text-gradient">transparent</span> pricing
+            </h2>
+          </Reveal>
+          <Reveal delay={0.06}>
+            <p className="text-lg text-foreground-muted max-w-2xl mx-auto">
+              Choose the plan that fits your building rhythm
+            </p>
+          </Reveal>
         </div>
 
         {/* Subscription Plans */}
         <div className="mb-20">
           <div className="text-center mb-12">
-            <h3 className="text-2xl font-bold text-foreground mb-2">
-              Auto-Refill Plans
-            </h3>
-            <p className="text-foreground-muted">
-              Perfect for regular builders. Tokens refill monthly.
-            </p>
+            <Reveal delay={0.12}>
+              <h3 className="text-2xl font-bold text-foreground mb-2">
+                Auto-Refill Plans
+              </h3>
+            </Reveal>
+            <Reveal delay={0.18}>
+              <p className="text-foreground-muted">
+                Perfect for regular builders. Tokens refill monthly.
+              </p>
+            </Reveal>
           </div>
 
           <div className="grid md:grid-cols-3 gap-8 min-h-[500px]">
             {subscriptionPlans.map((plan, index) => (
-              <Card 
-                key={plan.name}
-                className={`card-elevated p-8 relative transition-all duration-300 hover:shadow-lg hover:scale-[1.02] group ${
-                  plan.popular ? 'ring-2 ring-brand/20 shadow-glow' : ''
-                }`}
-                style={{ animationDelay: `${index * 0.1}s` }}
-              >
+              <Reveal key={plan.name} delay={0.24 + (index * 0.06)}>
+                <Card 
+                  className={`card-elevated p-8 relative transition-all duration-300 hover:shadow-lg hover:scale-[1.02] group ${
+                    plan.popular ? 'ring-2 ring-brand/20 shadow-glow' : ''
+                  }`}
+                >
                 {/* Popular Badge */}
                 {plan.popular && (
                   <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
@@ -159,6 +167,7 @@ export const PricingSection = () => {
                   />
                 </div>
               </Card>
+              </Reveal>
             ))}
           </div>
         </div>
@@ -166,96 +175,100 @@ export const PricingSection = () => {
         {/* One-Time Top-Ups */}
         <div>
           <div className="text-center mb-12">
-            <h3 className="text-2xl font-bold text-foreground mb-2">
-              One-Time Top-Ups
-            </h3>
-            <p className="text-foreground-muted">
-              Just need a few tokens? Buy only what you need.
-            </p>
+            <Reveal delay={0.24}>
+              <h3 className="text-2xl font-bold text-foreground mb-2">
+                One-Time Top-Ups
+              </h3>
+            </Reveal>
+            <Reveal delay={0.3}>
+              <p className="text-foreground-muted">
+                Just need a few tokens? Buy only what you need.
+              </p>
+            </Reveal>
           </div>
 
           <div className="grid md:grid-cols-3 gap-8 min-h-[400px]">
             {topUpPlans.map((plan, index) => (
-              <Card 
-                key={plan.name}
-                className="card-surface p-8 transition-all duration-300 hover:shadow-lg hover:scale-[1.02] group border-2 border-border hover:border-brand/30"
-                style={{ animationDelay: `${(index + 3) * 0.1}s` }}
-              >
-                <div className="space-y-6">
-                  {/* Plan Header */}
-                  <div className="text-center">
-                    <h4 className="text-xl font-semibold text-foreground mb-2">
-                      {plan.name}
-                    </h4>
-                    <div className="flex items-baseline justify-center gap-1 mb-4">
-                      <span className="text-4xl font-bold text-foreground">
-                        {plan.price}
-                      </span>
+              <Reveal key={plan.name} delay={0.36 + (index * 0.06)}>
+                <Card 
+                  className="card-surface p-8 transition-all duration-300 hover:shadow-lg hover:scale-[1.02] group border-2 border-border hover:border-brand/30"
+                >
+                  <div className="space-y-6">
+                    {/* Plan Header */}
+                    <div className="text-center">
+                      <h4 className="text-xl font-semibold text-foreground mb-2">
+                        {plan.name}
+                      </h4>
+                      <div className="flex items-baseline justify-center gap-1 mb-4">
+                        <span className="text-4xl font-bold text-foreground">
+                          {plan.price}
+                        </span>
+                      </div>
                     </div>
-                  </div>
 
-                  {/* Token Info */}
-                  <div className="text-center p-4 bg-surface-elevated rounded-lg">
-                    <div className="text-2xl font-bold text-foreground mb-1">
-                      <span className="accent-text-gradient">{plan.tokens} tokens</span>
+                    {/* Token Info */}
+                    <div className="text-center p-4 bg-surface-elevated rounded-lg">
+                      <div className="text-2xl font-bold text-foreground mb-1">
+                        <span className="accent-text-gradient">{plan.tokens} tokens</span>
+                      </div>
+                      <div className="text-sm text-foreground-muted">
+                        {plan.costPerToken} per token
+                      </div>
                     </div>
-                    <div className="text-sm text-foreground-muted">
-                      {plan.costPerToken} per token
-                    </div>
-                  </div>
 
-                  {/* CTA Button */}
-                  <PricingButton
-                    planName={plan.name}
-                    buttonText={plan.buttonText}
-                    variant="outline"
-                    className="w-full border-brand/30 text-brand hover:bg-brand/10 hover:border-brand/50"
-                  />
-                </div>
-              </Card>
+                    {/* CTA Button */}
+                    <PricingButton
+                      planName={plan.name}
+                      buttonText={plan.buttonText}
+                      variant="outline"
+                      className="w-full border-brand/30 text-brand hover:bg-brand/10 hover:border-brand/50"
+                    />
+                  </div>
+                </Card>
+              </Reveal>
             ))}
           </div>
         </div>
 
-
-
         {/* Additional Info */}
         <div className="mt-16 text-center">
-          <div className="max-w-2xl mx-auto p-6 bg-surface-elevated rounded-lg border border-border min-h-[200px]">
-            <h4 className="text-lg font-semibold text-foreground mb-3">
-              What's included with every plan?
-            </h4>
-            <div className="grid md:grid-cols-2 gap-4 text-sm text-foreground-muted">
-              <div className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <Check size={16} strokeWidth={2} aria-hidden="true" className="text-success" />
-                  <span>Unlimited idea submissions</span>
+          <Reveal delay={0.48}>
+            <div className="max-w-2xl mx-auto p-6 bg-surface-elevated rounded-lg border border-border min-h-[200px]">
+              <h4 className="text-lg font-semibold text-foreground mb-3">
+                What's included with every plan?
+              </h4>
+              <div className="grid md:grid-cols-2 gap-4 text-sm text-foreground-muted">
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <Check size={16} strokeWidth={2} aria-hidden="true" className="text-success" />
+                    <span>Unlimited idea submissions</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Check size={16} strokeWidth={2} aria-hidden="true" className="text-success" />
+                    <span>Detailed scoring breakdown</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Check size={16} strokeWidth={2} aria-hidden="true" className="text-success" />
+                    <span>Competitor analysis</span>
+                  </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <Check size={16} strokeWidth={2} aria-hidden="true" className="text-success" />
-                  <span>Detailed scoring breakdown</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Check size={16} strokeWidth={2} aria-hidden="true" className="text-success" />
-                  <span>Competitor analysis</span>
-                </div>
-              </div>
-              <div className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <Check size={16} strokeWidth={2} aria-hidden="true" className="text-success" />
-                  <span>Monetization guidance</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Check size={16} strokeWidth={2} aria-hidden="true" className="text-success" />
-                  <span>Go-to-market strategies</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Check size={16} strokeWidth={2} aria-hidden="true" className="text-success" />
-                  <span>Email support</span>
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <Check size={16} strokeWidth={2} aria-hidden="true" className="text-success" />
+                    <span>Monetization guidance</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Check size={16} strokeWidth={2} aria-hidden="true" className="text-success" />
+                    <span>Go-to-market strategies</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Check size={16} strokeWidth={2} aria-hidden="true" className="text-success" />
+                    <span>Email support</span>
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
+          </Reveal>
         </div>
       </div>
     </section>

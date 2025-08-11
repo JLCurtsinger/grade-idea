@@ -6,6 +6,7 @@ import {
   TrendingUp, 
   Rocket 
 } from "lucide-react";
+import Reveal from "@/components/ui/Reveal";
 
 export const FeaturesSection = () => {
   const features = [
@@ -64,15 +65,21 @@ export const FeaturesSection = () => {
       <div className="container mx-auto px-6">
         {/* Section Header */}
         <div className="text-center mb-16">
-          <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
-            Startup <span className="accent-text-gradient">idea grading</span>
-          </h2>
-          <h3 className="text-xl md:text-2xl font-semibold text-foreground mb-4">
-            Reports with current real-world data
-          </h3>
-          <p className="text-lg text-foreground-muted max-w-2xl mx-auto">
-            GradeIdea.cc helps you decide what's worth building
-          </p>
+          <Reveal>
+            <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
+              Startup <span className="accent-text-gradient">idea grading</span>
+            </h2>
+          </Reveal>
+          <Reveal delay={0.06}>
+            <h3 className="text-xl md:text-2xl font-semibold text-foreground mb-4">
+              Reports with current real-world data
+            </h3>
+          </Reveal>
+          <Reveal delay={0.12}>
+            <p className="text-lg text-foreground-muted max-w-2xl mx-auto">
+              GradeIdea.cc helps you decide what's worth building
+            </p>
+          </Reveal>
         </div>
 
         {/* Features Grid */}
@@ -81,11 +88,10 @@ export const FeaturesSection = () => {
             const Icon = feature.icon;
             
             return (
-              <Card 
-                key={feature.title}
-                className="card-elevated p-8 hover:shadow-lg transition-all duration-300 hover:scale-[1.02] group"
-                style={{ animationDelay: `${index * 0.1}s` }}
-              >
+              <Reveal key={feature.title} delay={0.12 + (index * 0.06)}>
+                <Card 
+                  className="card-elevated p-8 hover:shadow-lg transition-all duration-300 hover:scale-[1.02] group"
+                >
                 <div className="space-y-6">
                   {/* Icon */}
                   <div className={`inline-flex p-3 rounded-lg ${getIconBgColor(feature.color)}`}>
@@ -103,6 +109,7 @@ export const FeaturesSection = () => {
                   </div>
                 </div>
               </Card>
+              </Reveal>
             );
           })}
         </div>

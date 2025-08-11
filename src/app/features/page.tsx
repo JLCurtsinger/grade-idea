@@ -13,6 +13,7 @@ import {
   Shield,
   Clock
 } from "lucide-react";
+import Reveal from "@/components/ui/Reveal";
 
 export async function generateMetadata(): Promise<Metadata> {
   return {
@@ -86,12 +87,16 @@ export default function FeaturesPage() {
       <section className="py-16 bg-gradient-to-br from-brand/5 via-transparent to-transparent">
         <div className="container mx-auto px-6">
           <div className="text-center space-y-4">
-            <h1 className="text-4xl md:text-5xl font-bold text-foreground">
-              Powerful Features for Startup Validation
-            </h1>
-            <p className="text-lg text-foreground-muted max-w-3xl mx-auto">
-              GradeIdea.cc combines cutting-edge AI with proven startup frameworks to give you the insights you need to make informed decisions about your business idea.
-            </p>
+            <Reveal>
+              <h1 className="text-4xl md:text-5xl font-bold text-foreground">
+                Powerful Features for Startup Validation
+              </h1>
+            </Reveal>
+            <Reveal delay={0.06}>
+              <p className="text-lg text-foreground-muted max-w-3xl mx-auto">
+                GradeIdea.cc combines cutting-edge AI with proven startup frameworks to give you the insights you need to make informed decisions about your business idea.
+              </p>
+            </Reveal>
           </div>
         </div>
       </section>
@@ -100,67 +105,73 @@ export default function FeaturesPage() {
         {/* Main Features Grid */}
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 mb-16">
           {features.map((feature, index) => (
-            <Card key={index} className="p-6 hover:shadow-lg transition-all duration-200">
-              <div className="space-y-4">
-                <div className="flex items-center gap-3">
-                  {feature.icon}
-                  <h3 className="text-xl font-semibold text-foreground">{feature.title}</h3>
+            <Reveal key={index} delay={0.12 + (index * 0.06)}>
+              <Card key={index} className="p-6 hover:shadow-lg transition-all duration-200">
+                <div className="space-y-4">
+                  <div className="flex items-center gap-3">
+                    {feature.icon}
+                    <h3 className="text-xl font-semibold text-foreground">{feature.title}</h3>
+                  </div>
+                  <p className="text-foreground-muted leading-relaxed">{feature.description}</p>
+                  <ul className="space-y-2">
+                    {feature.benefits.map((benefit, benefitIndex) => (
+                      <li key={benefitIndex} className="flex items-center gap-2 text-sm">
+                        <CheckCircle className="w-4 h-4 text-green-600" />
+                        <span className="text-foreground-muted">{benefit}</span>
+                      </li>
+                    ))}
+                  </ul>
                 </div>
-                <p className="text-foreground-muted leading-relaxed">{feature.description}</p>
-                <ul className="space-y-2">
-                  {feature.benefits.map((benefit, benefitIndex) => (
-                    <li key={benefitIndex} className="flex items-center gap-2 text-sm">
-                      <CheckCircle className="w-4 h-4 text-green-600" />
-                      <span className="text-foreground-muted">{benefit}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            </Card>
+              </Card>
+            </Reveal>
           ))}
         </div>
 
         {/* Additional Features */}
-        <div className="bg-muted/50 rounded-xl p-8">
-          <h2 className="text-2xl font-bold text-foreground text-center mb-8">
-            Everything You Need to Succeed
-          </h2>
-          <div className="grid md:grid-cols-3 gap-6">
-            {additionalFeatures.map((feature, index) => (
-              <div key={index} className="text-center space-y-3">
-                <div className="mx-auto w-12 h-12 bg-background rounded-full flex items-center justify-center">
-                  {feature.icon}
+        <Reveal delay={0.48}>
+          <div className="bg-muted/50 rounded-xl p-8">
+            <h2 className="text-2xl font-bold text-foreground text-center mb-8">
+              Everything You Need to Succeed
+            </h2>
+            <div className="grid md:grid-cols-3 gap-6">
+              {additionalFeatures.map((feature, index) => (
+                <div key={index} className="text-center space-y-3">
+                  <div className="mx-auto w-12 h-12 bg-background rounded-full flex items-center justify-center">
+                    {feature.icon}
+                  </div>
+                  <h3 className="font-semibold text-foreground">{feature.title}</h3>
+                  <p className="text-sm text-foreground-muted">{feature.description}</p>
                 </div>
-                <h3 className="font-semibold text-foreground">{feature.title}</h3>
-                <p className="text-sm text-foreground-muted">{feature.description}</p>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
-        </div>
+        </Reveal>
 
         {/* CTA Section */}
-        <div className="text-center mt-16">
-          <h2 className="text-2xl font-bold text-foreground mb-4">
-            Ready to Validate Your Startup Idea?
-          </h2>
-          <p className="text-foreground-muted mb-6 max-w-2xl mx-auto">
-            Join thousands of entrepreneurs who have used GradeIdea.cc to make data-driven decisions about their business ideas.
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <a 
-              href="/"
-              className="inline-flex items-center justify-center px-6 py-3 bg-brand text-white font-medium rounded-lg hover:bg-brand/90 transition-colors"
-            >
-              Start Validating Now
-            </a>
-            <a 
-              href="/examples"
-              className="inline-flex items-center justify-center px-6 py-3 border border-border text-foreground font-medium rounded-lg hover:bg-muted transition-colors"
-            >
-              View Examples
-            </a>
+        <Reveal delay={0.54}>
+          <div className="text-center mt-16">
+            <h2 className="text-2xl font-bold text-foreground mb-4">
+              Ready to Validate Your Startup Idea?
+            </h2>
+            <p className="text-foreground-muted mb-6 max-w-2xl mx-auto">
+              Join thousands of entrepreneurs who have used GradeIdea.cc to make data-driven decisions about their business ideas.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <a 
+                href="/"
+                className="inline-flex items-center justify-center px-6 py-3 bg-brand text-white font-medium rounded-lg hover:bg-brand/90 transition-colors"
+              >
+                Start Validating Now
+              </a>
+              <a 
+                href="/examples"
+                className="inline-flex items-center justify-center px-6 py-3 border border-border text-foreground font-medium rounded-lg hover:bg-muted transition-colors"
+              >
+                View Examples
+              </a>
+            </div>
           </div>
-        </div>
+        </Reveal>
       </div>
     </div>
   );

@@ -8,6 +8,7 @@ import Image from "next/image";
 import { useRouter, usePathname } from "next/navigation";
 import { useCurrentIdea } from "@/context/CurrentIdeaContext";
 import { useAuth } from "@/context/AuthContext";
+import Reveal from "@/components/ui/Reveal";
 
 export const Header = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -159,96 +160,104 @@ export const Header = () => {
       <header className={`w-full sticky top-0 z-50 navglass nav-hairline transition-shadow ${scrolled ? "navshadow" : ""}`}>
         <div className="mx-auto flex h-14 md:h-16 items-center justify-between px-3 sm:px-4 md:px-6 lg:px-8">
           {/* Logo */}
-          <div className="flex items-center gap-3">
-            <div 
-              onClick={handleLogoClick}
-              className="flex items-center gap-2 cursor-pointer"
-            >
-              <div className="p-2 bg-brand/20 rounded-lg">
-                <Image
-                  src="/logo.svg"
-                  alt="GradeIdea logo"
-                  width={24}
-                  height={24}
-                  className="w-6 h-6"
-                  aria-hidden="true"
-                />
+          <Reveal>
+            <div className="flex items-center gap-3">
+              <div 
+                onClick={handleLogoClick}
+                className="flex items-center gap-2 cursor-pointer"
+              >
+                <div className="p-2 bg-brand/20 rounded-lg">
+                  <Image
+                    src="/logo.svg"
+                    alt="GradeIdea logo"
+                    width={24}
+                    height={24}
+                    className="w-6 h-6"
+                    aria-hidden="true"
+                  />
+                </div>
+                <div>
+                  <h1 className="text-lg sm:text-xl font-bold tracking-tight sm:tracking-normal">
+                    <span className="tropical-logo-gradient">GradeIdea</span>
+                  </h1>
+                  <div className="text-xs text-foreground-subtle">.cc</div>
+                </div>
               </div>
-              <div>
-                <h1 className="text-lg sm:text-xl font-bold tracking-tight sm:tracking-normal">
-                  <span className="tropical-logo-gradient">GradeIdea</span>
-                </h1>
-                <div className="text-xs text-foreground-subtle">.cc</div>
-              </div>
+              <Badge variant="secondary" className="bg-brand/10 text-brand border-brand/20 text-xs">
+                V1
+              </Badge>
             </div>
-            <Badge variant="secondary" className="bg-brand/10 text-brand border-brand/20 text-xs">
-              V1
-            </Badge>
-          </div>
+          </Reveal>
 
           {/* Desktop Navigation */}
-          <nav className="hidden md:flex items-center gap-6 overflow-x-auto">
-            <a 
-              href="#features" 
-              onClick={handleFeaturesClick}
-              className="link-underline text-sm md:text-[0.95rem] text-foreground/80 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--brand))] focus-visible:ring-offset-2 focus-visible:ring-offset-transparent rounded-sm transition-colors"
-            >
-              Features
-            </a>
-            <a 
-              href="#how-it-works" 
-              onClick={handleHowItWorksClick}
-              className="link-underline text-sm md:text-[0.95rem] text-foreground/80 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--brand))] focus-visible:ring-offset-2 focus-visible:ring-offset-transparent rounded-sm transition-colors"
-            >
-              How It Works
-            </a>
-            <a 
-              href="/examples" 
-              className="link-underline text-sm md:text-[0.95rem] text-foreground/80 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--brand))] focus-visible:ring-offset-2 focus-visible:ring-offset-transparent rounded-sm transition-colors"
-            >
-              Examples
-            </a>
-            <a 
-              href="#pricing" 
-              onClick={handlePricingClick}
-              className="link-underline text-sm md:text-[0.95rem] text-foreground/80 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--brand))] focus-visible:ring-offset-2 focus-visible:ring-offset-transparent rounded-sm transition-colors"
-            >
-              Pricing
-            </a>
-          </nav>
+          <Reveal delay={0.06}>
+            <nav className="hidden md:flex items-center gap-6 overflow-x-auto">
+              <a 
+                href="#features" 
+                onClick={handleFeaturesClick}
+                className="link-underline text-sm md:text-[0.95rem] text-foreground/80 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--brand))] focus-visible:ring-offset-2 focus-visible:ring-offset-transparent rounded-sm transition-colors"
+              >
+                Features
+              </a>
+              <a 
+                href="#how-it-works" 
+                onClick={handleHowItWorksClick}
+                className="link-underline text-sm md:text-[0.95rem] text-foreground/80 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--brand))] focus-visible:ring-offset-2 focus-visible:ring-offset-transparent rounded-sm transition-colors"
+              >
+                How It Works
+              </a>
+              <a 
+                href="/examples" 
+                className="link-underline text-sm md:text-[0.95rem] text-foreground/80 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--brand))] focus-visible:ring-offset-2 focus-visible:ring-offset-transparent rounded-sm transition-colors"
+              >
+                Examples
+              </a>
+              <a 
+                href="#pricing" 
+                onClick={handlePricingClick}
+                className="link-underline text-sm md:text-[0.95rem] text-foreground/80 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--brand))] focus-visible:ring-offset-2 focus-visible:ring-offset-transparent rounded-sm transition-colors"
+              >
+                Pricing
+              </a>
+            </nav>
+          </Reveal>
 
           {/* Desktop Actions */}
-          <div className="hidden md:flex items-center gap-4">
-            <Button 
-              variant="ghost" 
-              className="text-foreground-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--brand))] focus-visible:ring-offset-2 focus-visible:ring-offset-transparent rounded-sm transition-colors"
-              onClick={handleAuthClick}
-            >
-              {user ? 'Sign Out' : 'Sign In'}
-            </Button>
-            <Button 
-              className="shadow-md active:scale-[0.98] transition-transform duration-150"
-              onClick={handleGetStartedClick}
-            >
-              {user ? 'Dashboard' : 'Get Started'}
-            </Button>
-          </div>
+          <Reveal delay={0.12}>
+            <div className="hidden md:flex items-center gap-4">
+              <Button 
+                variant="ghost" 
+                className="text-foreground-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--brand))] focus-visible:ring-offset-2 focus-visible:ring-offset-transparent rounded-sm transition-colors"
+                onClick={handleAuthClick}
+              >
+                {user ? 'Sign Out' : 'Sign In'}
+              </Button>
+              <Button 
+                className="shadow-md active:scale-[0.98] transition-transform duration-150"
+                onClick={handleGetStartedClick}
+              >
+                {user ? 'Dashboard' : 'Get Started'}
+              </Button>
+            </div>
+          </Reveal>
 
           {/* Mobile Menu Button */}
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            className="md:hidden inline-flex h-10 w-10 items-center justify-center rounded-xl border border-border hover:bg-foreground/5 active:scale-[0.98] transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--brand))] focus-visible:ring-offset-2 focus-visible:ring-offset-transparent"
-            onClick={toggleMobileMenu}
-            aria-label="Open menu"
-            aria-expanded={isMobileMenuOpen}
-          >
-            {isMobileMenuOpen ? (
-              <X className="w-5 h-5" />
-            ) : (
-              <Menu className="w-5 h-5" />
-            )}
-          </Button>
+          <Reveal delay={0.18}>
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="md:hidden inline-flex h-10 w-10 items-center justify-center rounded-xl border border-border hover:bg-foreground/5 active:scale-[0.98] transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--brand))] focus-visible:ring-offset-2 focus-visible:ring-offset-transparent"
+              onClick={toggleMobileMenu}
+              aria-label="Open menu"
+              aria-expanded={isMobileMenuOpen}
+            >
+              {isMobileMenuOpen ? (
+                <X className="w-5 h-5" />
+              ) : (
+                <Menu className="w-5 h-5" />
+              )}
+            </Button>
+          </Reveal>
         </div>
       </header>
 
@@ -272,95 +281,107 @@ export const Header = () => {
       >
         {/* Mobile Menu Header */}
         <div className="flex items-center justify-between p-6 border-b border-border bg-surface-elevated">
-          <h2 className="text-xl font-semibold text-foreground">Menu</h2>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={closeMobileMenu}
-            className="text-foreground-muted hover:text-foreground"
-            aria-label="Close mobile menu"
-          >
-            <X className="w-6 h-6" />
-          </Button>
+          <Reveal>
+            <h2 className="text-xl font-semibold text-foreground">Menu</h2>
+          </Reveal>
+          <Reveal delay={0.06}>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={closeMobileMenu}
+              className="text-foreground-muted hover:text-foreground"
+              aria-label="Close mobile menu"
+            >
+              <X className="w-6 h-6" />
+            </Button>
+          </Reveal>
         </div>
 
         {/* Mobile Menu Content */}
         <div className="flex flex-col h-full">
           <div className="flex-1 p-6 space-y-8">
             {/* Navigation Links */}
-            <nav className="space-y-6">
-              <a 
-                href="#features" 
-                onClick={handleFeaturesClick}
-                className="block text-lg font-medium text-foreground-muted hover:text-foreground transition-colors py-3 border-b border-border/50"
-              >
-                Features
-              </a>
-              <a 
-                href="#pricing" 
-                onClick={handlePricingClick}
-                className="block text-lg font-medium text-foreground-muted hover:text-foreground transition-colors py-3 border-b border-border/50"
-              >
-                Pricing
-              </a>
-              <a 
-                href="/examples" 
-                className="block text-lg font-medium text-foreground-muted hover:text-foreground transition-colors py-3 border-b border-border/50"
-              >
-                Examples
-              </a>
-              <a 
-                href="#how-it-works" 
-                onClick={handleHowItWorksClick}
-                className="block text-lg font-medium text-foreground-muted hover:text-foreground transition-colors py-3 border-b border-border/50"
-              >
-                How It Works
-              </a>
-            </nav>
+            <Reveal delay={0.12}>
+              <nav className="space-y-6">
+                <a 
+                  href="#features" 
+                  onClick={handleFeaturesClick}
+                  className="block text-lg font-medium text-foreground-muted hover:text-foreground transition-colors py-3 border-b border-border/50"
+                >
+                  Features
+                </a>
+                <a 
+                  href="#pricing" 
+                  onClick={handlePricingClick}
+                  className="block text-lg font-medium text-foreground-muted hover:text-foreground transition-colors py-3 border-b border-border/50"
+                >
+                  Pricing
+                </a>
+                <a 
+                  href="/examples" 
+                  className="block text-lg font-medium text-foreground-muted hover:text-foreground transition-colors py-3 border-b border-border/50"
+                >
+                  Examples
+                </a>
+                <a 
+                  href="#how-it-works" 
+                  onClick={handleHowItWorksClick}
+                  className="block text-lg font-medium text-foreground-muted hover:text-foreground transition-colors py-3 border-b border-border/50"
+                >
+                  How It Works
+                </a>
+              </nav>
+            </Reveal>
 
             {/* Auth Actions */}
-            <div className="space-y-4">
-              <Button 
-                className="w-full btn-primary text-lg py-4"
-                onClick={handleGetStartedClick}
-              >
-                {user ? 'Dashboard' : 'Get Started'}
-              </Button>
-              
-              {user && (
+            <Reveal delay={0.18}>
+              <div className="space-y-4">
                 <Button 
-                  variant="ghost" 
-                  className="w-full justify-start text-lg text-foreground-muted hover:text-foreground py-4"
-                  onClick={handleAuthClick}
+                  className="w-full btn-primary text-lg py-4"
+                  onClick={handleGetStartedClick}
                 >
-                  Sign Out
+                  {user ? 'Dashboard' : 'Get Started'}
                 </Button>
-              )}
-            </div>
+                
+                {user && (
+                  <Button 
+                    variant="ghost" 
+                    className="w-full justify-start text-lg text-foreground-muted hover:text-foreground py-4"
+                    onClick={handleAuthClick}
+                  >
+                    Sign Out
+                  </Button>
+                )}
+              </div>
+            </Reveal>
 
             {/* User Info (if signed in) */}
             {user && (
-              <div className="pt-6 border-t border-border">
-                <div className="text-sm text-foreground-muted mb-2">
-                  Signed in as
+              <Reveal delay={0.24}>
+                <div className="pt-6 border-t border-border">
+                  <div className="text-sm text-foreground-muted mb-2">
+                    Signed in as
+                  </div>
+                  <div className="text-foreground font-medium truncate">
+                    {user.email}
+                  </div>
                 </div>
-                <div className="text-foreground font-medium truncate">
-                  {user.email}
-                </div>
-              </div>
+              </Reveal>
             )}
 
             {/* Sign In (if not signed in) */}
             {!user && (
-              <div className="pt-6 border-t border-border">
-                <Button 
-                  variant="ghost" 
-                  className="w-full justify-start text-lg text-foreground-muted hover:text-foreground py-4"
-                  onClick={handleAuthClick}
-                >
-                  Sign In
-                </Button>
-              </div>
+              <Reveal delay={0.24}>
+                <div className="pt-6 border-t border-border">
+                  <Button 
+                    variant="ghost" 
+                    className="w-full justify-start text-lg text-foreground-muted hover:text-foreground py-4"
+                    onClick={handleAuthClick}
+                  >
+                    Sign In
+                  </Button>
+                </div>
+              </Reveal>
             )}
           </div>
         </div>

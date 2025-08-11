@@ -2,9 +2,18 @@
 import { motion, useInView } from "framer-motion";
 import { useRef } from "react";
 
-export default function Reveal({ children, delay = 0, className = "" }: { children: React.ReactNode; delay?: number; className?: string; }) {
+export default function Reveal({
+  children,
+  delay = 0,
+  className = "",
+}: {
+  children: React.ReactNode;
+  delay?: number;
+  className?: string;
+}) {
   const ref = useRef(null);
   const inView = useInView(ref, { once: true, margin: "0px 0px -10% 0px" });
+
   return (
     <motion.div
       ref={ref}

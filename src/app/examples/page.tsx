@@ -18,6 +18,7 @@ import {
 import { getLetterGrade } from "@/lib/gradingScale";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import Reveal from "@/components/ui/Reveal";
 
 interface PublicIdea {
   id: string;
@@ -136,12 +137,16 @@ export default function ExamplesPage() {
       <section className="py-16 bg-gradient-to-br from-brand/5 via-transparent to-transparent">
         <div className="container mx-auto px-6">
           <div className="text-center space-y-4">
-            <h1 className="text-4xl font-bold text-foreground">
-              Startup Idea Examples
-            </h1>
-            <p className="text-lg text-foreground-muted max-w-2xl mx-auto">
-              Get inspired by top-rated startup ideas and try our example prompts to see how GradeIdea works.
-            </p>
+            <Reveal>
+              <h1 className="text-4xl font-bold text-foreground">
+                Startup Idea Examples
+              </h1>
+            </Reveal>
+            <Reveal delay={0.06}>
+              <p className="text-lg text-foreground-muted max-w-2xl mx-auto">
+                Get inspired by top-rated startup ideas and try our example prompts to see how GradeIdea works.
+              </p>
+            </Reveal>
           </div>
         </div>
       </section>
@@ -149,217 +154,236 @@ export default function ExamplesPage() {
       <div className="container mx-auto px-6 py-12">
         {/* Category Navigation */}
         <div className="mb-12">
-          <div className="text-center space-y-4 mb-8">
-            <h2 className="text-2xl font-semibold text-foreground">
-              Browse Ideas by Category
-            </h2>
-            <p className="text-foreground-muted">
-              Explore AI-powered validation reports for specific startup categories
-            </p>
-          </div>
+          <Reveal delay={0.12}>
+            <div className="text-center space-y-4 mb-8">
+              <h2 className="text-2xl font-semibold text-foreground">
+                Browse Ideas by Category
+              </h2>
+              <p className="text-foreground-muted">
+                Explore AI-powered validation reports for specific startup categories
+              </p>
+            </div>
+          </Reveal>
           
-          <div className="flex flex-wrap justify-center gap-4">
-            <Link 
-              href="/validate/ai" 
-              className="px-6 py-3 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-lg hover:shadow-lg transition-all duration-200 hover:scale-105 font-medium"
-            >
-              AI Startup Ideas
-            </Link>
-            <Link 
-              href="/validate/saas" 
-              className="px-6 py-3 bg-gradient-to-r from-green-500 to-blue-600 text-white rounded-lg hover:shadow-lg transition-all duration-200 hover:scale-105 font-medium"
-            >
-              SaaS Startup Ideas
-            </Link>
-            <Link 
-              href="/validate/ecommerce" 
-              className="px-6 py-3 bg-gradient-to-r from-orange-500 to-red-600 text-white rounded-lg hover:shadow-lg transition-all duration-200 hover:scale-105 font-medium"
-            >
-              E-commerce Startup Ideas
-            </Link>
-            <Link 
-              href="/validate/healthtech" 
-              className="px-6 py-3 bg-gradient-to-r from-emerald-500 to-teal-600 text-white rounded-lg hover:shadow-lg transition-all duration-200 hover:scale-105 font-medium"
-            >
-              HealthTech Startup Ideas
-            </Link>
-            <Link 
-              href="/validate/fintech" 
-              className="px-6 py-3 bg-gradient-to-r from-indigo-500 to-purple-600 text-white rounded-lg hover:shadow-lg transition-all duration-200 hover:scale-105 font-medium"
-            >
-              FinTech Startup Ideas
-            </Link>
-          </div>
+          <Reveal delay={0.18}>
+            <div className="flex flex-wrap justify-center gap-4">
+              <Link 
+                href="/validate/ai" 
+                className="px-6 py-3 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-lg hover:shadow-lg transition-all duration-200 hover:scale-105 font-medium"
+              >
+                AI Startup Ideas
+              </Link>
+              <Link 
+                href="/validate/saas" 
+                className="px-6 py-3 bg-gradient-to-r from-green-500 to-blue-600 text-white rounded-lg hover:shadow-lg transition-all duration-200 hover:scale-105 font-medium"
+              >
+                SaaS Startup Ideas
+              </Link>
+              <Link 
+                href="/validate/ecommerce" 
+                className="px-6 py-3 bg-gradient-to-r from-orange-500 to-red-600 text-white rounded-lg hover:shadow-lg transition-all duration-200 hover:scale-105 font-medium"
+              >
+                E-commerce Startup Ideas
+              </Link>
+              <Link 
+                href="/validate/healthtech" 
+                className="px-6 py-3 bg-gradient-to-r from-emerald-500 to-teal-600 text-white rounded-lg hover:shadow-lg transition-all duration-200 hover:scale-105 font-medium"
+              >
+                HealthTech Startup Ideas
+              </Link>
+              <Link 
+                href="/validate/fintech" 
+                className="px-6 py-3 bg-gradient-to-r from-indigo-500 to-purple-600 text-white rounded-lg hover:shadow-lg transition-all duration-200 hover:scale-105 font-medium"
+              >
+                FinTech Startup Ideas
+              </Link>
+            </div>
+          </Reveal>
         </div>
 
         <div className="grid lg:grid-cols-2 gap-12">
           {/* Section A: Example Prompts */}
           <div className="space-y-6">
-            <div className="flex items-center gap-3">
-              <Lightbulb className="w-6 h-6 text-brand" />
-              <h2 className="text-2xl font-semibold text-foreground">
-                Try these example prompts
-              </h2>
-            </div>
-            <p className="text-foreground-muted">
-              Click any example below to see how GradeIdea analyzes startup ideas. These will be filled into the input on the homepage.
-            </p>
+            <Reveal delay={0.24}>
+              <div className="flex items-center gap-3">
+                <Lightbulb className="w-6 h-6 text-brand" />
+                <h2 className="text-2xl font-semibold text-foreground">
+                  Try these example prompts
+                </h2>
+              </div>
+            </Reveal>
+            <Reveal delay={0.3}>
+              <p className="text-foreground-muted">
+                Click any example below to see how GradeIdea analyzes startup ideas. These will be filled into the input on the homepage.
+              </p>
+            </Reveal>
             
             <div className="grid gap-3">
               {examplePrompts.map((prompt, index) => (
-                <Card key={index} className="p-4 hover:shadow-md transition-shadow cursor-pointer">
-                  <Button
-                    variant="ghost"
-                    className="w-full justify-start h-auto p-0 text-left"
-                    onClick={() => handleExampleClick(prompt)}
-                  >
-                    <div className="flex items-center justify-between w-full">
-                      <div className="flex-1">
-                        <p className="font-medium text-foreground">{prompt}</p>
-                        <p className="text-sm text-foreground-muted mt-1">
-                          Click to try this example
-                        </p>
+                <Reveal key={index} delay={0.36 + (index * 0.06)}>
+                  <Card className="p-4 hover:shadow-md transition-shadow cursor-pointer">
+                    <Button
+                      variant="ghost"
+                      className="w-full justify-start h-auto p-0 text-left"
+                      onClick={() => handleExampleClick(prompt)}
+                    >
+                      <div className="flex items-center justify-between w-full">
+                        <div className="flex-1">
+                          <p className="font-medium text-foreground">{prompt}</p>
+                          <p className="text-sm text-foreground-muted mt-1">
+                            Click to try this example
+                          </p>
+                        </div>
+                        <ArrowRight className="w-4 h-4 text-foreground-muted ml-2" />
                       </div>
-                      <ArrowRight className="w-4 h-4 text-foreground-muted ml-2" />
-                    </div>
-                  </Button>
-                </Card>
+                    </Button>
+                  </Card>
+                </Reveal>
               ))}
             </div>
           </div>
 
           {/* Section B: Top Public Ideas */}
           <div className="space-y-6">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <Star className="w-6 h-6 text-brand" />
-                <h2 className="text-2xl font-semibold text-foreground">
-                  Top Public Ideas
-                </h2>
+            <Reveal delay={0.24}>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <Star className="w-6 h-6 text-brand" />
+                  <h2 className="text-2xl font-semibold text-foreground">
+                    Top Public Ideas
+                  </h2>
+                </div>
+                {process.env.NODE_ENV === 'development' && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleRefreshIdeas}
+                    disabled={isRefreshing}
+                    className="text-xs"
+                  >
+                    <RefreshCw className={`w-3 h-3 mr-1 ${isRefreshing ? 'animate-spin' : ''}`} />
+                    Refresh Ideas
+                  </Button>
+                )}
               </div>
-              {process.env.NODE_ENV === 'development' && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleRefreshIdeas}
-                  disabled={isRefreshing}
-                  className="text-xs"
-                >
-                  <RefreshCw className={`w-3 h-3 mr-1 ${isRefreshing ? 'animate-spin' : ''}`} />
-                  Refresh Ideas
-                </Button>
-              )}
-            </div>
-            <p className="text-foreground-muted">
-              These are the highest-rated startup ideas submitted by users who chose to make them public. Scores shown are from the original LLM evaluation. See how your idea compares!
-            </p>
+            </Reveal>
+            <Reveal delay={0.3}>
+              <p className="text-foreground-muted">
+                These are the highest-rated startup ideas submitted by users who chose to make them public. Scores shown are from the original LLM evaluation. See how your idea compares!
+              </p>
+            </Reveal>
 
             {isLoading ? (
               <div className="space-y-4">
                 {[...Array(3)].map((_, index) => (
-                  <Card key={index} className="p-4 animate-pulse">
-                    <div className="h-4 bg-surface-elevated rounded mb-2"></div>
-                    <div className="h-3 bg-surface-elevated rounded mb-4"></div>
-                    <div className="space-y-2">
-                      <div className="h-3 bg-surface-elevated rounded"></div>
-                      <div className="h-3 bg-surface-elevated rounded w-3/4"></div>
-                    </div>
-                  </Card>
+                  <Reveal key={index} delay={0.36 + (index * 0.06)}>
+                    <Card className="p-4 animate-pulse">
+                      <div className="h-4 bg-surface-elevated rounded mb-2"></div>
+                      <div className="h-3 bg-surface-elevated rounded mb-4"></div>
+                      <div className="space-y-2">
+                        <div className="h-3 bg-surface-elevated rounded"></div>
+                        <div className="h-3 bg-surface-elevated rounded w-3/4"></div>
+                      </div>
+                    </Card>
+                  </Reveal>
                 ))}
               </div>
             ) : publicIdeas.length > 0 ? (
               <div className="space-y-4">
                 {publicIdeas.map((idea, index) => (
-                  <Card 
-                    key={idea.id} 
-                    className="p-4 cursor-pointer hover:shadow-md transition-all duration-200 hover:scale-[1.01]"
-                  >
-                    <Link href={`/idea/${idea.id}`} className="block">
-                    <div className="space-y-3">
-                      {/* Idea Text */}
-                      <div>
-                        <p className="font-medium text-foreground leading-relaxed">
-                          {idea.ideaText}
-                        </p>
-                        <p className="text-xs text-foreground-muted mt-1">
-                          Submitted {formatDate(idea.createdAt)}
-                        </p>
-                      </div>
+                  <Reveal key={idea.id} delay={0.36 + (index * 0.06)}>
+                    <Card 
+                      className="p-4 cursor-pointer hover:shadow-md transition-all duration-200 hover:scale-[1.01]"
+                    >
+                      <Link href={`/idea/${idea.id}`} className="block">
+                      <div className="space-y-3">
+                        {/* Idea Text */}
+                        <div>
+                          <p className="font-medium text-foreground leading-relaxed">
+                            {idea.ideaText}
+                          </p>
+                          <p className="text-xs text-foreground-muted mt-1">
+                            Submitted {formatDate(idea.createdAt)}
+                          </p>
+                        </div>
 
-                      {/* Overall Score */}
-                      <div className="flex items-center gap-3">
-                        <div className="flex items-center gap-2">
-                          <span className="text-lg font-bold text-foreground">
-                            {idea.baseScores.overall}%
-                          </span>
-                          {(() => {
-                            const { letter, color } = getLetterGrade(idea.baseScores.overall);
-                            return (
-                              <Badge 
-                                variant="outline" 
-                                className={`text-sm font-medium ${
-                                  color === 'green' ? 'text-green-600 border-green-200' :
-                                  color === 'lime' ? 'text-lime-600 border-lime-200' :
-                                  color === 'yellow' ? 'text-yellow-600 border-yellow-200' :
-                                  color === 'orange' ? 'text-orange-600 border-orange-200' :
-                                  color === 'red' ? 'text-red-600 border-red-200' :
-                                  'text-gray-600 border-gray-200'
-                                }`}
-                              >
-                                {letter}
-                              </Badge>
-                            );
-                          })()}
+                        {/* Overall Score */}
+                        <div className="flex items-center gap-3">
+                          <div className="flex items-center gap-2">
+                            <span className="text-lg font-bold text-foreground">
+                              {idea.baseScores.overall}%
+                            </span>
+                            {(() => {
+                              const { letter, color } = getLetterGrade(idea.baseScores.overall);
+                              return (
+                                <Badge 
+                                  variant="outline" 
+                                  className={`text-sm font-medium ${
+                                    color === 'green' ? 'text-green-600 border-green-200' :
+                                    color === 'lime' ? 'text-lime-600 border-lime-200' :
+                                    color === 'yellow' ? 'text-yellow-600 border-yellow-200' :
+                                    color === 'orange' ? 'text-orange-600 border-orange-200' :
+                                    color === 'red' ? 'text-red-600 border-red-200' :
+                                    'text-gray-600 border-gray-200'
+                                  }`}
+                                >
+                                  {letter}
+                                </Badge>
+                              );
+                            })()}
+                          </div>
+                          <span className="text-sm text-foreground-muted">Overall Score</span>
                         </div>
-                        <span className="text-sm text-foreground-muted">Overall Score</span>
-                      </div>
 
-                      {/* Score Breakdown */}
-                      <div className="grid grid-cols-2 gap-3">
-                        <div className="flex items-center gap-2">
-                          <TrendingUp className="w-4 h-4 text-blue-600" />
-                          <span className="text-sm text-foreground-muted">Market:</span>
-                          <span className={`text-sm font-medium ${getScoreColor(idea.baseScores.market)}`}>
-                            {idea.baseScores.market}%
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Target className="w-4 h-4 text-[#95FC0F]" />
-                          <span className="text-sm text-foreground-muted">Differentiation:</span>
-                          <span className={`text-sm font-medium ${getScoreColor(idea.baseScores.differentiation)}`}>
-                            {idea.baseScores.differentiation}%
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <DollarSign className="w-4 h-4 text-green-600" />
-                          <span className="text-sm text-foreground-muted">Monetization:</span>
-                          <span className={`text-sm font-medium ${getScoreColor(idea.baseScores.monetization)}`}>
-                            {idea.baseScores.monetization}%
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Zap className="w-4 h-4 text-orange-600" />
-                          <span className="text-sm text-foreground-muted">Execution:</span>
-                          <span className={`text-sm font-medium ${getScoreColor(idea.baseScores.execution)}`}>
-                            {idea.baseScores.execution}%
-                          </span>
+                        {/* Score Breakdown */}
+                        <div className="grid grid-cols-2 gap-3">
+                          <div className="flex items-center gap-2">
+                            <TrendingUp className="w-4 h-4 text-blue-600" />
+                            <span className="text-sm text-foreground-muted">Market:</span>
+                            <span className={`text-sm font-medium ${getScoreColor(idea.baseScores.market)}`}>
+                              {idea.baseScores.market}%
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Target className="w-4 h-4 text-[#95FC0F]" />
+                            <span className="text-sm text-foreground-muted">Differentiation:</span>
+                            <span className={`text-sm font-medium ${getScoreColor(idea.baseScores.differentiation)}`}>
+                              {idea.baseScores.differentiation}%
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <DollarSign className="w-4 h-4 text-green-600" />
+                            <span className="text-sm text-foreground-muted">Monetization:</span>
+                            <span className={`text-sm font-medium ${getScoreColor(idea.baseScores.monetization)}`}>
+                              {idea.baseScores.monetization}%
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Zap className="w-4 h-4 text-orange-600" />
+                            <span className="text-sm text-foreground-muted">Execution:</span>
+                            <span className={`text-sm font-medium ${getScoreColor(idea.baseScores.execution)}`}>
+                              {idea.baseScores.execution}%
+                            </span>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                    </Link>
-                  </Card>
+                      </Link>
+                    </Card>
+                  </Reveal>
                 ))}
               </div>
             ) : (
-              <Card className="p-8 text-center">
-                <div className="space-y-3">
-                  <Lightbulb className="w-12 h-12 text-foreground-muted mx-auto" />
-                  <h3 className="text-lg font-medium text-foreground">No public ideas yet</h3>
-                  <p className="text-foreground-muted">
-                    Be the first to make your idea public and see it featured here!
-                  </p>
-                </div>
-              </Card>
+              <Reveal delay={0.36}>
+                <Card className="p-8 text-center">
+                  <div className="space-y-3">
+                    <Lightbulb className="w-12 h-12 text-foreground-muted mx-auto" />
+                    <h3 className="text-lg font-medium text-foreground">No public ideas yet</h3>
+                    <p className="text-foreground-muted">
+                      Be the first to make your idea public and see it featured here!
+                    </p>
+                  </div>
+                </Card>
+              </Reveal>
             )}
           </div>
         </div>

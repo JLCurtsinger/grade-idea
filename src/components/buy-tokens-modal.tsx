@@ -7,6 +7,7 @@ import { Card } from "@/components/ui/card";
 import { X, Coins } from "lucide-react";
 import { useStripeCheckout } from "@/hooks/use-stripe-checkout";
 import { useAuth } from "@/context/AuthContext";
+import Reveal from "@/components/ui/Reveal";
 
 interface BuyTokensModalProps {
   isOpen: boolean;
@@ -67,66 +68,67 @@ export const BuyTokensModal = ({ isOpen, onClose }: BuyTokensModalProps) => {
     <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle className="text-xl font-semibold">
-            Choose Your Token Pack
-          </DialogTitle>
+          <Reveal>
+            <DialogTitle className="text-xl font-semibold">
+              Choose Your Token Pack
+            </DialogTitle>
+          </Reveal>
         </DialogHeader>
 
         <div className="space-y-4">
           <div className="grid gap-4">
-            {tokenPlans.map((plan) => (
-              <Card 
-                key={plan.name}
-                className="p-4 hover:shadow-md transition-shadow border-2 hover:border-brand/30"
-              >
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 bg-brand/20 rounded-lg">
-                      <Coins className="w-4 h-4 text-brand" />
+            {tokenPlans.map((plan, index) => (
+              <Reveal key={plan.name} delay={0.12 + (index * 0.06)}>
+                <Card 
+                  className="p-4 hover:shadow-md transition-shadow border-2 hover:border-brand/30"
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 bg-brand/20 rounded-lg">
+                        <Coins className="w-4 h-4 text-brand" />
+                      </div>
+                      <div>
+                        <h3 className="font-semibold text-foreground">
+                          {plan.name}
+                        </h3>
+                        <p className="text-sm text-foreground-muted">
+                          {plan.description}
+                        </p>
+                      </div>
                     </div>
-                    <div>
-                      <h3 className="font-semibold text-foreground">
-                        {plan.name}
-                      </h3>
-                      <p className="text-sm text-foreground-muted">
-                        {plan.description}
-                      </p>
+                    <div className="text-right">
+                      <div className="text-lg font-bold text-foreground">
+                        {plan.price}
+                      </div>
+                      <div className="text-sm text-foreground-muted">
+                        <span className="accent-text-gradient">{plan.tokens} tokens</span>
+                      </div>
+                      <div className="text-xs text-foreground-subtle">
+                        {plan.costPerToken} per token
+                      </div>
                     </div>
                   </div>
-                  <div className="text-right">
-                    <div className="text-lg font-bold text-foreground">
-                      {plan.price}
-                    </div>
-                    <div className="text-sm text-foreground-muted">
-                      <span className="accent-text-gradient">{plan.tokens} tokens</span>
-                    </div>
-                    <div className="text-xs text-foreground-subtle">
-                      {plan.costPerToken} per token
-                    </div>
+                  
+                  <div className="mt-4">
+                    <Button
+                      className="w-full"
+                      onClick={() => handlePlanSelect(plan.name)}
+                      disabled={isLoading}
+                    >
+                      {isLoading ? (
+                        <>
+                          <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2"></div>
+                          Processing...
+                        </>
+                      ) : (
+                        "Buy Tokens"
+                      )}
+                    </Button>
                   </div>
-                </div>
-                
-                <div className="mt-4">
-                  <Button
-                    className="w-full"
-                    onClick={() => handlePlanSelect(plan.name)}
-                    disabled={isLoading}
-                  >
-                    {isLoading ? (
-                      <>
-                        <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2"></div>
-                        Processing...
-                      </>
-                    ) : (
-                      "Buy Tokens"
-                    )}
-                  </Button>
-                </div>
-              </Card>
+                </Card>
+              </Reveal>
             ))}
           </div>
-
-
         </div>
       </DialogContent>
     </Dialog>

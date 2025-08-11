@@ -2,6 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import Link from 'next/link';
 import { Metadata } from 'next';
+import Reveal from "@/components/ui/Reveal";
 
 type PostMeta = { title: string; description: string; date: string; slug: string };
 
@@ -41,19 +42,25 @@ export default function FoundersHubPage() {
   const posts = readPosts();
   return (
     <main className="container mx-auto px-4 py-10">
-      <h1 className="text-3xl md:text-5xl font-bold mb-4">Founders' Learning Hub</h1>
-      <p className="text-foreground/80 mb-8">
-        Actionable guides, strategies, and insights for validating and growing your startup idea.
-      </p>
+      <Reveal>
+        <h1 className="text-3xl md:text-5xl font-bold mb-4">Founders' Learning Hub</h1>
+      </Reveal>
+      <Reveal delay={0.06}>
+        <p className="text-foreground/80 mb-8">
+          Actionable guides, strategies, and insights for validating and growing your startup idea.
+        </p>
+      </Reveal>
       <ul className="space-y-6">
-        {posts.map(p => (
-          <li key={p.slug} className="border rounded-xl p-4">
-            <Link href={`/founders-hub/${p.slug}`} className="text-xl font-semibold hover:underline">
-              {p.title}
-            </Link>
-            <p className="text-sm text-foreground/70 mt-1">{p.description}</p>
-            <p className="text-xs text-foreground/50 mt-2">{p.date}</p>
-          </li>
+        {posts.map((p, index) => (
+          <Reveal key={p.slug} delay={0.12 + (index * 0.06)}>
+            <li className="border rounded-xl p-4">
+              <Link href={`/founders-hub/${p.slug}`} className="text-xl font-semibold hover:underline">
+                {p.title}
+              </Link>
+              <p className="text-sm text-foreground/70 mt-1">{p.description}</p>
+              <p className="text-xs text-foreground/50 mt-2">{p.date}</p>
+            </li>
+          </Reveal>
         ))}
       </ul>
     </main>

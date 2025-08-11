@@ -1,5 +1,6 @@
 import * as fs from 'node:fs';
 import * as path from 'node:path';
+import Reveal from "@/components/ui/Reveal";
 
 type Post = { title: string; description: string; date: string; body: string; slug: string };
 
@@ -66,12 +67,18 @@ export default function PostPage({ params }: { params: { slug: string } }) {
   const html = mdToHtml(post.body);
   return (
     <main className="container mx-auto px-4 py-10">
-      <h1 className="text-3xl md:text-5xl font-bold mb-3">{post.title}</h1>
-      <p className="text-sm text-foreground/60 mb-8">{post.date}</p>
-      <article
-        className="prose prose-neutral max-w-none"
-        dangerouslySetInnerHTML={{ __html: html }}
-      />
+      <Reveal delay={0.05}>
+        <h1 className="text-3xl md:text-5xl font-bold mb-3">{post.title}</h1>
+      </Reveal>
+      <Reveal delay={0.1}>
+        <p className="text-sm text-foreground/60 mb-8">{post.date}</p>
+      </Reveal>
+      <Reveal delay={0.15}>
+        <article
+          className="prose prose-neutral max-w-none"
+          dangerouslySetInnerHTML={{ __html: html }}
+        />
+      </Reveal>
 
       {/* JSON-LD: BlogPosting */}
       <script

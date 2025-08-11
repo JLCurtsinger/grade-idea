@@ -18,6 +18,7 @@ import {
   X,
   Lightbulb
 } from "lucide-react";
+import Reveal from "@/components/ui/Reveal";
 import { getLetterGrade } from "@/lib/gradingScale";
 
 interface PublicIdea {
@@ -95,131 +96,146 @@ export function TopIdeaModal({ idea, isOpen, onClose }: TopIdeaModalProps) {
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto mx-auto px-4">
         <DialogHeader>
           <div className="flex items-center gap-3">
-            <Lightbulb className="w-6 h-6 text-brand" />
-            <DialogTitle className="text-xl font-bold text-foreground">
-              Top-Rated Idea Analysis
-            </DialogTitle>
+            <Reveal>
+              <DialogTitle className="text-xl font-semibold">
+                Top-Rated Idea Analysis
+              </DialogTitle>
+            </Reveal>
           </div>
-          <DialogDescription className="text-foreground-muted">
-            Detailed evaluation of this public startup idea
-          </DialogDescription>
+          <Reveal delay={0.06}>
+            <DialogDescription className="text-foreground-muted">
+              Detailed evaluation of this public startup idea
+            </DialogDescription>
+          </Reveal>
         </DialogHeader>
 
         <div className="space-y-6">
           {/* Original Idea */}
-          <div className="space-y-3">
-            <h3 className="text-lg font-semibold text-foreground">Original Idea</h3>
-            <Card className="p-4 bg-surface">
-              <p className="text-foreground leading-relaxed">{idea.ideaText}</p>
-            </Card>
-          </div>
+          <Reveal delay={0.12}>
+            <div className="space-y-3">
+              <h3 className="text-lg font-semibold text-foreground">Original Idea</h3>
+              <Card className="p-4 bg-surface">
+                <p className="text-foreground leading-relaxed">{idea.ideaText}</p>
+              </Card>
+            </div>
+          </Reveal>
 
           {/* Idea Summary */}
-          <div className="space-y-3">
-            <h3 className="text-lg font-semibold text-foreground">Summary</h3>
-            <p className="text-foreground-muted leading-relaxed">
-              {generateIdeaSummary(idea.ideaText, idea.recommendation)}
-            </p>
-          </div>
+          <Reveal delay={0.18}>
+            <div className="space-y-3">
+              <h3 className="text-lg font-semibold text-foreground">Summary</h3>
+              <p className="text-foreground-muted leading-relaxed">
+                {generateIdeaSummary(idea.ideaText, idea.recommendation)}
+              </p>
+            </div>
+          </Reveal>
 
           {/* AI Evaluation Summary */}
-          <div className="space-y-3">
-            <h3 className="text-lg font-semibold text-foreground">AI Evaluation</h3>
-            <p className="text-foreground-muted leading-relaxed">
-              {generateEvaluationSummary(idea.baseScores)}
-            </p>
-          </div>
+          <Reveal delay={0.24}>
+            <div className="space-y-3">
+              <h3 className="text-lg font-semibold text-foreground">AI Evaluation</h3>
+              <p className="text-foreground-muted leading-relaxed">
+                {generateEvaluationSummary(idea.baseScores)}
+              </p>
+            </div>
+          </Reveal>
 
           {/* Score Breakdown */}
-          <div className="space-y-4">
-            <h3 className="text-lg font-semibold text-foreground">Score Breakdown</h3>
-            <div className="grid grid-cols-2 gap-4">
-              <Card className="p-4">
-                <div className="flex items-center gap-3 mb-3">
-                  <TrendingUp className="w-5 h-5 text-blue-600" />
-                  <h4 className="font-medium text-foreground">Market Potential</h4>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className={`text-2xl font-bold ${getScoreColor(idea.baseScores.market)}`}>
-                    {idea.baseScores.market}%
-                  </span>
-                </div>
-              </Card>
+          <Reveal delay={0.30}>
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold text-foreground">Score Breakdown</h3>
+              <div className="grid grid-cols-2 gap-4">
+                <Card className="p-4">
+                  <div className="flex items-center gap-3 mb-3">
+                    <TrendingUp className="w-5 h-5 text-blue-600" />
+                    <h4 className="font-medium text-foreground">Market Potential</h4>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className={`text-2xl font-bold ${getScoreColor(idea.baseScores.market)}`}>
+                      {idea.baseScores.market}%
+                    </span>
+                  </div>
+                </Card>
 
-              <Card className="p-4">
-                <div className="flex items-center gap-3 mb-3">
-                  <Target className="w-5 h-5 text-[#95FC0F]" />
-                  <h4 className="font-medium text-foreground">Competition</h4>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className={`text-2xl font-bold ${getScoreColor(idea.baseScores.differentiation)}`}>
-                    {idea.baseScores.differentiation}%
-                  </span>
-                </div>
-              </Card>
+                <Card className="p-4">
+                  <div className="flex items-center gap-3 mb-3">
+                    <Target className="w-5 h-5 text-[#95FC0F]" />
+                    <h4 className="font-medium text-foreground">Competition</h4>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className={`text-2xl font-bold ${getScoreColor(idea.baseScores.differentiation)}`}>
+                      {idea.baseScores.differentiation}%
+                    </span>
+                  </div>
+                </Card>
 
-              <Card className="p-4">
-                <div className="flex items-center gap-3 mb-3">
-                  <DollarSign className="w-5 h-5 text-green-600" />
-                  <h4 className="font-medium text-foreground">Monetization</h4>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className={`text-2xl font-bold ${getScoreColor(idea.baseScores.monetization)}`}>
-                    {idea.baseScores.monetization}%
-                  </span>
-                </div>
-              </Card>
+                <Card className="p-4">
+                  <div className="flex items-center gap-3 mb-3">
+                    <DollarSign className="w-5 h-5 text-green-600" />
+                    <h4 className="font-medium text-foreground">Monetization</h4>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className={`text-2xl font-bold ${getScoreColor(idea.baseScores.monetization)}`}>
+                      {idea.baseScores.monetization}%
+                    </span>
+                  </div>
+                </Card>
 
-              <Card className="p-4">
-                <div className="flex items-center gap-3 mb-3">
-                  <Zap className="w-5 h-5 text-orange-600" />
-                  <h4 className="font-medium text-foreground">Execution</h4>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className={`text-2xl font-bold ${getScoreColor(idea.baseScores.execution)}`}>
-                    {idea.baseScores.execution}%
-                  </span>
-                </div>
-              </Card>
-            </div>
-          </div>
-
-          {/* Overall Grade */}
-          <div className="space-y-3">
-            <h3 className="text-lg font-semibold text-foreground">Overall Grade</h3>
-            <div className="flex items-center gap-4">
-              <div className="flex items-center gap-3">
-                <span className="text-3xl font-bold text-foreground">
-                  {idea.baseScores.overall}%
-                </span>
-                {(() => {
-                  const { letter, color } = getLetterGrade(idea.baseScores.overall);
-                  return (
-                    <Badge 
-                      variant="outline" 
-                      className={`text-lg font-medium px-3 py-1 ${
-                        color === 'green' ? 'text-green-600 border-green-200' :
-                        color === 'lime' ? 'text-lime-600 border-lime-200' :
-                        color === 'yellow' ? 'text-yellow-600 border-yellow-200' :
-                        color === 'orange' ? 'text-orange-600 border-orange-200' :
-                        color === 'red' ? 'text-red-600 border-red-200' :
-                        'text-gray-600 border-gray-200'
-                      }`}
-                    >
-                      {letter}
-                    </Badge>
-                  );
-                })()}
+                <Card className="p-4">
+                  <div className="flex items-center gap-3 mb-3">
+                    <Zap className="w-5 h-5 text-orange-600" />
+                    <h4 className="font-medium text-foreground">Execution</h4>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className={`text-2xl font-bold ${getScoreColor(idea.baseScores.execution)}`}>
+                      {idea.baseScores.execution}%
+                    </span>
+                  </div>
+                </Card>
               </div>
             </div>
-          </div>
+          </Reveal>
+
+          {/* Overall Grade */}
+          <Reveal delay={0.36}>
+            <div className="space-y-3">
+              <h3 className="text-lg font-semibold text-foreground">Overall Grade</h3>
+              <div className="flex items-center gap-4">
+                <div className="flex items-center gap-3">
+                  <span className="text-3xl font-bold text-foreground">
+                    {idea.baseScores.overall}%
+                  </span>
+                  {(() => {
+                    const { letter, color } = getLetterGrade(idea.baseScores.overall);
+                    return (
+                      <Badge 
+                        variant="outline" 
+                        className={`text-lg font-medium px-3 py-1 ${
+                          color === 'green' ? 'text-green-600 border-green-200' :
+                          color === 'lime' ? 'text-lime-600 border-lime-200' :
+                          color === 'yellow' ? 'text-yellow-600 border-yellow-200' :
+                          color === 'orange' ? 'text-orange-600 border-orange-200' :
+                          color === 'red' ? 'text-red-600 border-red-200' :
+                          'text-gray-600 border-gray-200'
+                        }`}
+                      >
+                        {letter}
+                      </Badge>
+                    );
+                  })()}
+                </div>
+              </div>
+            </div>
+          </Reveal>
 
           {/* Metadata */}
-          <div className="pt-4 border-t border-border">
-            <p className="text-sm text-foreground-muted">
-              Submitted on {formatDate(idea.createdAt)}
-            </p>
-          </div>
+          <Reveal delay={0.42}>
+            <div className="pt-4 border-t border-border">
+              <p className="text-sm text-foreground-muted">
+                Submitted on {formatDate(idea.createdAt)}
+              </p>
+            </div>
+          </Reveal>
         </div>
       </DialogContent>
     </Dialog>

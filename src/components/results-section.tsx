@@ -7,6 +7,7 @@ import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
 import { getLetterGrade } from "@/lib/gradingScale";
 import { useAuth } from "@/context/AuthContext";
+import Reveal from "@/components/ui/Reveal";
 import { 
   TrendingUp, 
   Users, 
@@ -17,7 +18,8 @@ import {
   AlertTriangle,
   XCircle,
   ExternalLink,
-  Sparkles
+  Sparkles,
+  Search
 } from "lucide-react";
 
 interface ResultsSectionProps {
@@ -157,219 +159,192 @@ export const ResultsSection = ({ idea, analysis: apiAnalysis }: ResultsSectionPr
     return "danger";
   };
 
+  const getScoreColorClass = (score: number) => {
+    if (score >= 80) return "text-success";
+    if (score >= 60) return "text-brand";
+    if (score >= 40) return "text-warning";
+    return "text-danger";
+  };
+
+  const getMetricIconBgColor = (color: "success" | "brand" | "warning" | "danger") => {
+    switch (color) {
+      case "success": return "bg-success/20";
+      case "brand": return "bg-brand/20";
+      case "warning": return "bg-warning/20";
+      case "danger": return "bg-danger/20";
+      default: return "bg-gray-200";
+    }
+  };
+
+  const getMetricIconColor = (color: "success" | "brand" | "warning" | "danger") => {
+    switch (color) {
+      case "success": return "text-success";
+      case "brand": return "text-brand";
+      case "warning": return "text-warning";
+      case "danger": return "text-danger";
+      default: return "text-gray-600";
+    }
+  };
+
   return (
-    <section className="py-16">
-      <div className="container mx-auto px-6">
-        {/* Mock Data Banner for Non-Authenticated Users */}
-        {!user && (
-          <div className="mb-8">
-            <Card className="bg-gradient-to-r from-blue-500/10 to-[#95FC0F]/10 border-blue-500/20">
-              <div className="p-6">
-                <div className="flex items-center gap-3 mb-3">
-                  <Sparkles className="w-5 h-5 text-blue-500" />
-                  <h3 className="text-lg font-semibold text-blue-600">Demo Mode</h3>
-                </div>
-                <p className="text-blue-700 mb-4">
-                  This is mock data. Sign up to run a real AI-powered analysis.
-                </p>
-                <Button 
-                  onClick={() => openModal('signup')}
-                  className="btn-primary"
-                >
-                  Sign Up
-                </Button>
-              </div>
-            </Card>
+    <section className="py-16 md:py-24 bg-background">
+      <div className="container mx-auto px-4 md:px-6">
+        {/* Header */}
+        <Reveal>
+          <div className="text-center mb-12">
+            <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
+              Your Idea Analysis
+            </h1>
+            <p className="text-lg text-foreground-muted max-w-2xl mx-auto">
+              {analysis.summary}
+            </p>
           </div>
-        )}
-        
-        <div className="grid lg:grid-cols-2 gap-12">
-          {/* Left Panel - Strategic Insights */}
-          <div className="space-y-6 animate-slide-up">
-            <Card className="card-elevated p-8">
-              <div className="space-y-6">
-                {/* Recommendation */}
-                <div className="flex items-center gap-3">
-                  <div className={`flex items-center gap-2 px-4 py-2 rounded-full border font-semibold ${
-                    analysis.recommendationColor === 'success' ? 'score-excellent' :
-                    analysis.recommendationColor === 'warning' ? 'score-warning' : 'score-poor'
-                  }`}>
-                    {getRecommendationIcon()}
-                    {analysis.recommendation}
-                  </div>
-                </div>
+        </Reveal>
 
-                {/* Summary */}
-                <div>
-                  <h3 className="text-lg font-semibold mb-3">AI Analysis</h3>
-                  <p className="text-foreground-muted leading-relaxed">
-                    {analysis.summary}
-                  </p>
-                </div>
+        {/* Overall Score */}
+        <Reveal delay={0.06}>
+          <Card className="card-glow p-8 mb-8 text-center">
+            <div className="space-y-4">
+              <div className="flex items-center justify-center gap-3">
+                {getRecommendationIcon()}
+                <h2 className="text-2xl font-bold text-foreground">
+                  {analysis.recommendation}
+                </h2>
+              </div>
+              <div className="text-6xl font-bold">
+                <span className={getScoreColorClass(analysisData.overall_score)}>
+                  {getLetterGrade(analysisData.overall_score).letter}
+                </span>
+              </div>
+              <div className="text-2xl font-semibold text-foreground-muted">
+                {analysisData.overall_score}%
+              </div>
+            </div>
+          </Card>
+        </Reveal>
 
-                {/* Similar Products */}
-                <div>
-                  <h4 className="font-semibold mb-3">Similar Products</h4>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    {analysis.similarProducts.map((product, index) => (
-                      <div
-                        key={product.name || index}
-                        className="p-3 bg-surface border border-border rounded-lg hover:border-brand/30 transition-colors group cursor-pointer"
-                      >
-                        <div className="flex items-start justify-between gap-3">
-                          <div className="flex-1">
-                            <div className="font-medium text-sm text-foreground mb-1">
-                              {product.name}
-                            </div>
-                            <div className="text-xs text-foreground-muted leading-relaxed">
-                              {product.description}
-                            </div>
-                          </div>
-                          {product.url && (
-                            <a
-                              href={product.url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="flex-shrink-0"
-                            >
-                              <ExternalLink className="w-4 h-4 text-foreground-subtle group-hover:text-brand transition-colors" />
-                            </a>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Strategy Pills */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <h4 className="font-semibold mb-3">Monetization Models</h4>
-                    <div className="flex flex-wrap gap-2">
-                      {/* AI-generated models */}
-                      {analysis.monetization.map((model) => (
-                        <Badge key={model} variant="secondary" className="bg-brand/10 text-brand border-brand/20">
-                          {model}
-                        </Badge>
-                      ))}
-                      
-                      {/* Custom models - only show for authenticated users */}
-                      {user && analysisData.custom?.monetization_models && analysisData.custom.monetization_models.length > 0 && (
-                        <>
-                          {analysisData.custom.monetization_models.map((model) => (
-                            <Badge key={`custom-${model}`} variant="secondary" className="bg-brand/10 text-brand border-brand/20">
-                              {model}
-                            </Badge>
-                          ))}
-                        </>
-                      )}
+        {/* Score Breakdown */}
+        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
+          {[
+            { label: "Market Potential", score: analysisData.market_potential, icon: TrendingUp, color: "success" as const },
+            { label: "Competition", score: analysisData.competition, icon: Users, color: "brand" as const },
+            { label: "Monetization", score: analysisData.monetization, icon: DollarSign, color: "success" as const },
+            { label: "Execution", score: analysisData.execution, icon: Zap, color: "warning" as const }
+          ].map((metric, index) => (
+            <Reveal key={metric.label} delay={0.12 + (index * 0.06)}>
+              <Card className="card-elevated p-6 text-center">
+                <div className="space-y-4">
+                  <div className="flex justify-center">
+                    <div className={`p-3 rounded-lg ${getMetricIconBgColor(metric.color)}`}>
+                      <metric.icon size={24} strokeWidth={2} aria-hidden="true" className={getMetricIconColor(metric.color)} />
                     </div>
                   </div>
-                  <div>
-                    <h4 className="font-semibold mb-3">Go-To-Market Channels</h4>
-                    <div className="flex flex-wrap gap-2">
-                      {/* AI-generated channels */}
-                      {analysis.gtmChannels.map((channel) => (
-                        <Badge key={channel} variant="secondary" className="bg-surface-elevated">
-                          {channel}
-                        </Badge>
-                      ))}
-                      
-                      {/* Custom channels - only show for authenticated users */}
-                      {user && analysisData.custom?.go_to_market_channels && analysisData.custom.go_to_market_channels.length > 0 && (
-                        <>
-                          {analysisData.custom.go_to_market_channels.map((channel) => (
-                            <Badge key={`custom-${channel}`} variant="secondary" className="bg-brand/10 text-brand border-brand/20">
-                              {channel}
-                            </Badge>
-                          ))}
-                        </>
-                      )}
-                    </div>
+                  <h3 className="text-lg font-semibold text-foreground">
+                    {metric.label}
+                  </h3>
+                  <div className="text-3xl font-bold">
+                    <span className={getScoreColorClass(metric.score)}>
+                      {metric.score}%
+                    </span>
                   </div>
+                  <Progress value={metric.score} className="h-2" />
                 </div>
-              </div>
-            </Card>
-          </div>
-
-          {/* Right Panel - Animated Scorecard */}
-          <div className="space-y-6 animate-slide-up" style={{ animationDelay: "0.2s" }}>
-            <Card className="card-elevated p-8">
-              <div className="space-y-6">
-                <h3 className="text-xl font-semibold">Validation Scorecard</h3>
-                
-                <div className="space-y-6">
-                  {analysis.scores.map((metric, index) => {
-                    const Icon = metric.icon;
-                    const colorClass = getScoreColor(metric.score);
-                    
-                    return (
-                      <div 
-                        key={metric.id} 
-                        className="space-y-3"
-                        style={{ animationDelay: `${index * 0.1}s` }}
-                      >
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-3">
-                            <div className={`p-2 rounded-lg ${
-                              colorClass === 'success' ? 'bg-success/20 text-success' :
-                              colorClass === 'brand' ? 'bg-brand/20 text-brand' :
-                              colorClass === 'warning' ? 'bg-warning/20 text-warning' :
-                              'bg-danger/20 text-danger'
-                            }`}>
-                              <Icon className="w-4 h-4" />
-                            </div>
-                            <span className="font-medium">{metric.label}</span>
-                          </div>
-                          <span className="text-2xl font-bold">
-                            {animateScores ? metric.score : 0}
-                          </span>
-                        </div>
-                        
-                        <Progress 
-                          value={animateScores ? metric.score : 0} 
-                          className="h-3"
-                        />
-                        
-                        <p className="text-sm text-foreground-muted">
-                          {metric.justification}
-                        </p>
-                      </div>
-                    );
-                  })}
-                </div>
-
-                {/* Overall Score */}
-                <div className="pt-6 border-t border-border">
-                  <div className="text-center space-y-2">
-                    <div className="flex items-center justify-center gap-3">
-                      <div className="text-3xl font-bold text-gradient">
-                        {animateScores ? Math.round(analysis.scores.reduce((sum, s) => sum + s.score, 0) / analysis.scores.length) : 0}
-                      </div>
-                      {animateScores && (() => {
-                        const overallScore = Math.round(analysis.scores.reduce((sum, s) => sum + s.score, 0) / analysis.scores.length);
-                        const { letter, color } = getLetterGrade(overallScore);
-                        return (
-                          <div className={`text-2xl font-bold ${
-                            color === 'green' ? 'text-green-600' :
-                            color === 'lime' ? 'text-lime-600' :
-                            color === 'yellow' ? 'text-yellow-600' :
-                            color === 'orange' ? 'text-orange-600' :
-                            color === 'red' ? 'text-red-600' :
-                            'text-gray-600'
-                          }`}>
-                            {letter}
-                          </div>
-                        );
-                      })()}
-                    </div>
-                    <div className="text-sm text-foreground-muted">Overall Validation Score</div>
-                  </div>
-                </div>
-              </div>
-            </Card>
-          </div>
+              </Card>
+            </Reveal>
+          ))}
         </div>
+
+        {/* Key Insights */}
+        <Reveal delay={0.24}>
+          <Card className="card-elevated p-8 mb-12">
+            <h3 className="text-xl font-semibold text-foreground mb-6 flex items-center gap-2">
+              <Target className="w-5 h-5 text-brand" />
+              Key Insights
+            </h3>
+            <div className="grid md:grid-cols-2 gap-4">
+              {analysisData.insights.map((insight, index) => (
+                <div key={index} className="flex items-start gap-3">
+                  <CheckCircle size={16} strokeWidth={2} aria-hidden="true" className="text-success mt-1 flex-shrink-0" />
+                  <span className="text-foreground-muted">{insight}</span>
+                </div>
+              ))}
+            </div>
+          </Card>
+        </Reveal>
+
+        {/* Similar Products */}
+        <Reveal delay={0.3}>
+          <Card className="card-elevated p-8 mb-12">
+            <h3 className="text-xl font-semibold text-foreground mb-6 flex items-center gap-2">
+              <Search className="w-5 h-5 text-brand" />
+              Similar Products
+            </h3>
+            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
+              {analysis.similarProducts.map((product, index) => (
+                <div key={index} className="text-center p-4 bg-surface rounded-lg border border-border">
+                  <div className="text-2xl mb-2">{product.logo}</div>
+                  <h4 className="font-semibold text-foreground mb-1">{product.name}</h4>
+                  <p className="text-sm text-foreground-muted">{product.description}</p>
+                </div>
+              ))}
+            </div>
+          </Card>
+        </Reveal>
+
+        {/* Monetization & GTM */}
+        <div className="grid md:grid-cols-2 gap-8 mb-12">
+          <Reveal delay={0.36}>
+            <Card className="card-elevated p-8">
+              <h3 className="text-xl font-semibold text-foreground mb-6 flex items-center gap-2">
+                <DollarSign className="w-5 h-5 text-success" />
+                Monetization Models
+              </h3>
+              <div className="space-y-3">
+                {analysis.monetization.map((model, index) => (
+                  <div key={index} className="flex items-center gap-3">
+                    <div className="w-2 h-2 bg-success rounded-full" />
+                    <span className="text-foreground-muted">{model}</span>
+                  </div>
+                ))}
+              </div>
+            </Card>
+          </Reveal>
+
+          <Reveal delay={0.42}>
+            <Card className="card-elevated p-8">
+              <h3 className="text-xl font-semibold text-foreground mb-6 flex items-center gap-2">
+                <TrendingUp className="w-5 h-5 text-brand" />
+                Go-to-Market Channels
+              </h3>
+              <div className="space-y-3">
+                {analysis.gtmChannels.map((channel, index) => (
+                  <div key={index} className="flex items-center gap-3">
+                    <div className="w-2 h-2 bg-brand rounded-full" />
+                    <span className="text-foreground-muted">{channel}</span>
+                  </div>
+                ))}
+              </div>
+            </Card>
+          </Reveal>
+        </div>
+
+        {/* Action Buttons */}
+        <Reveal delay={0.48}>
+          <div className="text-center space-y-4">
+            {user && (
+              <Button 
+                onClick={() => window.location.href = '/dashboard'}
+                className="btn-primary text-lg px-8 py-4"
+              >
+                <Sparkles className="w-5 h-5 mr-2" />
+                View Full Report
+              </Button>
+            )}
+            <div className="text-sm text-foreground-muted">
+              Your analysis has been saved to your dashboard
+            </div>
+          </div>
+        </Reveal>
       </div>
     </section>
   );

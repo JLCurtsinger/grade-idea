@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { BuyTokensModal } from "@/components/buy-tokens-modal";
 import { IdeaDetailModal } from "@/components/IdeaDetailModal";
 import { DeleteConfirmationModal } from "@/components/DeleteConfirmationModal";
+import Reveal from "@/components/ui/Reveal";
 import { collection, query, orderBy, limit, getDocs, doc, getDoc, updateDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { getAuth, onAuthStateChanged } from 'firebase/auth';
@@ -529,242 +530,109 @@ export default function DashboardPage() {
         <div className="container mx-auto px-6 py-8">
           {/* Header */}
           <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 mb-8">
-            <div>
-              <h1 className="text-3xl font-bold text-foreground mb-2">Dashboard</h1>
-              <p className="text-foreground-muted">Track your idea analysis history and token balance</p>
-            </div>
+            <Reveal>
+              <div>
+                <h1 className="text-3xl font-bold text-foreground mb-2">Dashboard</h1>
+                <p className="text-foreground-muted">Track your idea analysis history and token balance</p>
+              </div>
+            </Reveal>
             
-            <div className="flex items-center gap-4">
-              <Button 
-                onClick={handleNewIdea}
-                className="btn-primary"
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                + New Idea
-              </Button>
-              <Button 
-                onClick={handleBuyTokens}
-                className="btn-primary"
-              >
-                <Coins className="w-4 h-4 mr-2" />
-                Buy Tokens
-              </Button>
-              {/* Development-only test emails button */}
-              {process.env.NODE_ENV !== 'production' && (
+            <Reveal delay={0.06}>
+              <div className="flex items-center gap-4">
                 <Button 
-                  onClick={handleTestEmails}
-                  variant="outline"
-                  size="sm"
-                  className="border-orange-500 text-orange-500 hover:bg-orange-500/10"
+                  onClick={handleNewIdea}
+                  className="btn-primary"
                 >
-                  Test Emails
+                  <Plus className="w-4 h-4 mr-2" />
+                  + New Idea
                 </Button>
-              )}
-            </div>
+                <Button 
+                  onClick={handleBuyTokens}
+                  className="btn-primary"
+                >
+                  <Coins className="w-4 h-4 mr-2" />
+                  Buy Tokens
+                </Button>
+                {/* Development-only test emails button */}
+                {process.env.NODE_ENV !== 'production' && (
+                  <Button 
+                    onClick={handleTestEmails}
+                    variant="outline"
+                    size="sm"
+                    className="border-orange-500 text-orange-500 hover:bg-orange-500/10"
+                  >
+                    Test Emails
+                  </Button>
+                )}
+              </div>
+            </Reveal>
           </div>
 
           {/* Token Balance Card */}
-          <Card className="card-glow p-6 mb-8">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-4">
-                <div className="p-3 bg-brand/10 rounded-lg">
-                  <Coins className="w-6 h-6 text-brand" />
+          <Reveal delay={0.12}>
+            <Card className="card-glow p-6 mb-8">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <div className="p-3 bg-brand/10 rounded-lg">
+                    <Coins className="w-6 h-6 text-brand" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-semibold text-foreground">Token Balance</h3>
+                    <p className="text-2xl font-bold text-brand">
+                      {profile?.token_balance || 0} tokens
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <h3 className="text-lg font-semibold text-foreground">Token Balance</h3>
-                  <p className="text-2xl font-bold text-brand">
-                    {profile?.token_balance || 0} tokens
-                  </p>
-                </div>
+                <Button 
+                  onClick={refreshTokenBalance}
+                  variant="outline"
+                  size="sm"
+                >
+                  <RefreshCw className="w-4 h-4 mr-2" />
+                  Refresh
+                </Button>
               </div>
-              <Button 
-                onClick={refreshTokenBalance}
-                variant="outline"
-                size="sm"
-              >
-                <RefreshCw className="w-4 h-4 mr-2" />
-                Refresh
-              </Button>
-            </div>
-          </Card>
+            </Card>
+          </Reveal>
 
           {/* Ideas History */}
           <div className="space-y-6">
-            <div className="flex items-center justify-between">
-              <h2 className="text-2xl font-bold text-foreground">Current Ideas</h2>
-              <Badge variant="secondary">
-                {(() => {
-                  // Use totalIdeasSubmitted if available, otherwise fallback to ideas.length with "+" indicator
-                  if (profile?.totalIdeasSubmitted !== undefined && profile.totalIdeasSubmitted > 0) {
-                    return `Total Analyzed: ${profile.totalIdeasSubmitted}`;
-                  } else {
-                    // Fallback for older users without the counter
-                    return `${ideas.length}+ analyzed`;
-                  }
-                })()}
-              </Badge>
-            </div>
+            <Reveal delay={0.18}>
+              <div className="flex items-center justify-between">
+                <h2 className="text-2xl font-bold text-foreground">Current Ideas</h2>
+                <Badge variant="secondary">
+                  {(() => {
+                    // Use totalIdeasSubmitted if available, otherwise fallback to ideas.length with "+" indicator
+                    if (profile?.totalIdeasSubmitted !== undefined && profile.totalIdeasSubmitted > 0) {
+                      return `Total Analyzed: ${profile.totalIdeasSubmitted}`;
+                    } else {
+                      // Fallback for older users without the counter
+                      return `${ideas.length}+ analyzed`;
+                    }
+                  })()}
+                </Badge>
+              </div>
+            </Reveal>
 
             {ideas.length === 0 ? (
-              <Card className="p-8 text-center">
-                <Lightbulb className="w-12 h-12 text-foreground-muted mx-auto mb-4" />
-                <h3 className="text-lg font-semibold text-foreground mb-2">No ideas analyzed yet</h3>
-                <p className="text-foreground-muted mb-4">
-                  Start by analyzing your first idea on the homepage
-                </p>
-                <Button onClick={() => router.push('/')} className="btn-primary">
-                  Analyze Idea
-                </Button>
-              </Card>
+              <Reveal delay={0.24}>
+                <Card className="p-8 text-center">
+                  <Lightbulb className="w-12 h-12 text-foreground-muted mx-auto mb-4" />
+                  <h3 className="text-lg font-semibold text-foreground mb-2">No ideas analyzed yet</h3>
+                  <p className="text-foreground-muted mb-4">
+                    Start by analyzing your first idea on the homepage
+                  </p>
+                  <Button onClick={() => router.push('/')} className="btn-primary">
+                    Analyze Idea
+                  </Button>
+                </Card>
+              </Reveal>
             ) : (
               <div className="grid gap-6">
-                {ideas.map((idea) => (
-                  <Card 
-                    key={idea.id} 
-                    className="p-6 cursor-pointer hover:shadow-lg transition-all duration-200 hover:scale-[1.01]"
-                    onClick={() => handleIdeaClick(idea)}
-                  >
-                    <div className="flex items-start justify-between mb-4">
-                      <div className="flex-1">
-                        <h3 className="text-lg font-semibold text-foreground mb-2">
-                          {idea.ideaText}
-                        </h3>
-                        <div className="flex items-center gap-4 text-sm text-foreground-muted">
-                          <div className="flex items-center gap-1">
-                            <Calendar className="w-4 h-4" />
-                            {formatDate(idea.createdAt)}
-                          </div>
-                          <div className="flex items-center gap-1">
-                            <Coins className="w-4 h-4" />
-                            {idea.tokensUsed} token{idea.tokensUsed !== 1 ? 's' : ''}
-                          </div>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Badge 
-                          variant={idea.analysis.recommendation === "Worth Building" ? "default" : "secondary"}
-                          className="ml-4"
-                        >
-                          {idea.analysis.recommendation}
-                        </Badge>
-                        <button
-                          onClick={(e) => toggleStar(e, idea)}
-                          className={`p-2 rounded-full transition-colors ${
-                            idea.starred 
-                              ? 'text-yellow-500 hover:text-yellow-600' 
-                              : 'text-foreground-muted hover:text-yellow-500'
-                          }`}
-                          title={idea.starred ? "Unstar idea" : "Star idea"}
-                        >
-                          <Star className={`w-4 h-4 ${idea.starred ? 'fill-current' : ''}`} />
-                        </button>
-                        <button
-                          onClick={(e) => toggleArchive(e, idea)}
-                          className="p-2 text-foreground-muted hover:text-blue-600 rounded-full transition-colors"
-                          title="Move to Past Ideas"
-                        >
-                          <Archive className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={(e) => handleDeleteClick(e, idea)}
-                          className="p-2 text-foreground-muted hover:text-red-600 hover:bg-red-50 rounded-full transition-colors"
-                          title="Delete idea"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
-                    </div>
-
-                    {/* Score Grid */}
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
-                      <div className="text-center p-3 bg-surface rounded-lg">
-                        <div className="text-sm text-foreground-muted mb-1">Overall</div>
-                        <div className="flex items-center justify-center gap-2">
-                          {(() => {
-                            const updatedScores = updatedIdeaScores[idea.id];
-                            const overallScore = updatedScores ? updatedScores.overall_score : getOverallScore(idea.analysis);
-                            const { letter, color } = getLetterGrade(overallScore);
-                            return (
-                              <>
-                                <div className={`text-lg font-bold transition-all duration-300 ${getScoreColor(overallScore)}`}>
-                                  {overallScore}%
-                                </div>
-                                <div className={`text-lg font-bold transition-all duration-300 ${
-                                  color === 'green' ? 'text-green-600' :
-                                  color === 'lime' ? 'text-lime-600' :
-                                  color === 'yellow' ? 'text-yellow-600' :
-                                  color === 'orange' ? 'text-orange-600' :
-                                  color === 'red' ? 'text-red-600' :
-                                  'text-gray-600'
-                                }`}>
-                                  {letter}
-                                </div>
-                              </>
-                            );
-                          })()}
-                        </div>
-                      </div>
-                      <div className="text-center p-3 bg-surface rounded-lg">
-                        <div className="text-sm text-foreground-muted mb-1">Market</div>
-                        <div className={`text-lg font-bold transition-all duration-300 ${getScoreColor(updatedIdeaScores[idea.id]?.market_potential ?? idea.analysis.market_potential)}`}>
-                          {updatedIdeaScores[idea.id]?.market_potential ?? idea.analysis.market_potential}%
-                        </div>
-                      </div>
-                      <div className="text-center p-3 bg-surface rounded-lg">
-                        <div className="text-sm text-foreground-muted mb-1">Competition</div>
-                        <div className={`text-lg font-bold transition-all duration-300 ${getScoreColor(idea.analysis.competition)}`}>
-                          {idea.analysis.competition}%
-                        </div>
-                      </div>
-                      <div className="text-center p-3 bg-surface rounded-lg">
-                        <div className="text-sm text-foreground-muted mb-1">Execution</div>
-                        <div className={`text-lg font-bold transition-all duration-300 ${getScoreColor(updatedIdeaScores[idea.id]?.execution ?? idea.analysis.execution)}`}>
-                          {updatedIdeaScores[idea.id]?.execution ?? idea.analysis.execution}%
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Insights */}
-                    <div className="space-y-2">
-                      <h4 className="font-medium text-foreground">Key Insights</h4>
-                      <ul className="space-y-1">
-                        {idea.analysis.insights.slice(0, 3).map((insight, index) => (
-                          <li key={index} className="text-sm text-foreground-muted flex items-start gap-2">
-                            <div className="w-1 h-1 bg-brand rounded-full mt-2 flex-shrink-0"></div>
-                            {insight}
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  </Card>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* Past Ideas Section */}
-          {archivedIdeas.length > 0 && (
-            <div className="space-y-6 mt-8">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <h2 className="text-2xl font-bold text-foreground">Past Ideas</h2>
-                  <Badge variant="outline">{archivedIdeas.length} archived</Badge>
-                </div>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setShowArchivedIdeas(!showArchivedIdeas)}
-                >
-                  {showArchivedIdeas ? 'Hide' : 'Show'} Past Ideas
-                </Button>
-              </div>
-
-              {showArchivedIdeas && (
-                <div className="grid gap-6">
-                  {archivedIdeas.map((idea) => (
+                {ideas.map((idea, index) => (
+                  <Reveal key={idea.id} delay={0.24 + (index * 0.06)}>
                     <Card 
-                      key={idea.id} 
-                      className="p-6 cursor-pointer hover:shadow-lg transition-all duration-200 hover:scale-[1.01] opacity-75"
+                      className="p-6 cursor-pointer hover:shadow-lg transition-all duration-200 hover:scale-[1.01]"
                       onClick={() => handleIdeaClick(idea)}
                     >
                       <div className="flex items-start justify-between mb-4">
@@ -803,8 +671,8 @@ export default function DashboardPage() {
                           </button>
                           <button
                             onClick={(e) => toggleArchive(e, idea)}
-                            className="p-2 text-blue-600 hover:text-blue-700 rounded-full transition-colors"
-                            title="Move to Current Ideas"
+                            className="p-2 text-foreground-muted hover:text-blue-600 rounded-full transition-colors"
+                            title="Move to Past Ideas"
                           >
                             <Archive className="w-4 h-4" />
                           </button>
@@ -880,6 +748,153 @@ export default function DashboardPage() {
                         </ul>
                       </div>
                     </Card>
+                  </Reveal>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Past Ideas Section */}
+          {archivedIdeas.length > 0 && (
+            <div className="space-y-6 mt-8">
+              <Reveal delay={0.3}>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <h2 className="text-2xl font-bold text-foreground">Past Ideas</h2>
+                    <Badge variant="outline">{archivedIdeas.length} archived</Badge>
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShowArchivedIdeas(!showArchivedIdeas)}
+                  >
+                    {showArchivedIdeas ? 'Hide' : 'Show'} Past Ideas
+                  </Button>
+                </div>
+              </Reveal>
+
+              {showArchivedIdeas && (
+                <div className="grid gap-6">
+                  {archivedIdeas.map((idea, index) => (
+                    <Reveal key={idea.id} delay={0.36 + (index * 0.06)}>
+                      <Card 
+                        className="p-6 cursor-pointer hover:shadow-lg transition-all duration-200 hover:scale-[1.01] opacity-75"
+                        onClick={() => handleIdeaClick(idea)}
+                      >
+                        <div className="flex items-start justify-between mb-4">
+                          <div className="flex-1">
+                            <h3 className="text-lg font-semibold text-foreground mb-2">
+                              {idea.ideaText}
+                            </h3>
+                            <div className="flex items-center gap-4 text-sm text-foreground-muted">
+                              <div className="flex items-center gap-1">
+                                <Calendar className="w-4 h-4" />
+                                {formatDate(idea.createdAt)}
+                              </div>
+                              <div className="flex items-center gap-1">
+                                <Coins className="w-4 h-4" />
+                                {idea.tokensUsed} token{idea.tokensUsed !== 1 ? 's' : ''}
+                              </div>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Badge 
+                              variant={idea.analysis.recommendation === "Worth Building" ? "default" : "secondary"}
+                              className="ml-4"
+                            >
+                              {idea.analysis.recommendation}
+                            </Badge>
+                            <button
+                              onClick={(e) => toggleStar(e, idea)}
+                              className={`p-2 rounded-full transition-colors ${
+                                idea.starred 
+                                  ? 'text-yellow-500 hover:text-yellow-600' 
+                                  : 'text-foreground-muted hover:text-yellow-500'
+                              }`}
+                              title={idea.starred ? "Unstar idea" : "Star idea"}
+                            >
+                              <Star className={`w-4 h-4 ${idea.starred ? 'fill-current' : ''}`} />
+                            </button>
+                            <button
+                              onClick={(e) => toggleArchive(e, idea)}
+                              className="p-2 text-blue-600 hover:text-blue-700 rounded-full transition-colors"
+                              title="Move to Current Ideas"
+                            >
+                              <Archive className="w-4 h-4" />
+                            </button>
+                            <button
+                              onClick={(e) => handleDeleteClick(e, idea)}
+                              className="p-2 text-foreground-muted hover:text-red-600 hover:bg-red-50 rounded-full transition-colors"
+                              title="Delete idea"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* Score Grid */}
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+                          <div className="text-center p-3 bg-surface rounded-lg">
+                            <div className="text-sm text-foreground-muted mb-1">Overall</div>
+                            <div className="flex items-center justify-center gap-2">
+                              {(() => {
+                                const updatedScores = updatedIdeaScores[idea.id];
+                                const overallScore = updatedScores ? updatedScores.overall_score : getOverallScore(idea.analysis);
+                                const { letter, color } = getLetterGrade(overallScore);
+                                return (
+                                  <>
+                                    <div className={`text-lg font-bold transition-all duration-300 ${getScoreColor(overallScore)}`}>
+                                      {overallScore}%
+                                    </div>
+                                    <div className={`text-lg font-bold transition-all duration-300 ${
+                                      color === 'green' ? 'text-green-600' :
+                                      color === 'lime' ? 'text-lime-600' :
+                                      color === 'yellow' ? 'text-yellow-600' :
+                                      color === 'orange' ? 'text-orange-600' :
+                                      color === 'red' ? 'text-red-600' :
+                                      'text-gray-600'
+                                    }`}>
+                                      {letter}
+                                    </div>
+                                  </>
+                                );
+                              })()}
+                            </div>
+                          </div>
+                          <div className="text-center p-3 bg-surface rounded-lg">
+                            <div className="text-sm text-foreground-muted mb-1">Market</div>
+                            <div className={`text-lg font-bold transition-all duration-300 ${getScoreColor(updatedIdeaScores[idea.id]?.market_potential ?? idea.analysis.market_potential)}`}>
+                              {updatedIdeaScores[idea.id]?.market_potential ?? idea.analysis.market_potential}%
+                            </div>
+                          </div>
+                          <div className="text-center p-3 bg-surface rounded-lg">
+                            <div className="text-sm text-foreground-muted mb-1">Competition</div>
+                            <div className={`text-lg font-bold transition-all duration-300 ${getScoreColor(idea.analysis.competition)}`}>
+                              {idea.analysis.competition}%
+                            </div>
+                          </div>
+                          <div className="text-center p-3 bg-surface rounded-lg">
+                            <div className="text-sm text-foreground-muted mb-1">Execution</div>
+                            <div className={`text-lg font-bold transition-all duration-300 ${getScoreColor(updatedIdeaScores[idea.id]?.execution ?? idea.analysis.execution)}`}>
+                              {updatedIdeaScores[idea.id]?.execution ?? idea.analysis.execution}%
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Insights */}
+                        <div className="space-y-2">
+                          <h4 className="font-medium text-foreground">Key Insights</h4>
+                          <ul className="space-y-1">
+                            {idea.analysis.insights.slice(0, 3).map((insight, index) => (
+                              <li key={index} className="text-sm text-foreground-muted flex items-start gap-2">
+                                <div className="w-1 h-1 bg-brand rounded-full mt-2 flex-shrink-0"></div>
+                                {insight}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      </Card>
+                    </Reveal>
                   ))}
                 </div>
               )}
