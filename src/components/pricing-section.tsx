@@ -3,6 +3,7 @@ import { Badge } from "@/components/ui/badge";
 import { Check, Star } from "lucide-react";
 import { PricingButton } from "@/components/pricing-button";
 import Reveal from "@/components/ui/Reveal";
+import CountUp from "@/components/ui/CountUp";
 
 export const PricingSection = () => {
   const subscriptionPlans = [
@@ -136,7 +137,7 @@ export const PricingSection = () => {
                   {/* Token Info */}
                   <div className="text-center p-4 bg-surface rounded-lg">
                     <div className="text-2xl font-bold text-foreground mb-1">
-                      <span className="accent-text-gradient">{plan.tokens} tokens</span>
+                      <span className="accent-text-gradient"><CountUp to={plan.tokens} /> tokens</span>
                     </div>
                     <div className="text-sm text-foreground-muted">
                       {plan.costPerToken} per token
@@ -209,7 +210,7 @@ export const PricingSection = () => {
                     {/* Token Info */}
                     <div className="text-center p-4 bg-surface-elevated rounded-lg">
                       <div className="text-2xl font-bold text-foreground mb-1">
-                        <span className="accent-text-gradient">{plan.tokens} tokens</span>
+                        <span className="accent-text-gradient"><CountUp to={plan.tokens} /> tokens</span>
                       </div>
                       <div className="text-sm text-foreground-muted">
                         {plan.costPerToken} per token

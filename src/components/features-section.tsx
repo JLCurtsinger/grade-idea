@@ -7,18 +7,21 @@ import {
   Rocket 
 } from "lucide-react";
 import Reveal from "@/components/ui/Reveal";
+import CountUp from "@/components/ui/CountUp";
 
 export const FeaturesSection = () => {
   const features = [
     {
       icon: Clock,
       title: "Validate in 60 Seconds",
+      titleWithCountUp: () => <>Validate in <CountUp to={60} /> Seconds</>,
       description: "Avoid weeks of guesswork. Enter your idea and get instant, founder-grade feedback across market size, competition, monetization, and execution.",
       color: "brand"
     },
     {
       icon: BarChart3,
       title: "5-Part Scorecard, No Fluff",
+      titleWithCountUp: () => <><CountUp to={5} />-Part Scorecard, No Fluff</>,
       description: "Understand your idea's strengths and risks. Each scan breaks down into clear, justified scores—with no jargon or generic advice.",
       color: "success"
     },
@@ -101,7 +104,7 @@ export const FeaturesSection = () => {
                   {/* Content */}
                   <div className="space-y-3">
                     <h3 className="text-xl font-semibold text-foreground group-hover:text-brand transition-colors">
-                      {feature.title}
+                      {feature.titleWithCountUp ? feature.titleWithCountUp() : feature.title}
                     </h3>
                     <p className="text-foreground-muted leading-relaxed">
                       {feature.description}

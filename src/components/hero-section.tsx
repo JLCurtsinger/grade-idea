@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, Sparkles } from "lucide-react";
 import Reveal from "@/components/ui/Reveal";
+import CountUp from "@/components/ui/CountUp";
 
 interface HeroSectionProps {
   onSubmit: (idea: string) => void;
@@ -160,7 +161,7 @@ export const HeroSection = ({ onSubmit, tokenBalance, exampleIdea, isGrading = f
               <div className="inline-flex items-center gap-2 px-4 py-2 bg-surface-elevated border border-border-elevated rounded-full">
                 <Sparkles size={16} strokeWidth={2} aria-hidden="true" className="text-brand" />
                 <span className="text-sm font-medium text-foreground-muted">
-                  Trusted by 10,000+ founders
+                  Trusted by <CountUp to={10000} />+ founders
                 </span>
               </div>
             </Reveal>
@@ -169,7 +170,7 @@ export const HeroSection = ({ onSubmit, tokenBalance, exampleIdea, isGrading = f
             <div className="space-y-4">
               <Reveal>
                 <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold leading-tight">
-                  Validate your startup idea <span className="accent-text-gradient glow-pulse">in seconds</span>
+                  Validate your startup idea <span className="accent-text-gradient glow-pulse">in <CountUp to={60} /> seconds</span>
                 </h1>
               </Reveal>
               <Reveal delay={0.08}>
