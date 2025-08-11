@@ -8,6 +8,7 @@ import { AuthProvider } from "@/context/AuthContext";
 import { SignInModal } from "@/components/auth/SignInModal";
 import GoogleAnalytics from "@/components/GoogleAnalytics";
 import { Toaster } from "@/components/ui/toaster";
+import MotionProvider from "@/components/providers/MotionProvider";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -65,9 +66,11 @@ export default function RootLayout({
         <Providers>
           <AuthProvider>
             <CurrentIdeaProvider>
-              <Header />
-              {children}
-              <SignInModal />
+              <MotionProvider>
+                <Header />
+                {children}
+                <SignInModal />
+              </MotionProvider>
             </CurrentIdeaProvider>
           </AuthProvider>
         </Providers>

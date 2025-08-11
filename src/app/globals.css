@@ -345,3 +345,20 @@
 @media (prefers-reduced-motion: reduce) {
   .link-underline::after { transition: none; }
 } 
+
+/* Breathing glow animation for hero text */
+@keyframes glow-breathe {
+  0%, 100% { text-shadow: 0 0 0.5px rgba(255,255,255,0.15), 0 0 10px rgba(149,252,15,0.12); }
+  50% { text-shadow: 0 0 0.75px rgba(255,255,255,0.2), 0 0 16px rgba(149,252,15,0.18); }
+}
+
+.glow-pulse {
+  animation: glow-breathe 2.6s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .glow-pulse { 
+    animation: none; 
+    text-shadow: none; 
+  }
+} 

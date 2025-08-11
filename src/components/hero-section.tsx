@@ -165,7 +165,7 @@ export const HeroSection = ({ onSubmit, tokenBalance, exampleIdea, isGrading = f
             {/* Headline */}
             <div className="space-y-4">
               <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold leading-tight">
-                Validate your startup idea <span className="accent-text-gradient">in seconds</span>
+                Validate your startup idea <span className="accent-text-gradient glow-pulse">in seconds</span>
               </h1>
               <p className="text-subhero max-w-lg">
                 Real-time insights to help you decide what&apos;s worth building.
