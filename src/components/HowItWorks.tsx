@@ -40,7 +40,7 @@ export default function HowItWorks() {
             id="how-it-works-title"
             className="text-3xl md:text-4xl font-semibold tracking-tight"
           >
-            How to <span className="accent-text-gradient">validate a startup</span> idea
+            How to <span className="accent-text-gradient">validate a startup idea</span>
           </h2>
         </header>
 

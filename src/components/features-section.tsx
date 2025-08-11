@@ -65,13 +65,13 @@ export const FeaturesSection = () => {
         {/* Section Header */}
         <div className="text-center mb-16">
           <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
-            Business <span className="accent-text-gradient">idea grading</span>
+            Startup <span className="accent-text-gradient">idea grading</span>
           </h2>
           <h3 className="text-xl md:text-2xl font-semibold text-foreground mb-4">
-            Founder-Grade Startup Validation Reports
+            Reports with current real-world data
           </h3>
           <p className="text-lg text-foreground-muted max-w-2xl mx-auto">
-            How GradeIdea helps you decide what's worth building
+            GradeIdea.cc helps you decide what's worth building
           </p>
         </div>
 
