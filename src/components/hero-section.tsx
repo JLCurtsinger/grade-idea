@@ -170,7 +170,7 @@ export const HeroSection = ({ onSubmit, tokenBalance, exampleIdea, isGrading = f
             <div className="space-y-4">
               <Reveal>
                 <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold leading-tight">
-                  Validate your startup idea <span className="accent-text-gradient glow-pulse">in <CountUp to={60} /> seconds</span>
+                  Validate your startup idea <span className="accent-text-gradient glow-pulse">in seconds</span>
                 </h1>
               </Reveal>
               <Reveal delay={0.08}>
