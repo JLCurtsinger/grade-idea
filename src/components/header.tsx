@@ -219,7 +219,7 @@ export const Header = () => {
                 className="btn-primary"
                 onClick={handleGetStartedClick}
               >
-                {user ? 'My Dashboard' : 'Get Started'}
+                {user ? 'Dashboard' : 'Get Started'}
               </Button>
             </div>
 
@@ -314,7 +314,7 @@ export const Header = () => {
                 className="w-full btn-primary text-lg py-4"
                 onClick={handleGetStartedClick}
               >
-                {user ? 'My Dashboard' : 'Get Started'}
+                {user ? 'Dashboard' : 'Get Started'}
               </Button>
               
               {user && (
