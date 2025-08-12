@@ -34,7 +34,28 @@ jobs:
           echo "Site not live yet (sitemap still not 200)."
           exit 1
 
-      - name: Ping Google/Bing/IndexNow
+      - name: Validate sitemap like Googlebot
+        run: |
+          URL="https://www.gradeidea.cc/sitemap.xml"
+          echo "HEAD headers:" && curl -sI "$URL"
+          echo "Fetch as Googlebot:" && curl -s -A "Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)" -o /tmp/sm.xml -w "\nHTTP:%{http_code}\n" "$URL"
+          file -bi /tmp/sm.xml
+          head -n 5 /tmp/sm.xml
+          ct=$(file -bi /tmp/sm.xml)
+          echo "Content-Type: $ct"
+          [[ "$ct" =~ xml ]] || { echo "Not XML ($ct)"; exit 1; }
+
+      - name: Quick XML well-formedness check
+        run: |
+          sudo apt-get update -y && sudo apt-get install -y libxml2-utils
+          xmllint --noout /tmp/sm.xml
+
+      - name: Assert robots.txt exposes sitemap
+        run: |
+          curl -s https://www.gradeidea.cc/robots.txt | tee /tmp/robots.txt
+          grep -qi "^sitemap: https://www.gradeidea.cc/sitemap.xml" /tmp/robots.txt || { echo "robots.txt missing Sitemap line"; exit 1; }
+
+      - name: Notify search engines that still listen (Bing/IndexNow)
         run: npm run ping-search
         env:
           INDEXNOW_KEY: ${{ secrets.INDEXNOW_KEY }}

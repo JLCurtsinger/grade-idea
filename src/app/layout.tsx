@@ -18,6 +18,9 @@ export const metadata: Metadata = {
     "Get an AI-powered, founder-grade validation report for your startup idea. Score market potential, monetization, and growth – instantly.",
   alternates: {
     canonical: 'https://gradeidea.cc',
+    types: {
+      'application/rss+xml': 'https://www.gradeidea.cc/feed.xml',
+    },
   },
   openGraph: {
     type: 'website',

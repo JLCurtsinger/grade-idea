@@ -1,0 +1,6 @@
+# This is a placeholder file for the IndexNow key
+# The actual key file must exist at /${INDEXNOW_KEY}.txt
+# where ${INDEXNOW_KEY} is the actual secret value
+# 
+# This file should be replaced with the actual key file
+# during the build process or deployment

@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+  <channel>
+    <title>GradeIdea Updates</title>
+    <link>https://www.gradeidea.cc/</link>
+    <description>Updates and new pages from GradeIdea</description>
+    <language>en-us</language>
+    <lastBuildDate>2025-01-27T00:00:00+00:00</lastBuildDate>
+    <!-- Add a few key URLs as items -->
+    <item>
+      <title>Home</title>
+      <link>https://www.gradeidea.cc/</link>
+      <guid isPermaLink="true">https://www.gradeidea.cc/</guid>
+      <pubDate>2025-01-27T00:00:00+00:00</pubDate>
+    </item>
+    <item>
+      <title>Pricing</title>
+      <link>https://www.gradeidea.cc/pricing</link>
+      <guid isPermaLink="true">https://www.gradeidea.cc/pricing</guid>
+      <pubDate>2025-01-27T00:00:00+00:00</pubDate>
+    </item>
+  </channel>
+</rss>
