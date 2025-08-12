@@ -14,13 +14,18 @@ export default function HeroAssurances() {
       <ul className="flex flex-wrap items-center gap-x-4 gap-y-2">
         <li className="inline-flex items-center gap-1.5">
           <span className="inline-block h-1.5 w-1.5 rounded-full bg-emerald-400" aria-hidden />
-          <span>No sign‑up for roast</span>
+          <span>Get Roasted</span>
         </li>
         <li className="inline-flex items-center gap-1.5">
           <span className="inline-block h-1.5 w-1.5 rounded-full bg-sky-400" aria-hidden />
-          <span>Share & download ready</span>
+          <span>It's Shareable</span>
         </li>
         <li className="inline-flex items-center gap-1.5">
+          <span className="inline-block h-1.5 w-1.5 rounded-full bg-sky-400" aria-hidden />
+          <span>AndDownload ready</span>
+        </li>
+        {/* <li className="inline-flex items-center gap-1.5">
+          <span>1</span>
           <span className="inline-flex items-center">
             <Image
               src="/logo.svg"
@@ -30,8 +35,7 @@ export default function HeroAssurances() {
               className="opacity-80"
             />
           </span>
-          <span>1 token per roast</span>
-        </li>
+        </li> */}
       </ul>
     </div>
   );

@@ -173,7 +173,7 @@ export const HeroSection = ({ onSubmit, tokenBalance, exampleIdea, isGrading = f
               <div className="inline-flex items-center gap-2 px-4 py-2 bg-surface-elevated border border-border-elevated rounded-full">
                 <Sparkles size={16} strokeWidth={2} aria-hidden="true" className="text-brand" />
                 <span className="text-sm font-medium text-foreground-muted">
-                  Trusted by <CountUp to={4000} />+ founders
+                  Trusted by <CountUp to={10000} />+ founders
                 </span>
               </div>
             </Reveal>
