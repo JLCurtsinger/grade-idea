@@ -253,6 +253,29 @@ export const HeroSection = ({ onSubmit, tokenBalance, exampleIdea, isGrading = f
                   </Button>
                 </div>
 
+                {/* Roast Button */}
+                {process.env.NEXT_PUBLIC_ENABLE_ROAST === "true" && (
+                  <div className="mt-2 sm:mt-3 mb-2 sm:mb-3 flex justify-end">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => {
+                        if (idea.trim().length < 6) {
+                          alert("Please enter an idea (at least 6 characters)");
+                          return;
+                        }
+                        setShowPre(true);
+                      }}
+                      className="inline-flex items-center gap-2 border-red-500/60 text-red-300 hover:bg-red-500/10 hover:border-red-500/40"
+                    >
+                      Roast it for
+                      <span className="inline-flex items-center gap-1">
+                        1 <TokenIcon className="ml-1 h-4 w-4 align-[-1px]" />
+                      </span>
+                    </Button>
+                  </div>
+                )}
+
                 {/* Loading Dots Overlay */}
                 {isGrading && (
                   <div className="fixed inset-0 bg-background/80 backdrop-blur-sm flex items-center justify-center z-50">
@@ -292,29 +315,6 @@ export const HeroSection = ({ onSubmit, tokenBalance, exampleIdea, isGrading = f
                     </button>
                   ))}
                 </div>
-
-                {/* Roast Button */}
-                {process.env.NEXT_PUBLIC_ENABLE_ROAST === "true" && (
-                  <div className="mt-2">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={() => {
-                        if (idea.trim().length < 6) {
-                          alert("Please enter an idea (at least 6 characters)");
-                          return;
-                        }
-                        setShowPre(true);
-                      }}
-                      className="inline-flex items-center gap-2 border-red-500/60 text-red-300 hover:bg-red-500/10 hover:border-red-500/40"
-                    >
-                      Roast it for
-                      <span className="inline-flex items-center gap-1">
-                        1 <TokenIcon className="ml-1 h-4 w-4 align-[-1px]" />
-                      </span>
-                    </Button>
-                  </div>
-                )}
               </form>
               
               {/* Modals */}
