@@ -18,11 +18,11 @@ export default function HeroAssurances() {
         </li>
         <li className="inline-flex items-center gap-1.5">
           <span className="inline-block h-1.5 w-1.5 rounded-full bg-sky-400" aria-hidden />
-          <span>Shareable</span>
+          <span>It's Shareable</span>
         </li>
         <li className="inline-flex items-center gap-1.5">
           <span className="inline-block h-1.5 w-1.5 rounded-full bg-sky-400" aria-hidden />
-          <span>Download ready</span>
+          <span>& Download ready</span>
         </li>
         {/* <li className="inline-flex items-center gap-1.5">
           <span>1</span>
