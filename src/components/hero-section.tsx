@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
+import HeroTokenBalance from "@/components/HeroTokenBalance";
 import { ArrowRight, Sparkles } from "lucide-react";
 import Reveal from "@/components/ui/Reveal";
 import CountUp from "@/components/ui/CountUp";
@@ -10,7 +11,6 @@ import TokenIcon from "@/components/ui/TokenIcon";
 import RoastModal from "@/components/RoastModal";
 import PreRoastModal from "@/components/PreRoastModal";
 import HeroAssurances from "@/components/HeroAssurances";
-import HeroTokenBalance from "@/components/HeroTokenBalance";
 import { useAuth } from "@/context/AuthContext";
 
 interface HeroSectionProps {
@@ -255,7 +255,7 @@ export const HeroSection = ({ onSubmit, tokenBalance, exampleIdea, isGrading = f
                   </Button>
                 </div>
 
-                {/* Token Balance Display */}
+                {/* Token balance centered below the input (signed-in only) */}
                 <HeroTokenBalance />
 
                 {/* Roast Button */}
