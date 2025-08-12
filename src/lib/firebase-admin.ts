@@ -35,6 +35,9 @@ export function getAdminDb(): admin.firestore.Firestore {
     });
   }
   _db = admin.firestore();
+  // Prevent crashes when patch objects contain undefined
+  // @ts-ignore
+  _db.settings?.({ ignoreUndefinedProperties: true });
   return _db;
 }
 

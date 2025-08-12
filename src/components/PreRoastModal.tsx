@@ -16,7 +16,7 @@ export default function PreRoastModal({
   const label = h === 1 ? "Light" : h === 2 ? "Medium" : "Nuclear";
   return (
     <div className="fixed inset-0 z-50 grid place-items-center bg-black/60 p-4">
-      <div className="relative w-full max-w-md rounded-2xl border border-neutral-800 bg-neutral-900/70 p-5">
+      <div className="relative w-full max-w-md rounded-2xl border border-neutral-800 backdrop-blur bg-neutral-900/95 p-5">
         <button onClick={onCancel} className="absolute right-4 top-4 text-neutral-400 hover:text-neutral-200">✕</button>
         <h3 className="text-lg font-semibold mb-2">How spicy should we be?</h3>
         <p className="text-sm text-neutral-400 mb-4 line-clamp-3">{idea}</p>

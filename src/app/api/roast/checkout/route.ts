@@ -7,20 +7,17 @@ export const runtime = "nodejs";
 
 export async function POST(req: NextRequest) {
   const body = await req.json().catch(() => ({}));
-  const rawIdea = (body?.idea ?? "").toString().trim();
-  const hParsed = Number(body?.harshness);
-  const h = [1,2,3].includes(hParsed) ? (hParsed as 1|2|3) : 2;
+  const idea = String(body?.idea || "").trim();
+  const hNum = Number(body?.harshness);
+  const harshness = ([1,2,3].includes(hNum) ? hNum : 2) as 1|2|3;
 
-  if (rawIdea.length < 6) {
-    console.log('Roast checkout validation failed:', { ideaLength: rawIdea.length, harshnessUsed: h });
-    return NextResponse.json(
-      { error: "Missing or invalid fields", details: { idea: false, harshness: true } },
-      { status: 400 }
-    );
+  if (idea.length < 6) {
+    console.log("[roast/checkout] invalid", { ideaLength: idea.length, harshness });
+    return NextResponse.json({ error: "Missing or invalid fields" }, { status: 400 });
   }
 
   const { id } = await createRoastDoc({
-    idea: rawIdea, harshness: h, userId: null, paid: false, source: "stripe", status: "pending"
+    idea, harshness, userId: null, paid: false, source: "stripe", status: "pending"
   });
 
   const price = process.env.STRIPE_PRICE_ID_ROAST_SINGLE!;

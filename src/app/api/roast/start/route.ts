@@ -7,19 +7,16 @@ import { adminAuth } from "@/lib/firebase-admin";
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json().catch(() => ({}));
-    const rawIdea = (body?.idea ?? "").toString().trim();
-    const hParsed = Number(body?.harshness);
-    const h = [1,2,3].includes(hParsed) ? (hParsed as 1|2|3) : 2;
+    const idea = String(body?.idea || "").trim();
+    const hNum = Number(body?.harshness);
+    const harshness = ([1,2,3].includes(hNum) ? hNum : 2) as 1|2|3;
 
-    if (rawIdea.length < 6) {
-      console.log('Roast start validation failed:', { ideaLength: rawIdea.length, harshnessUsed: h });
-      return NextResponse.json(
-        { error: "Missing or invalid fields", details: { idea: false, harshness: true } },
-        { status: 400 }
-      );
+    if (idea.length < 6) {
+      console.log("[roast/start] invalid", { ideaLength: idea.length, harshness });
+      return NextResponse.json({ error: "Missing or invalid fields" }, { status: 400 });
     }
 
-    // Check if user has tokens (if authenticated)
+    // Verify Firebase ID token if present
     const authHeader = req.headers.get('authorization') || req.headers.get('Authorization');
     let uid: string | null = null;
     
@@ -34,39 +31,21 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    if (uid) {
-      // Authenticated user - check tokens
-      const hasTokens = await hasAtLeastOneToken(uid);
-      
-      if (!hasTokens) {
-        return NextResponse.json({ error: "Insufficient tokens" }, { status: 402 });
-      }
-
-      // Deduct one token
-      await deductOneToken(uid);
+    // Guests & 0-token users should use checkout endpoint
+    if (!uid || !(await hasAtLeastOneToken(uid))) {
+      return NextResponse.json({ error: "Payment required" }, { status: 402 });
     }
 
-    // Create roast document
-    const { id } = await createRoastDoc({
-      idea: rawIdea,
-      harshness: h,
-      userId: uid,
-      paid: false,
-      source: uid ? "token" : "guest",
-      status: "processing"
-    });
-
-    // Generate roast content
     try {
-      const result = await generateRoast(idea, harshness as 1 | 2 | 3);
+      await deductOneToken(uid);
+      const { id } = await createRoastDoc({ idea, harshness, userId: uid, paid: true, source: "token", status: "processing" });
+      const result = await generateRoast(idea, harshness);
       await updateRoast(id, { status: "ready", result });
-    } catch (error) {
-      console.error("Error generating roast:", error);
-      await updateRoast(id, { status: "error" });
-      return NextResponse.json({ error: "Failed to generate roast" }, { status: 500 });
+      return NextResponse.json({ roastId: id });
+    } catch (e: any) {
+      console.error("Error in roast start:", e);
+      return NextResponse.json({ error: "Internal server error" }, { status: 500 });
     }
-
-    return NextResponse.json({ roastId: id });
   } catch (error) {
     console.error("Error in roast start:", error);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });

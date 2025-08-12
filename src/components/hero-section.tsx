@@ -297,7 +297,6 @@ export const HeroSection = ({ onSubmit, tokenBalance, exampleIdea, isGrading = f
                   <div className="mt-2">
                     <button
                       type="button"
-                      className="w-full inline-flex items-center justify-center rounded-lg border border-red-500/60 px-3 py-2 text-sm font-medium text-red-300 hover:bg-red-500/10"
                       onClick={() => {
                         if (idea.trim().length < 6) {
                           alert("Please enter an idea (at least 6 characters)");
@@ -305,8 +304,12 @@ export const HeroSection = ({ onSubmit, tokenBalance, exampleIdea, isGrading = f
                         }
                         setShowPre(true);
                       }}
+                      className="mt-2 inline-flex items-center gap-2 rounded-lg border border-red-500/60 px-4 py-2 text-sm font-medium text-red-300 hover:bg-red-500/10 self-start"
                     >
                       Roast It
+                      <span className="inline-flex items-center gap-1">
+                        1 <img src="/logo.svg" alt="" className="h-4 w-4 opacity-90" />
+                      </span>
                     </button>
                   </div>
                 )}
