@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getStripe } from "@/lib/stripe";
-import { siteUrl } from "@/lib/url";
+import { inferSiteUrlFromRequest } from "@/lib/url";
 
 export const runtime = "nodejs";
 
@@ -17,7 +17,9 @@ export async function POST(req: NextRequest) {
   const roastId = globalThis.crypto?.randomUUID?.() || Math.random().toString(36).slice(2);
   const stripe = getStripe();
   const price = process.env.STRIPE_PRICE_ID_ROAST_SINGLE!;
-  const base = siteUrl();
+  const base = inferSiteUrlFromRequest(req);
+  
+  console.log("[roast][checkout] base:", base);
 
   const session = await stripe.checkout.sessions.create({
     mode: "payment",
