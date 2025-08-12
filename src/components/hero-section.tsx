@@ -6,6 +6,7 @@ import { ArrowRight, Sparkles } from "lucide-react";
 import Reveal from "@/components/ui/Reveal";
 import CountUp from "@/components/ui/CountUp";
 import TokenCount from "@/components/ui/TokenCount";
+import RoastModal from "@/components/RoastModal";
 
 interface HeroSectionProps {
   onSubmit: (idea: string) => void;
@@ -17,6 +18,9 @@ interface HeroSectionProps {
 export const HeroSection = ({ onSubmit, tokenBalance, exampleIdea, isGrading = false }: HeroSectionProps) => {
   const [idea, setIdea] = useState(exampleIdea || "");
   const [isLoading, setIsLoading] = useState(false);
+  const [harshness, setHarshness] = useState(2);
+  const [open, setOpen] = useState(false);
+  const [roastId, setRoastId] = useState<string | null>(null);
   
   // Refs for dynamic padding calculation
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -283,6 +287,32 @@ export const HeroSection = ({ onSubmit, tokenBalance, exampleIdea, isGrading = f
                     </button>
                   ))}
                 </div>
+
+                {/* Roast Controls */}
+                {process.env.NEXT_PUBLIC_ENABLE_ROAST === "true" && (
+                  <div className="mt-2">
+                    <label className="mb-1 flex items-center gap-3 text-xs text-neutral-400">
+                      Harshness
+                      <input type="range" min={1} max={3} step={1} value={harshness}
+                        onChange={(e) => setHarshness(parseInt(e.target.value))} className="w-32 accent-red-500" />
+                      <span className="text-neutral-300">{harshness === 1 ? "Light" : harshness === 2 ? "Medium" : "Nuclear"}</span>
+                    </label>
+                    <button
+                      type="button"
+                      className="mt-2 inline-flex items-center rounded-lg border border-red-500/60 px-3 py-2 text-sm font-medium text-red-300 hover:bg-red-500/10"
+                      onClick={async () => {
+                        const res = await fetch("/api/roast/start", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ idea, harshness }) });
+                        const json = await res.json();
+                        if (json.roastId) { setRoastId(json.roastId); setOpen(true); }
+                        else if (res.status === 402) { alert("Roast requires payment (Stripe coming soon)."); }
+                        else { alert(json.error || "Failed to start roast"); }
+                      }}
+                    >
+                      Roast It
+                    </button>
+                    {open && roastId && <RoastModal roastId={roastId} onClose={() => setOpen(false)} />}
+                  </div>
+                )}
               </form>
             </Reveal>
 
