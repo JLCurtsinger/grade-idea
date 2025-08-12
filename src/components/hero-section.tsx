@@ -7,6 +7,7 @@ import Reveal from "@/components/ui/Reveal";
 import CountUp from "@/components/ui/CountUp";
 import TokenCount from "@/components/ui/TokenCount";
 import RoastModal from "@/components/RoastModal";
+import { useAuth } from "@/context/AuthContext";
 
 interface HeroSectionProps {
   onSubmit: (idea: string) => void;
@@ -16,6 +17,7 @@ interface HeroSectionProps {
 }
 
 export const HeroSection = ({ onSubmit, tokenBalance, exampleIdea, isGrading = false }: HeroSectionProps) => {
+  const { user } = useAuth();
   const [idea, setIdea] = useState(exampleIdea || "");
   const [isLoading, setIsLoading] = useState(false);
   const [harshness, setHarshness] = useState(2);
@@ -301,10 +303,35 @@ export const HeroSection = ({ onSubmit, tokenBalance, exampleIdea, isGrading = f
                       type="button"
                       className="mt-2 inline-flex items-center rounded-lg border border-red-500/60 px-3 py-2 text-sm font-medium text-red-300 hover:bg-red-500/10"
                       onClick={async () => {
-                        const res = await fetch("/api/roast/start", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ idea, harshness }) });
+                        if (!user) {
+                          alert("Please sign in to roast your idea");
+                          return;
+                        }
+                        
+                        // Get Firebase ID token
+                        const idToken = await user.getIdToken();
+                        
+                        const res = await fetch("/api/roast/start", { 
+                          method: "POST", 
+                          headers: { 
+                            "Content-Type": "application/json",
+                            "Authorization": `Bearer ${idToken}`
+                          }, 
+                          body: JSON.stringify({ idea, harshness }) 
+                        });
                         const json = await res.json();
                         if (json.roastId) { setRoastId(json.roastId); setOpen(true); }
-                        else if (res.status === 402) { alert("Roast requires payment (Stripe coming soon)."); }
+                        else if (res.status === 402) { 
+                          const payRes = await fetch("/api/roast/checkout", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ idea, harshness }),
+                          });
+                          const payJson = await payRes.json();
+                          if (payJson.checkoutUrl) window.location.assign(payJson.checkoutUrl);
+                          else alert(payJson.error || "Checkout unavailable");
+                          return;
+                        }
                         else { alert(json.error || "Failed to start roast"); }
                       }}
                     >

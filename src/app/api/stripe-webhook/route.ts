@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { stripe } from '@/lib/stripe';
 import { incrementUserTokens } from '@/lib/firebase-admin';
 import Stripe from 'stripe';
+import { getRoast, updateRoast } from "@/lib/roast";
+import { generateRoast } from "@/lib/openai/roast";
 
 // Robust plan name normalization (server-side)
 const normalizePlanName = (plan: string): 'basic' | 'standard' | 'pro' | 'starter' | 'popular' | 'value' | null => {
@@ -187,6 +189,35 @@ export async function POST(request: NextRequest) {
           { error: 'Failed to process checkout session' },
           { status: 500 }
         );
+      }
+
+      // Handle roast-specific checkout completion
+      const roastId = session.metadata?.roastId;
+      if (roastId) {
+        console.log('=== WEBHOOK: ROAST CHECKOUT COMPLETED ===');
+        console.log('Roast ID:', roastId);
+        console.log('Session ID:', session.id);
+        
+        try {
+          // Idempotency: if already ready (or already has result), do nothing
+          const doc = await getRoast(roastId);
+          if (doc && doc.status === "ready" && doc.result) {
+            console.log('Roast already processed, skipping');
+          } else {
+            await updateRoast(roastId, { paid: true, status: "processing", sessionId: session.id });
+            try {
+              const result = await generateRoast(doc?.idea || "Your idea", doc?.harshness || 2);
+              await updateRoast(roastId, { status: "ready", result });
+              console.log('Roast generated successfully');
+            } catch (e) {
+              console.error('Error generating roast:', e);
+              await updateRoast(roastId, { status: "error" });
+            }
+          }
+        } catch (roastError) {
+          console.error('Error processing roast checkout:', roastError);
+          // Don't fail the webhook for roast errors
+        }
       }
       break;
 
