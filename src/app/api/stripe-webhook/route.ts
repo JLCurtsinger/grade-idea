@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { stripe } from '@/lib/stripe';
+import { getStripe } from '@/lib/stripe';
 import { incrementUserTokens, getAdminDb } from '@/lib/firebase-admin';
 import Stripe from 'stripe';
 import { getRoast, updateRoast, createRoastDocWithId } from "@/lib/roast";
@@ -88,32 +88,35 @@ async function handleRoastCheckoutCompleted(session: any) {
   }
 }
 
-export async function POST(request: NextRequest) {
-  const body = await request.text();
-  const signature = request.headers.get('stripe-signature');
+export const runtime = "nodejs";
 
-  if (!signature) {
-    console.error('Missing stripe-signature header');
-    return NextResponse.json(
-      { error: 'Missing stripe-signature header' },
-      { status: 400 }
-    );
-  }
-
+export async function POST(req: NextRequest) {
+  const stripe = getStripe();
+  const signature = req.headers.get("stripe-signature");
   let event: Stripe.Event;
 
-  try {
-    event = stripe.webhooks.constructEvent(
-      body,
-      signature,
-      process.env.STRIPE_WEBHOOK_SECRET!
-    );
-  } catch (err) {
-    console.error('Webhook signature verification failed:', err);
-    return NextResponse.json(
-      { error: 'Invalid signature' },
-      { status: 400 }
-    );
+  if (process.env.STRIPE_WEBHOOK_SECRET && signature) {
+    const raw = await req.text(); // important
+    try {
+      event = stripe.webhooks.constructEvent(raw, signature, process.env.STRIPE_WEBHOOK_SECRET);
+    } catch (err: any) {
+      console.error("Stripe signature verification failed:", err?.message);
+      return new NextResponse("Bad signature", { status: 400 });
+    }
+  } else {
+    // dev fallback
+    event = await req.json();
+  }
+
+  // Handle the event
+  if (event.type === "checkout.session.completed") {
+    const session = (event.data.object as any);
+    if (session?.metadata?.roastId) {
+      console.log("[roast][webhook] type=", event.type, "roastId=", session.metadata.roastId);
+      await handleRoastCheckoutCompleted(session);
+      console.log("[roast][ready] roastId=", session.metadata.roastId);
+      return NextResponse.json({ ok: true });
+    }
   }
 
   // Handle the event
@@ -125,13 +128,6 @@ export async function POST(request: NextRequest) {
       console.log('Session ID:', session.id);
       console.log('Session metadata:', session.metadata);
       console.log('Client reference ID:', session.client_reference_id);
-      
-      // Handle roast checkout if metadata.roastId is present
-      if (session?.metadata?.roastId) {
-        console.log("[roast][webhook] event=checkout.session.completed roastId=", session.metadata.roastId);
-        await handleRoastCheckoutCompleted(session);
-        return NextResponse.json({ received: true });
-      }
       
       // Handle token purchase (existing logic)
       try {
