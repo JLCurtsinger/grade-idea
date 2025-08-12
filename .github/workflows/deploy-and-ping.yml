@@ -50,6 +50,19 @@ jobs:
           sudo apt-get update -y && sudo apt-get install -y libxml2-utils
           xmllint --noout /tmp/sm.xml
 
+      - name: Fetch robots.txt as Googlebot
+        run: |
+          curl -s -A "Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)" -o /tmp/robots-gb.txt -w "\nHTTP:%{http_code}\n" https://www.gradeidea.cc/robots.txt
+          head -n 5 /tmp/robots-gb.txt
+
+      - name: Sample sitemap URLs resolve 200
+        run: |
+          grep -Eo '<loc>[^<]+' /tmp/sm.xml | sed 's/<loc>//' | head -n 25 | while read url; do
+            code=$(curl -s -o /dev/null -w "%{http_code}" "$url")
+            echo "$code $url"
+            if [ "$code" -ge 400 ]; then echo "Bad URL in sitemap: $url"; exit 1; fi
+          done
+
       - name: Assert robots.txt exposes sitemap
         run: |
           curl -s https://www.gradeidea.cc/robots.txt | tee /tmp/robots.txt

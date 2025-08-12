@@ -9,6 +9,18 @@ const nextConfig = {
   images: {
     unoptimized: true
   },
+  async redirects() {
+    return [
+      // Redirect apex to www (choose one scheme and stick with it in GSC)
+      {
+        source: '/:path*',
+        has: [{ type: 'host', value: 'gradeidea.cc' }],
+        destination: 'https://www.gradeidea.cc/:path*',
+        permanent: true,
+      },
+      // If you prefer apex instead, flip host/value + destination accordingly
+    ];
+  },
   async headers() {
     return [
       {
