@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { stripe } from '@/lib/stripe';
-import { incrementUserTokens } from '@/lib/firebase-admin';
+import { incrementUserTokens, getAdminDb } from '@/lib/firebase-admin';
 import Stripe from 'stripe';
-import { getRoast, updateRoast } from "@/lib/roast";
+import { getRoast, updateRoast, createRoastDocWithId } from "@/lib/roast";
 import { generateRoast } from "@/lib/openai/roast";
 
 // Robust plan name normalization (server-side)
@@ -155,7 +155,7 @@ export async function POST(request: NextRequest) {
           let userEmail = session.customer_details?.email;
           if (!userEmail) {
             // Fallback: get email from user document
-            const userRef = adminDb.collection('users').doc(userId);
+            const userRef = getAdminDb().collection('users').doc(userId);
             const userDoc = await userRef.get();
             if (userDoc.exists) {
               userEmail = userDoc.data()?.email;
@@ -197,16 +197,20 @@ export async function POST(request: NextRequest) {
         console.log('=== WEBHOOK: ROAST CHECKOUT COMPLETED ===', { roastId, event: event.type });
         
         try {
-          // Idempotency: if already ready (or already has result), do nothing
+          const idea = (session?.metadata?.idea || "").toString();
+          const h = Number(session?.metadata?.harshness);
+          const harshness: 1|2|3 = ([1,2,3] as const).includes(h as any) ? (h as 1|2|3) : 2;
+
           const doc = await getRoast(roastId);
-          if (doc && doc.status === "ready" && doc.result) {
-            console.log('Roast already processed, skipping');
-            return NextResponse.json({ received: true });
+          if (!doc) {
+            // Create new roast document with the roastId
+            await createRoastDocWithId(roastId, { idea, harshness, userId: null, paid: true, source: "stripe", status: "processing", sessionId: session.id });
+          } else if (doc.status !== "ready" || !doc.result) {
+            await updateRoast(roastId, { paid: true, status: "processing", sessionId: session.id });
           }
-          
-          await updateRoast(roastId, { paid: true, status: "processing", sessionId: session.id });
+
           try {
-            const result = await generateRoast(doc?.idea || "Your idea", doc?.harshness || 2);
+            const result = await generateRoast(idea || doc?.idea || "Your idea", harshness || (doc?.harshness as 1|2|3) || 2);
             await updateRoast(roastId, { status: "ready", result });
             console.log('Roast generated successfully');
           } catch (e) {

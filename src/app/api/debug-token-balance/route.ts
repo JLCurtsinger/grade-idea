@@ -1,5 +1,5 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { adminAuth, adminDb } from '@/lib/firebase-admin';
+import { NextRequest, NextResponse } from "next/server";
+import { getAdminAuth, getAdminDb } from '@/lib/firebase-admin';
 
 export async function GET(request: NextRequest) {
   try {
@@ -14,16 +14,16 @@ export async function GET(request: NextRequest) {
     const idToken = authHeader.substring(7);
     
     // Verify the Firebase ID token
-    const decoded = await adminAuth.verifyIdToken(idToken);
+    const decoded = await getAdminAuth().verifyIdToken(idToken);
     const uid = decoded.uid;
     
     console.log('Debug endpoint - UID from token:', uid);
-    console.log('Debug endpoint - Admin DB initialized:', !!adminDb);
+    console.log('Debug endpoint - Admin DB initialized:', !!getAdminDb());
     
     // TEST 1: Hardcoded Write Check
     console.log('=== TESTING FIRESTORE WRITE ===');
     try {
-      await adminDb.collection('debug-check').doc('test-write').set({
+      await getAdminDb().collection('debug-check').doc('test-write').set({
         timestamp: new Date(),
         test: 'write-from-api',
         uid: uid,
@@ -39,7 +39,7 @@ export async function GET(request: NextRequest) {
     }
     
     // Read the current token balance from Firestore
-    const userRef = adminDb.collection('users').doc(uid);
+    const userRef = getAdminDb().collection('users').doc(uid);
     const userDoc = await userRef.get();
     
     if (!userDoc.exists) {

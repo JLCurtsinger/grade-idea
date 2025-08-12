@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { adminAuth, adminDb, incrementUserTokens, getUserTokenBalance } from '@/lib/firebase-admin';
+import { getAdminAuth, getAdminDb, incrementUserTokens, getUserTokenBalance } from '@/lib/firebase-admin';
 import { Timestamp } from 'firebase-admin/firestore';
 
 // Request interface
@@ -19,7 +19,7 @@ interface GeneratePlanResponse {
 // Verify Firebase ID token
 const verifyFirebaseIdToken = async (idToken: string) => {
   try {
-    const decodedToken = await adminAuth.verifyIdToken(idToken);
+    const decodedToken = await getAdminAuth().verifyIdToken(idToken);
     return decodedToken;
   } catch (error) {
     console.error('Error verifying Firebase ID token:', error);
@@ -156,7 +156,7 @@ Return a step-by-step plan in paragraph or list format that is practical and act
 const updateChecklistItemWithPlan = async (userId: string, ideaId: string, checklistItemId: string, plan: string) => {
   try {
     // First, find the checklist document
-    const checklistsRef = adminDb.collection("checklists");
+    const checklistsRef = getAdminDb().collection("checklists");
     const q = checklistsRef.where("idea_id", "==", ideaId).where("user_id", "==", userId);
     const querySnapshot = await q.get();
     

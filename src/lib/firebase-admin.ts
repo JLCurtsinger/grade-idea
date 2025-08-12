@@ -9,11 +9,27 @@ function haveEnv() {
          !!process.env.FIREBASE_PRIVATE_KEY;
 }
 
-function normalizePem(raw: string) {
-  // Handle both '\\n' (double-escaped) and '\n'
-  return raw
-    .replace(/\\\\n/g, "\n")  // turn \\n into real newline first
-    .replace(/\\n/g, "\n");   // then \n into real newline
+function normalizePem(rawInput: string) {
+  let raw = (rawInput || "").trim();
+
+  // Strip leading and trailing quotes if present
+  if ((raw.startsWith('"') && raw.endsWith('"')) || (raw.startsWith("'") && raw.endsWith("'"))) {
+    raw = raw.slice(1, -1);
+  }
+
+  // If it's base64 (no BEGIN/END markers), decode
+  if (!raw.includes("BEGIN") && !raw.includes("END")) {
+    try {
+      raw = Buffer.from(raw, "base64").toString("utf8");
+    } catch {
+      // ignore; fallback to raw
+    }
+  }
+
+  // Replace double-escaped \\n first, then single-escaped \n
+  raw = raw.replace(/\\\\n/g, "\n").replace(/\\n/g, "\n").replace(/\r\n/g, "\n");
+
+  return raw;
 }
 
 export function getAdminDb(): admin.firestore.Firestore {
@@ -63,9 +79,9 @@ export function getAdminAuth(): admin.auth.Auth {
   return _auth;
 }
 
-// Legacy exports for backward compatibility
-export const adminDb = getAdminDb();
-export const adminAuth = getAdminAuth();
+// Legacy exports for backward compatibility - REMOVED to prevent build-time initialization
+// export const adminDb = getAdminDb();
+// export const adminAuth = getAdminAuth();
 
 // Ideas collection helper functions
 export interface IdeaDocument {

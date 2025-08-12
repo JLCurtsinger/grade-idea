@@ -1,11 +1,11 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { adminAuth, adminDb } from '@/lib/firebase-admin';
+import { NextRequest, NextResponse } from "next/server";
+import { getAdminAuth, getAdminDb } from '@/lib/firebase-admin';
 import { calculateDynamicScores } from '@/lib/scoring';
 
 // Verify Firebase ID token
 const verifyFirebaseIdToken = async (idToken: string) => {
   try {
-    const decodedToken = await adminAuth.verifyIdToken(idToken);
+    const decodedToken = await getAdminAuth().verifyIdToken(idToken);
     return decodedToken;
   } catch (error) {
     console.error('Error verifying Firebase ID token:', error);
@@ -57,7 +57,7 @@ export async function POST(request: NextRequest) {
     console.log('User authenticated:', { uid });
 
     // Get the current idea document to check for base score
-    const ideaRef = adminDb.collection("users").doc(uid).collection("ideas").doc(ideaId);
+    const ideaRef = getAdminDb().collection("users").doc(uid).collection("ideas").doc(ideaId);
     const ideaDoc = await ideaRef.get();
     
     if (!ideaDoc.exists) {

@@ -37,4 +37,7 @@ export const getPriceIdForPlan = (planName: string): string => {
 // Validate price ID exists
 export const isValidPriceId = (priceId: string): boolean => {
   return Object.keys(tokenMap).includes(priceId);
-}; 
+};
+
+// Get Stripe instance
+export const getStripe = () => stripe; 

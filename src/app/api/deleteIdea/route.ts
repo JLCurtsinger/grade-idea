@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { adminAuth, deleteUserIdea } from '@/lib/firebase-admin';
+import { getAdminAuth, deleteUserIdea } from '@/lib/firebase-admin';
 import { logTokenError } from '@/lib/utils';
 
 // Verify Firebase ID token
 const verifyFirebaseIdToken = async (idToken: string) => {
   try {
-    const decodedToken = await adminAuth.verifyIdToken(idToken);
+    const decodedToken = await getAdminAuth().verifyIdToken(idToken);
     return decodedToken;
   } catch (error) {
     console.error('Error verifying Firebase ID token:', error);

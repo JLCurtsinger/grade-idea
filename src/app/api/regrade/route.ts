@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { adminAuth, adminDb } from '@/lib/firebase-admin';
+import { getAdminAuth, getAdminDb } from '@/lib/firebase-admin';
 import { Timestamp } from 'firebase-admin/firestore';
 
 // Types for regrade request
@@ -92,7 +92,7 @@ The response must be strictly parseable by JSON.parse(). Focus on actionable, fo
 // Verify Firebase ID token
 const verifyFirebaseIdToken = async (idToken: string) => {
   try {
-    const decodedToken = await adminAuth.verifyIdToken(idToken);
+    const decodedToken = await getAdminAuth().verifyIdToken(idToken);
     return decodedToken;
   } catch (error) {
     console.error('Error verifying Firebase ID token:', error);
@@ -245,7 +245,7 @@ export async function POST(request: NextRequest) {
     console.log('User authenticated:', { uid });
 
     // Check token balance
-    const userRef = adminDb.collection('users').doc(uid);
+    const userRef = getAdminDb().collection('users').doc(uid);
     const userDoc = await userRef.get();
     
     if (!userDoc.exists) {
@@ -287,7 +287,7 @@ export async function POST(request: NextRequest) {
     });
 
     // Update idea document with new analysis
-    const ideaRef = adminDb
+    const ideaRef = getAdminDb()
       .collection("users")
       .doc(uid)
       .collection("ideas")

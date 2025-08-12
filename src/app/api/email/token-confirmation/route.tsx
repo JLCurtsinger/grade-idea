@@ -4,7 +4,7 @@ import { z } from 'zod';
 import { sendEmail } from '@/lib/email/resend';
 import { render } from '@react-email/render';
 import TokenConfirmationEmail, { subject } from '@/emails/TokenConfirmationEmail';
-import { adminDb } from '@/lib/firebase-admin';
+import { getAdminDb } from '@/lib/firebase-admin';
 import { logInfo, logWarn, logError } from '@/lib/log';
 import React from 'react';
 
@@ -58,7 +58,7 @@ export async function POST(req: NextRequest) {
 
     // Idempotency: check payment flag (skip if forced)
     if (!forced) {
-      const payRef = adminDb.collection('payments').doc(sessionId);
+      const payRef = getAdminDb().collection('payments').doc(sessionId);
       const snap = await payRef.get();
       if (snap.exists && snap.data()?.tokenEmailSent) {
         logInfo("token-confirmation email skipped - already sent", { 
@@ -94,7 +94,7 @@ export async function POST(req: NextRequest) {
     const emailId = (res as any)?.id || null;
     
     // Set idempotency flag
-    const payRef = adminDb.collection('payments').doc(sessionId);
+    const payRef = getAdminDb().collection('payments').doc(sessionId);
     await payRef.set({ tokenEmailSent: true }, { merge: true });
 
     logInfo("token-confirmation email sent successfully", { 

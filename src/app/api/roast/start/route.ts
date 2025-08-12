@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createRoastDoc } from "@/lib/roast";
 import { hasAtLeastOneToken, deductOneToken } from "@/lib/token-validation";
 import { generateRoast } from "@/lib/openai/roast";
-import { adminAuth } from "@/lib/firebase-admin";
+import { getAdminAuth } from '@/lib/firebase-admin';
 
 export async function POST(req: NextRequest) {
   try {
@@ -23,7 +23,7 @@ export async function POST(req: NextRequest) {
     if (authHeader?.startsWith('Bearer ')) {
       try {
         const idToken = authHeader.replace('Bearer ', '').trim();
-        const decodedToken = await adminAuth.verifyIdToken(idToken);
+        const decodedToken = await getAdminAuth().verifyIdToken(idToken);
         uid = decodedToken.uid;
       } catch (error) {
         console.error('Token verification failed:', error);

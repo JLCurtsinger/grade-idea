@@ -1,5 +1,5 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { adminDb } from '@/lib/firebase-admin';
+import { NextRequest, NextResponse } from "next/server";
+import { getAdminDb } from '@/lib/firebase-admin';
 
 export async function GET(
   request: NextRequest,
@@ -16,7 +16,7 @@ export async function GET(
     }
 
     // Search for the idea across all users where public is true
-    const ideasSnapshot = await adminDb
+    const ideasSnapshot = await getAdminDb()
       .collectionGroup('ideas')
       .where('public', '==', true)
       .get();

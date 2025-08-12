@@ -1,6 +1,6 @@
 // src/app/api/seed-initial-token/route.ts
-import { NextResponse } from 'next/server';
-import { adminAuth, adminDb } from '@/lib/firebaseAdmin';
+import { NextRequest, NextResponse } from "next/server";
+import { getAdminAuth, getAdminDb } from '@/lib/firebase-admin';
 
 export async function POST(req: Request) {
   try {
@@ -9,14 +9,14 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Missing or invalid Authorization header' }, { status: 401 });
     }
     const idToken = authHeader.replace('Bearer ', '').trim();
-    const decoded = await adminAuth.verifyIdToken(idToken);
+    const decoded = await getAdminAuth().verifyIdToken(idToken);
     const uid = decoded.uid;
 
-    const userRef = adminDb.collection('users').doc(uid);
+    const userRef = getAdminDb().collection('users').doc(uid);
     let credited = false;
     let balance = 0;
 
-    await adminDb.runTransaction(async (tx) => {
+    await getAdminDb().runTransaction(async (tx) => {
       const snap = await tx.get(userRef);
       const now = new Date();
 

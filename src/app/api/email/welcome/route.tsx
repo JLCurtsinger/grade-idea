@@ -14,7 +14,7 @@ import { z } from 'zod';
 import { sendEmail } from '@/lib/email/resend';
 import { render } from '@react-email/render';
 import WelcomeEmail, { subject } from '@/emails/WelcomeEmail';
-import { adminDb } from '@/lib/firebase-admin';
+import { getAdminDb } from '@/lib/firebase-admin';
 import { logInfo, logWarn, logError } from '@/lib/log';
 import React from 'react';
 
@@ -78,7 +78,7 @@ export async function POST(req: NextRequest) {
 
     // Idempotency: check user flag (skip if forced)
     if (!forced) {
-      const userRef = adminDb.collection('users').doc(uid);
+      const userRef = getAdminDb().collection('users').doc(uid);
       const snap = await userRef.get();
       if (snap.exists && snap.data()?.welcomeEmailSent) {
         logInfo("welcome email skipped - already sent", { 
@@ -124,7 +124,7 @@ export async function POST(req: NextRequest) {
     const emailId = (res as any)?.id || null;
     
     // Set idempotency flag
-    const userRef = adminDb.collection('users').doc(uid);
+    const userRef = getAdminDb().collection('users').doc(uid);
     await userRef.set({ welcomeEmailSent: true }, { merge: true });
 
     logInfo("welcome email sent successfully", { 

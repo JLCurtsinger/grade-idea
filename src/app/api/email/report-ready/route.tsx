@@ -4,7 +4,7 @@ import { z } from 'zod';
 import { sendEmail } from '@/lib/email/resend';
 import { render } from '@react-email/render';
 import ReportReadyEmail, { subject } from '@/emails/ReportReadyEmail';
-import { adminDb } from '@/lib/firebase-admin';
+import { getAdminDb } from '@/lib/firebase-admin';
 import { logInfo, logWarn, logError } from '@/lib/log';
 import React from 'react';
 
@@ -59,7 +59,7 @@ export async function POST(req: NextRequest) {
 
     // Idempotency: check idea flag (skip if forced)
     if (!forced) {
-      const ideaRef = adminDb.collection('users').doc(uid).collection('ideas').doc(ideaId);
+      const ideaRef = getAdminDb().collection('users').doc(uid).collection('ideas').doc(ideaId);
       const snap = await ideaRef.get();
       if (snap.exists && snap.data()?.reportReadyEmailSent) {
         logInfo("report-ready email skipped - already sent", { 
@@ -95,7 +95,7 @@ export async function POST(req: NextRequest) {
     const emailId = (res as any)?.id || null;
     
     // Set idempotency flag
-    const ideaRef = adminDb.collection('users').doc(uid).collection('ideas').doc(ideaId);
+    const ideaRef = getAdminDb().collection('users').doc(uid).collection('ideas').doc(ideaId);
     await ideaRef.set({ reportReadyEmailSent: true }, { merge: true });
 
     logInfo("report-ready email sent successfully", { 

@@ -38,3 +38,22 @@ export async function getRoast(id: string) {
   const snap = await db.collection(COL).doc(id).get();
   return snap.exists ? { id: snap.id, ...(snap.data() as RoastDoc) } : null;
 }
+
+export async function createRoastDocWithId(id: string, data: Partial<RoastDoc>) {
+  const ref = getAdminDb().collection(COL).doc(id);
+  const now = Date.now();
+  const doc: RoastDoc = {
+    idea: data.idea || "",
+    harshness: (data.harshness as any) || 2,
+    userId: data.userId ?? null,
+    paid: !!data.paid,
+    source: (data.source as any) || "stripe",
+    status: (data.status as any) || "pending",
+    createdAt: now,
+    updatedAt: now,
+    sessionId: (data as any).sessionId,
+    result: data.result,
+  };
+  await ref.set(omitUndefined(doc));
+  return { id };
+}

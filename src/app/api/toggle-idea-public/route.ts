@@ -1,5 +1,5 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { adminAuth, adminDb } from '@/lib/firebase-admin';
+import { NextRequest, NextResponse } from "next/server";
+import { getAdminAuth, getAdminDb } from '@/lib/firebase-admin';
 
 export async function POST(request: NextRequest) {
   try {
@@ -14,11 +14,11 @@ export async function POST(request: NextRequest) {
     }
 
     // Authenticate user
-    const decoded = await adminAuth.verifyIdToken(idToken);
+    const decoded = await getAdminAuth().verifyIdToken(idToken);
     const uid = decoded.uid;
 
     // Get the idea document
-    const ideaRef = adminDb
+    const ideaRef = getAdminDb()
       .collection("users")
       .doc(uid)
       .collection("ideas")
