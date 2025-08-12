@@ -41,6 +41,7 @@ import { IdeaChecklist } from "./IdeaChecklist";
 import { calculateDynamicScores } from "@/lib/scoring";
 import { RegradeConfirmationModal } from "./RegradeConfirmationModal";
 import Reveal from "@/components/ui/Reveal";
+import TokenCount from "@/components/ui/TokenCount";
 
 interface Idea {
   id: string;
@@ -1383,7 +1384,7 @@ export function IdeaDetailModal({ idea, isOpen, onClose, onScoreUpdate, googleTr
               </div>
               <div className="flex items-center gap-2">
                 <Coins className="w-4 h-4" />
-                {idea.tokensUsed} token{idea.tokensUsed !== 1 ? 's' : ''} used
+                <TokenCount value={idea.tokensUsed} /> used
               </div>
             </div>
           </Reveal>

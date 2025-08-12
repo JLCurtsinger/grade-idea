@@ -8,6 +8,8 @@ import { X, Coins } from "lucide-react";
 import { useStripeCheckout } from "@/hooks/use-stripe-checkout";
 import { useAuth } from "@/context/AuthContext";
 import Reveal from "@/components/ui/Reveal";
+import TokenCount from "@/components/ui/TokenCount";
+import TokenIcon from "@/components/ui/TokenIcon";
 
 interface BuyTokensModalProps {
   isOpen: boolean;
@@ -101,10 +103,10 @@ export const BuyTokensModal = ({ isOpen, onClose }: BuyTokensModalProps) => {
                         {plan.price}
                       </div>
                       <div className="text-sm text-foreground-muted">
-                        <span className="accent-text-gradient">{plan.tokens} tokens</span>
+                        <span className="accent-text-gradient"><TokenCount value={plan.tokens} /></span>
                       </div>
                       <div className="text-xs text-foreground-subtle">
-                        {plan.costPerToken} per token
+                        {plan.costPerToken} per <TokenIcon alt="token" />
                       </div>
                     </div>
                   </div>

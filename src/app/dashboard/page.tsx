@@ -12,6 +12,7 @@ import { BuyTokensModal } from "@/components/buy-tokens-modal";
 import { IdeaDetailModal } from "@/components/IdeaDetailModal";
 import { DeleteConfirmationModal } from "@/components/DeleteConfirmationModal";
 import Reveal from "@/components/ui/Reveal";
+import TokenCount from "@/components/ui/TokenCount";
 import { collection, query, orderBy, limit, getDocs, doc, getDoc, updateDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { getAuth, onAuthStateChanged } from 'firebase/auth';
@@ -579,7 +580,7 @@ export default function DashboardPage() {
                   <div>
                     <h3 className="text-lg font-semibold text-foreground">Token Balance</h3>
                     <p className="text-2xl font-bold text-brand">
-                      {profile?.token_balance || 0} tokens
+                      <TokenCount value={profile?.token_balance || 0} />
                     </p>
                   </div>
                 </div>
@@ -647,7 +648,7 @@ export default function DashboardPage() {
                             </div>
                             <div className="flex items-center gap-1">
                               <Coins className="w-4 h-4" />
-                              {idea.tokensUsed} token{idea.tokensUsed !== 1 ? 's' : ''}
+                              <TokenCount value={idea.tokensUsed} />
                             </div>
                           </div>
                         </div>
@@ -793,7 +794,7 @@ export default function DashboardPage() {
                               </div>
                               <div className="flex items-center gap-1">
                                 <Coins className="w-4 h-4" />
-                                {idea.tokensUsed} token{idea.tokensUsed !== 1 ? 's' : ''}
+                                <TokenCount value={idea.tokensUsed} />
                               </div>
                             </div>
                           </div>

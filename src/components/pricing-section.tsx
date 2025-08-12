@@ -4,6 +4,8 @@ import { Check, Star } from "lucide-react";
 import { PricingButton } from "@/components/pricing-button";
 import Reveal from "@/components/ui/Reveal";
 import CountUp from "@/components/ui/CountUp";
+import TokenCount from "@/components/ui/TokenCount";
+import TokenIcon from "@/components/ui/TokenIcon";
 
 export const PricingSection = () => {
   const subscriptionPlans = [
@@ -137,10 +139,10 @@ export const PricingSection = () => {
                   {/* Token Info */}
                   <div className="text-center p-4 bg-surface rounded-lg">
                     <div className="text-2xl font-bold text-foreground mb-1">
-                      <span className="accent-text-gradient"><CountUp to={plan.tokens} /> tokens</span>
+                      <span className="accent-text-gradient"><CountUp to={plan.tokens} /> <TokenIcon className="inline-block h-6 w-6 align-[-2px]" /></span>
                     </div>
                     <div className="text-sm text-foreground-muted">
-                      {plan.costPerToken} per token
+                      {plan.costPerToken} per <TokenIcon alt="token" />
                     </div>
                   </div>
 
@@ -210,10 +212,10 @@ export const PricingSection = () => {
                     {/* Token Info */}
                     <div className="text-center p-4 bg-surface-elevated rounded-lg">
                       <div className="text-2xl font-bold text-foreground mb-1">
-                        <span className="accent-text-gradient"><CountUp to={plan.tokens} /> tokens</span>
+                        <span className="accent-text-gradient"><CountUp to={plan.tokens} /> <TokenIcon className="inline-block h-6 w-6 align-[-2px]" /></span>
                       </div>
                       <div className="text-sm text-foreground-muted">
-                        {plan.costPerToken} per token
+                        {plan.costPerToken} per <TokenIcon alt="token" />
                       </div>
                     </div>
 

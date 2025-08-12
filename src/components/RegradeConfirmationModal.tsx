@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Coins } from "lucide-react";
 import Reveal from "@/components/ui/Reveal";
+import TokenCount from "@/components/ui/TokenCount";
 
 interface RegradeConfirmationModalProps {
   isOpen: boolean;
@@ -82,7 +83,7 @@ export function RegradeConfirmationModal({
             <div className="flex items-center gap-2 p-3 bg-surface rounded-lg">
               <Coins className="w-4 h-4 text-brand" />
               <span className="text-sm text-foreground-muted">
-                Token balance: {tokenBalance || 0} tokens
+                Token balance: <TokenCount value={tokenBalance || 0} />
               </span>
             </div>
           </Reveal>

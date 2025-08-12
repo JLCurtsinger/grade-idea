@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { ArrowRight, Sparkles } from "lucide-react";
 import Reveal from "@/components/ui/Reveal";
 import CountUp from "@/components/ui/CountUp";
+import TokenCount from "@/components/ui/TokenCount";
 
 interface HeroSectionProps {
   onSubmit: (idea: string) => void;
@@ -263,7 +264,7 @@ export const HeroSection = ({ onSubmit, tokenBalance, exampleIdea, isGrading = f
                 <div className="min-h-[20px] flex items-center justify-center">
                   {tokenBalance !== null && (
                     <p className="text-sm text-foreground-muted text-center">
-                      You have {tokenBalance} tokens remaining
+                      You have <TokenCount value={tokenBalance ?? 0} /> remaining
                     </p>
                   )}
                 </div>
