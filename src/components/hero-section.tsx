@@ -7,6 +7,7 @@ import Reveal from "@/components/ui/Reveal";
 import CountUp from "@/components/ui/CountUp";
 import TokenCount from "@/components/ui/TokenCount";
 import RoastModal from "@/components/RoastModal";
+import PreRoastModal from "@/components/PreRoastModal";
 import { useAuth } from "@/context/AuthContext";
 
 interface HeroSectionProps {
@@ -20,7 +21,8 @@ export const HeroSection = ({ onSubmit, tokenBalance, exampleIdea, isGrading = f
   const { user } = useAuth();
   const [idea, setIdea] = useState(exampleIdea || "");
   const [isLoading, setIsLoading] = useState(false);
-  const [harshness, setHarshness] = useState(2);
+  const [showPre, setShowPre] = useState(false);
+  const [pending, setPending] = useState(false);
   const [open, setOpen] = useState(false);
   const [roastId, setRoastId] = useState<string | null>(null);
   
@@ -290,57 +292,68 @@ export const HeroSection = ({ onSubmit, tokenBalance, exampleIdea, isGrading = f
                   ))}
                 </div>
 
-                {/* Roast Controls */}
+                {/* Roast Button */}
                 {process.env.NEXT_PUBLIC_ENABLE_ROAST === "true" && (
                   <div className="mt-2">
-                    <label className="mb-1 flex items-center gap-3 text-xs text-neutral-400">
-                      Harshness
-                      <input type="range" min={1} max={3} step={1} value={harshness}
-                        onChange={(e) => setHarshness(parseInt(e.target.value))} className="w-32 accent-red-500" />
-                      <span className="text-neutral-300">{harshness === 1 ? "Light" : harshness === 2 ? "Medium" : "Nuclear"}</span>
-                    </label>
                     <button
                       type="button"
-                      className="mt-2 inline-flex items-center rounded-lg border border-red-500/60 px-3 py-2 text-sm font-medium text-red-300 hover:bg-red-500/10"
-                      onClick={async () => {
-                        if (!user) {
-                          alert("Please sign in to roast your idea");
+                      className="w-full inline-flex items-center justify-center rounded-lg border border-red-500/60 px-3 py-2 text-sm font-medium text-red-300 hover:bg-red-500/10"
+                      onClick={() => {
+                        if (idea.trim().length < 6) {
+                          alert("Please enter an idea (at least 6 characters)");
                           return;
                         }
-                        
-                        // Get Firebase ID token
-                        const idToken = await user.getIdToken();
-                        
-                        const res = await fetch("/api/roast/start", { 
-                          method: "POST", 
-                          headers: { 
-                            "Content-Type": "application/json",
-                            "Authorization": `Bearer ${idToken}`
-                          }, 
-                          body: JSON.stringify({ idea, harshness }) 
-                        });
-                        const json = await res.json();
-                        if (json.roastId) { setRoastId(json.roastId); setOpen(true); }
-                        else if (res.status === 402) { 
-                          const payRes = await fetch("/api/roast/checkout", {
-                            method: "POST",
-                            headers: { "Content-Type": "application/json" },
-                            body: JSON.stringify({ idea, harshness }),
-                          });
-                          const payJson = await payRes.json();
-                          if (payJson.checkoutUrl) window.location.assign(payJson.checkoutUrl);
-                          else alert(payJson.error || "Checkout unavailable");
-                          return;
-                        }
-                        else { alert(json.error || "Failed to start roast"); }
+                        setShowPre(true);
                       }}
                     >
                       Roast It
                     </button>
-                    {open && roastId && <RoastModal roastId={roastId} onClose={() => setOpen(false)} />}
                   </div>
                 )}
               </form>
+              
+              {/* Modals */}
+              {showPre && (
+                <PreRoastModal
+                  idea={idea}
+                  pending={pending}
+                  onCancel={() => setShowPre(false)}
+                  onStart={async (harshness) => {
+                    setPending(true);
+                    try {
+                      const res = await fetch("/api/roast/start", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ idea, harshness })
+                      });
+                      const json = await res.json();
+                      
+                      if (json.roastId) {
+                        setRoastId(json.roastId);
+                        setShowPre(false);
+                        setOpen(true);
+                      } else if (res.status === 402) {
+                        const payRes = await fetch("/api/roast/checkout", {
+                          method: "POST",
+                          headers: { "Content-Type": "application/json" },
+                          body: JSON.stringify({ idea, harshness }),
+                        });
+                        const payJson = await payRes.json();
+                        if (payJson.checkoutUrl) window.location.assign(payJson.checkoutUrl);
+                        else alert(payJson.error || "Checkout unavailable");
+                      } else {
+                        alert(json.error || "Failed to start roast");
+                      }
+                    } catch (error) {
+                      alert("Failed to start roast. Please try again.");
+                    } finally {
+                      setPending(false);
+                    }
+                  }}
+                />
+              )}
+              
+              {open && roastId && <RoastModal roastId={roastId} onClose={() => setOpen(false)} />}
             </Reveal>
 
             {/* Trust Indicators */}

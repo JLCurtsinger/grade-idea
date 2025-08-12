@@ -6,51 +6,53 @@ import { adminAuth } from "@/lib/firebase-admin";
 
 export async function POST(req: NextRequest) {
   try {
-    // Get authorization header
+    const body = await req.json().catch(() => ({}));
+    const rawIdea = (body?.idea ?? "").toString().trim();
+    const hParsed = Number(body?.harshness);
+    const h = [1,2,3].includes(hParsed) ? (hParsed as 1|2|3) : 2;
+
+    if (rawIdea.length < 6) {
+      console.log('Roast start validation failed:', { ideaLength: rawIdea.length, harshnessUsed: h });
+      return NextResponse.json(
+        { error: "Missing or invalid fields", details: { idea: false, harshness: true } },
+        { status: 400 }
+      );
+    }
+
+    // Check if user has tokens (if authenticated)
     const authHeader = req.headers.get('authorization') || req.headers.get('Authorization');
-    if (!authHeader?.startsWith('Bearer ')) {
-      return NextResponse.json({ error: 'Missing or invalid Authorization header' }, { status: 401 });
-    }
-
-    const idToken = authHeader.replace('Bearer ', '').trim();
+    let uid: string | null = null;
     
-    // Verify Firebase ID token
-    let decodedToken;
-    try {
-      decodedToken = await adminAuth.verifyIdToken(idToken);
-    } catch (error) {
-      console.error('Token verification failed:', error);
-      return NextResponse.json({ error: 'Invalid token' }, { status: 401 });
+    if (authHeader?.startsWith('Bearer ')) {
+      try {
+        const idToken = authHeader.replace('Bearer ', '').trim();
+        const decodedToken = await adminAuth.verifyIdToken(idToken);
+        uid = decodedToken.uid;
+      } catch (error) {
+        console.error('Token verification failed:', error);
+        // Continue as guest user
+      }
     }
 
-    const uid = decodedToken.uid;
-    if (!uid) {
-      return NextResponse.json({ error: 'User ID not found in token' }, { status: 401 });
-    }
+    if (uid) {
+      // Authenticated user - check tokens
+      const hasTokens = await hasAtLeastOneToken(uid);
+      
+      if (!hasTokens) {
+        return NextResponse.json({ error: "Insufficient tokens" }, { status: 402 });
+      }
 
-    const { idea, harshness } = await req.json();
-    
-    if (!idea || ![1, 2, 3].includes(harshness)) {
-      return NextResponse.json({ error: "Missing or invalid fields" }, { status: 400 });
+      // Deduct one token
+      await deductOneToken(uid);
     }
-
-    // Check if user has tokens
-    const hasTokens = await hasAtLeastOneToken(uid);
-    
-    if (!hasTokens) {
-      return NextResponse.json({ error: "Insufficient tokens" }, { status: 402 });
-    }
-
-    // Deduct one token
-    await deductOneToken(uid);
 
     // Create roast document
     const { id } = await createRoastDoc({
-      idea,
-      harshness: harshness as 1 | 2 | 3,
+      idea: rawIdea,
+      harshness: h,
       userId: uid,
       paid: false,
-      source: "token",
+      source: uid ? "token" : "guest",
       status: "processing"
     });
 
