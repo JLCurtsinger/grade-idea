@@ -6,6 +6,7 @@ import { ArrowRight, Sparkles } from "lucide-react";
 import Reveal from "@/components/ui/Reveal";
 import CountUp from "@/components/ui/CountUp";
 import TokenCount from "@/components/ui/TokenCount";
+import TokenIcon from "@/components/ui/TokenIcon";
 import RoastModal from "@/components/RoastModal";
 import PreRoastModal from "@/components/PreRoastModal";
 import { useAuth } from "@/context/AuthContext";
@@ -170,7 +171,7 @@ export const HeroSection = ({ onSubmit, tokenBalance, exampleIdea, isGrading = f
               <div className="inline-flex items-center gap-2 px-4 py-2 bg-surface-elevated border border-border-elevated rounded-full">
                 <Sparkles size={16} strokeWidth={2} aria-hidden="true" className="text-brand" />
                 <span className="text-sm font-medium text-foreground-muted">
-                  Trusted by <CountUp to={8348} />+ founders
+                  Trusted by <CountUp to={4000} />+ founders
                 </span>
               </div>
             </Reveal>
@@ -295,8 +296,9 @@ export const HeroSection = ({ onSubmit, tokenBalance, exampleIdea, isGrading = f
                 {/* Roast Button */}
                 {process.env.NEXT_PUBLIC_ENABLE_ROAST === "true" && (
                   <div className="mt-2">
-                    <button
+                    <Button
                       type="button"
+                      variant="outline"
                       onClick={() => {
                         if (idea.trim().length < 6) {
                           alert("Please enter an idea (at least 6 characters)");
@@ -304,13 +306,13 @@ export const HeroSection = ({ onSubmit, tokenBalance, exampleIdea, isGrading = f
                         }
                         setShowPre(true);
                       }}
-                      className="mt-2 inline-flex items-center gap-2 rounded-lg border border-red-500/60 px-4 py-2 text-sm font-medium text-red-300 hover:bg-red-500/10 self-start"
+                      className="inline-flex items-center gap-2 border-red-500/60 text-red-300 hover:bg-red-500/10 hover:border-red-500/40"
                     >
-                      Roast It
+                      Roast it for
                       <span className="inline-flex items-center gap-1">
-                        1 <img src="/logo.svg" alt="" className="h-4 w-4 opacity-90" />
+                        1 <TokenIcon className="ml-1 h-4 w-4 align-[-1px]" />
                       </span>
-                    </button>
+                    </Button>
                   </div>
                 )}
               </form>
@@ -343,12 +345,17 @@ export const HeroSection = ({ onSubmit, tokenBalance, exampleIdea, isGrading = f
                         });
                         const payJson = await payRes.json();
                         if (payJson.checkoutUrl) window.location.assign(payJson.checkoutUrl);
-                        else alert(payJson.error || "Checkout unavailable");
+                        else {
+                          // Show error in modal instead of alert
+                          (window as any).setRoastModalError?.(payJson.error || "Checkout unavailable");
+                        }
                       } else {
-                        alert(json.error || "Failed to start roast");
+                        // Show error in modal instead of alert
+                        (window as any).setRoastModalError?.(json.error || "Failed to start roast");
                       }
                     } catch (error) {
-                      alert("Failed to start roast. Please try again.");
+                      // Show error in modal instead of alert
+                      (window as any).setRoastModalError?.("Failed to start roast. Please try again.");
                     } finally {
                       setPending(false);
                     }

@@ -1,4 +1,5 @@
 import { Metadata } from "next";
+import RoastPoller from "@/components/RoastPoller";
 
 async function getRoastData(id: string) {
   const res = await fetch(`${process.env.NEXT_PUBLIC_SITE_URL}/api/roast/${id}`, { cache: "no-store" });
@@ -17,13 +18,30 @@ export async function generateMetadata({ params }: { params: { id: string } }): 
   };
 }
 
-export default async function Page({ params }: { params: { id: string } }) {
+export default async function Page({ 
+  params, 
+  searchParams 
+}: { 
+  params: { id: string };
+  searchParams: { session_id?: string };
+}) {
   const data = await getRoastData(params.id);
   if (!data) return <div className="p-8 text-neutral-400">Roast not found.</div>;
   const r = data.result || {};
+  const hasSessionId = !!searchParams.session_id;
+  
   return (
     <main className="min-h-screen bg-neutral-950 text-neutral-100">
       <div className="mx-auto max-w-2xl p-6">
+        {hasSessionId && (
+          <div className="mb-4 p-4 bg-blue-500/10 border border-blue-500/20 rounded-lg">
+            <div className="flex items-center gap-2 text-blue-300">
+              <div className="w-2 h-2 bg-blue-400 rounded-full animate-pulse" />
+              <span className="text-sm">Processing your payment...</span>
+            </div>
+          </div>
+        )}
+        
         <article id="roast-card" className="rounded-2xl border border-neutral-800 bg-neutral-900/60 p-6 shadow-xl">
           <h1 className="text-2xl font-semibold mb-4">{r.title || "Your Roast"}</h1>
           <div className="mb-4">
@@ -36,6 +54,8 @@ export default async function Page({ params }: { params: { id: string } }) {
           </div>
           <div className="text-neutral-300"><span className="text-neutral-400">Verdict:</span> {r.verdict}</div>
         </article>
+        
+        {hasSessionId && <RoastPoller id={params.id} initial={data} />}
       </div>
     </main>
   );
