@@ -108,6 +108,21 @@ jobs:
             exit 1
           fi
 
+      - name: Verify IndexNow key file before submit
+        run: |
+          if [ -z "${INDEXNOW_KEY}" ]; then
+            echo "INDEXNOW_KEY not set; will skip IndexNow in script."
+            exit 0
+          fi
+          URL="https://www.gradeidea.cc/${INDEXNOW_KEY}.txt"
+          echo "Checking ${URL} ..."
+          code=$(curl -s -o /tmp/key.txt -w "%{http_code}" -L "$URL")
+          echo "HTTP:$code"
+          echo "Contents:"; cat /tmp/key.txt || true
+          if [ "$code" != "200" ]; then
+            echo "::warning::IndexNow key file not reachable (expect 200). The script will skip IndexNow."
+          fi
+
       - name: Notify search engines that still listen (Bing/IndexNow)
         run: npm run ping-search
         env:
