@@ -22,7 +22,7 @@ export default function HeroAssurances() {
         </li>
         <li className="inline-flex items-center gap-1.5">
           <span className="inline-block h-1.5 w-1.5 rounded-full bg-sky-400" aria-hidden />
-          <span>AndDownload ready</span>
+          <span>And Download ready</span>
         </li>
         {/* <li className="inline-flex items-center gap-1.5">
           <span>1</span>
