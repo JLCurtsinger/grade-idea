@@ -255,7 +255,7 @@ export const HeroSection = ({ onSubmit, tokenBalance, exampleIdea, isGrading = f
 
                 {/* Roast Button */}
                 {process.env.NEXT_PUBLIC_ENABLE_ROAST === "true" && (
-                  <div className="mt-2 sm:mt-3 mb-2 sm:mb-3 flex justify-end">
+                  <div className="mt-2 sm:mt-3 mb-1 sm:mb-2 flex justify-end pr-2 md:pr-3">
                     <Button
                       type="button"
                       variant="outline"
@@ -302,7 +302,7 @@ export const HeroSection = ({ onSubmit, tokenBalance, exampleIdea, isGrading = f
                 </div>
 
                 {/* Suggestion Chips */}
-                <div className="flex flex-wrap gap-2 min-h-[32px]">
+                <div className="flex flex-wrap gap-1.5 min-h-[32px]">
                   <span className="text-sm text-foreground-subtle">Try:</span>
                   {suggestionChips.map((chip) => (
                     <button
