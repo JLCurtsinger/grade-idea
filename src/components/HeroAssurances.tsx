@@ -14,15 +14,15 @@ export default function HeroAssurances() {
       <ul className="flex flex-wrap items-center gap-x-4 gap-y-2">
         <li className="inline-flex items-center gap-1.5">
           <span className="inline-block h-1.5 w-1.5 rounded-full bg-emerald-400" aria-hidden />
-          <span>Get Roasted</span>
+          <span>Get Roasted 🔥</span>
         </li>
         <li className="inline-flex items-center gap-1.5">
           <span className="inline-block h-1.5 w-1.5 rounded-full bg-sky-400" aria-hidden />
-          <span>It's Shareable</span>
+          <span>Shareable</span>
         </li>
         <li className="inline-flex items-center gap-1.5">
           <span className="inline-block h-1.5 w-1.5 rounded-full bg-sky-400" aria-hidden />
-          <span>And Download ready</span>
+          <span>Download ready</span>
         </li>
         {/* <li className="inline-flex items-center gap-1.5">
           <span>1</span>

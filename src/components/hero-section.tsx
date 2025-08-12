@@ -10,7 +10,6 @@ import TokenCount from "@/components/ui/TokenCount";
 import TokenIcon from "@/components/ui/TokenIcon";
 import RoastModal from "@/components/RoastModal";
 import PreRoastModal from "@/components/PreRoastModal";
-import HeroAssurances from "@/components/HeroAssurances";
 import { useAuth } from "@/context/AuthContext";
 
 interface HeroSectionProps {
@@ -258,9 +257,25 @@ export const HeroSection = ({ onSubmit, tokenBalance, exampleIdea, isGrading = f
                 {/* Token balance centered below the input (signed-in only) */}
                 <HeroTokenBalance />
 
+                {/* Centered Bullets */}
+                <div className="mt-3 sm:mt-4 flex flex-wrap items-center justify-center gap-3 text-[13px] sm:text-sm text-neutral-300">
+                  <div className="inline-flex items-center gap-1.5">
+                    <span className="inline-block h-1.5 w-1.5 rounded-full bg-emerald-400" aria-hidden />
+                    <span>Get Roasted</span>
+                  </div>
+                  <div className="inline-flex items-center gap-1.5">
+                    <span className="inline-block h-1.5 w-1.5 rounded-full bg-sky-400" aria-hidden />
+                    <span>It's Shareable</span>
+                  </div>
+                  <div className="inline-flex items-center gap-1.5">
+                    <span className="inline-block h-1.5 w-1.5 rounded-full bg-sky-400" aria-hidden />
+                    <span>And Download ready</span>
+                  </div>
+                </div>
+
                 {/* Roast Button */}
                 {process.env.NEXT_PUBLIC_ENABLE_ROAST === "true" && (
-                  <div className="mt-1 sm:mt-2 md:mt-2 mb-1 sm:mb-2 md:mb-2 flex justify-end pr-2 md:pr-3">
+                  <div className="mt-3 sm:mt-4 flex justify-center">
                     <Button
                       type="button"
                       variant="outline"
@@ -280,9 +295,6 @@ export const HeroSection = ({ onSubmit, tokenBalance, exampleIdea, isGrading = f
                     </Button>
                   </div>
                 )}
-
-                {/* Assurances Row */}
-                <HeroAssurances />
 
                 {/* Loading Dots Overlay */}
                 {isGrading && (
