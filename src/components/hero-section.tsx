@@ -198,7 +198,7 @@ export const HeroSection = ({ onSubmit, tokenBalance, exampleIdea, isGrading = f
                 <div
                   ref={containerRef}
                   className={`
-                    bg-transparent border border-border rounded-lg px-4 text-foreground placeholder:text-foreground-subtle focus:border-brand focus:ring-1 focus:ring-brand transition-all duration-200 outline-none relative w-full overflow-hidden max-sm:pr-2 max-sm:pr-[env(safe-area-inset-right)]
+                    bg-transparent border border-border rounded-lg px-4 text-foreground placeholder:text-foreground-subtle focus:border-brand focus:ring-1 focus:ring-brand transition-all duration-200 outline-none relative w-full overflow-hidden max-sm:pr-2 max-sm:pr-[env(safe-area-inset-right)] z-10
                     ${isGrading ? 'animate-input-pulse' : ''}
                   `}
                 >
