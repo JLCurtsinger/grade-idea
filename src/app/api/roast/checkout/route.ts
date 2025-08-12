@@ -35,5 +35,7 @@ export async function POST(req: NextRequest) {
     },
   });
 
+  console.log("[roast][checkout] created session for roastId", roastId);
+
   return NextResponse.json({ checkoutUrl: session.url, roastId });
 }

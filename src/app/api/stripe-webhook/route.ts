@@ -50,6 +50,44 @@ const getTokenCountForPriceId = (priceId: string): number => {
   return tokenMap[priceId] || 0;
 };
 
+async function handleRoastCheckoutCompleted(session: any) {
+  const roastId = session?.metadata?.roastId;
+  if (!roastId) return;
+
+  const idea = (session?.metadata?.idea || "").toString();
+  const hNum = Number(session?.metadata?.harshness);
+  const harshness: 1|2|3 = ([1,2,3] as const).includes(hNum as any) ? (hNum as 1|2|3) : 2;
+
+  const doc = await getRoast(roastId);
+  if (!doc) {
+    if (typeof createRoastDocWithId === "function") {
+      await createRoastDocWithId(roastId, {
+        idea,
+        harshness,
+        userId: null,
+        paid: true,
+        source: "stripe",
+        status: "processing",
+        sessionId: session.id,
+      });
+    } else {
+      // Fallback: update if helper not available (should exist already)
+      await updateRoast(roastId, {
+        idea, harshness, userId: null, paid: true, source: "stripe", status: "processing", sessionId: session.id,
+      });
+    }
+  } else if (doc.status !== "ready" || !doc.result) {
+    await updateRoast(roastId, { paid: true, status: "processing", sessionId: session.id });
+  }
+
+  try {
+    const result = await generateRoast(idea || doc?.idea || "Your idea", harshness || (doc?.harshness as 1|2|3) || 2);
+    await updateRoast(roastId, { status: "ready", result });
+  } catch {
+    await updateRoast(roastId, { status: "error" });
+  }
+}
+
 export async function POST(request: NextRequest) {
   const body = await request.text();
   const signature = request.headers.get('stripe-signature');
@@ -88,6 +126,14 @@ export async function POST(request: NextRequest) {
       console.log('Session metadata:', session.metadata);
       console.log('Client reference ID:', session.client_reference_id);
       
+      // Handle roast checkout if metadata.roastId is present
+      if (session?.metadata?.roastId) {
+        console.log("[roast][webhook] event=checkout.session.completed roastId=", session.metadata.roastId);
+        await handleRoastCheckoutCompleted(session);
+        return NextResponse.json({ received: true });
+      }
+      
+      // Handle token purchase (existing logic)
       try {
         // Extract user ID and plan name
         const userId = session.client_reference_id;
@@ -189,38 +235,6 @@ export async function POST(request: NextRequest) {
           { error: 'Failed to process checkout session' },
           { status: 500 }
         );
-      }
-
-      // Handle roast-specific checkout completion
-      const roastId = session.metadata?.roastId;
-      if (roastId) {
-        console.log('=== WEBHOOK: ROAST CHECKOUT COMPLETED ===', { roastId, event: event.type });
-        
-        try {
-          const idea = (session?.metadata?.idea || "").toString();
-          const h = Number(session?.metadata?.harshness);
-          const harshness: 1|2|3 = ([1,2,3] as const).includes(h as any) ? (h as 1|2|3) : 2;
-
-          const doc = await getRoast(roastId);
-          if (!doc) {
-            // Create new roast document with the roastId
-            await createRoastDocWithId(roastId, { idea, harshness, userId: null, paid: true, source: "stripe", status: "processing", sessionId: session.id });
-          } else if (doc.status !== "ready" || !doc.result) {
-            await updateRoast(roastId, { paid: true, status: "processing", sessionId: session.id });
-          }
-
-          try {
-            const result = await generateRoast(idea || doc?.idea || "Your idea", harshness || (doc?.harshness as 1|2|3) || 2);
-            await updateRoast(roastId, { status: "ready", result });
-            console.log('Roast generated successfully');
-          } catch (e) {
-            console.error('Error generating roast:', e);
-            await updateRoast(roastId, { status: "error" });
-          }
-        } catch (roastError) {
-          console.error('Error processing roast checkout:', roastError);
-          // Don't fail the webhook for roast errors
-        }
       }
 
     default:
