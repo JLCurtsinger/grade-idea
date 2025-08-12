@@ -9,6 +9,7 @@ import TokenCount from "@/components/ui/TokenCount";
 import TokenIcon from "@/components/ui/TokenIcon";
 import RoastModal from "@/components/RoastModal";
 import PreRoastModal from "@/components/PreRoastModal";
+import HeroAssurances from "@/components/HeroAssurances";
 import { useAuth } from "@/context/AuthContext";
 
 interface HeroSectionProps {
@@ -275,6 +276,9 @@ export const HeroSection = ({ onSubmit, tokenBalance, exampleIdea, isGrading = f
                     </Button>
                   </div>
                 )}
+
+                {/* Assurances Row */}
+                <HeroAssurances />
 
                 {/* Loading Dots Overlay */}
                 {isGrading && (
