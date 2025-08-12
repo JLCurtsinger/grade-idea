@@ -4,6 +4,7 @@ import { incrementUserTokens, getAdminDb } from '@/lib/firebase-admin';
 import Stripe from 'stripe';
 import { getRoast, updateRoast, createRoastDocWithId } from "@/lib/roast";
 import { generateRoast } from "@/lib/openai/roast";
+import { FieldValue } from 'firebase-admin/firestore';
 
 // Robust plan name normalization (server-side)
 const normalizePlanName = (plan: string): 'basic' | 'standard' | 'pro' | 'starter' | 'popular' | 'value' | null => {
@@ -50,41 +51,83 @@ const getTokenCountForPriceId = (priceId: string): number => {
   return tokenMap[priceId] || 0;
 };
 
-async function handleRoastCheckoutCompleted(session: any) {
+async function handleRoastCheckoutCompleted(session: Stripe.Checkout.Session) {
   const roastId = session?.metadata?.roastId;
   if (!roastId) return;
 
-  const idea = (session?.metadata?.idea || "").toString();
-  const hNum = Number(session?.metadata?.harshness);
-  const harshness: 1|2|3 = ([1,2,3] as const).includes(hNum as any) ? (hNum as 1|2|3) : 2;
-
-  const doc = await getRoast(roastId);
-  if (!doc) {
-    if (typeof createRoastDocWithId === "function") {
-      await createRoastDocWithId(roastId, {
-        idea,
-        harshness,
-        userId: null,
-        paid: true,
-        source: "stripe",
-        status: "processing",
-        sessionId: session.id,
-      });
-    } else {
-      // Fallback: update if helper not available (should exist already)
-      await updateRoast(roastId, {
-        idea, harshness, userId: null, paid: true, source: "stripe", status: "processing", sessionId: session.id,
-      });
-    }
-  } else if (doc.status !== "ready" || !doc.result) {
-    await updateRoast(roastId, { paid: true, status: "processing", sessionId: session.id });
+  // Extract metadata
+  const idea = (session?.metadata?.idea || '').toString();
+  const harshness = Number(session?.metadata?.harshness || 2) || 2;
+  const sessionId = session.id;
+  const livemode = !!session.livemode;
+  
+  // Get price IDs from line items
+  let priceIds: string[] = [];
+  if (session.line_items?.data) {
+    priceIds = session.line_items.data.map(li => li.price?.id).filter(Boolean) as string[];
+  } else {
+    // If line_items isn't expanded, retrieve the session with expanded data
+    const expandedSession = await getStripe().checkout.sessions.retrieve(session.id, { 
+      expand: ["line_items.data.price.product"] 
+    });
+    priceIds = expandedSession.line_items?.data?.map(li => li.price?.id).filter(Boolean) as string[] || [];
   }
 
+  // Log mode sanity check
+  console.log(`[roast][webhook] event livemode? { livemode: ${livemode} }`);
+
+  // Check if roast doc exists and get current status
+  const existingDoc = await getRoast(roastId);
+  const existsBefore = !!existingDoc;
+  
+  // Idempotency: if already processed this session, return early
+  if (existingDoc?.sessionId === sessionId && existingDoc?.status === "ready") {
+    console.log(`[roast][webhook] already processed { roastId: "${roastId}", sessionId: "${sessionId}" }`);
+    return;
+  }
+
+  // Upsert roasts/{roastId}
+  if (!existingDoc) {
+    // Create new doc
+    await createRoastDocWithId(roastId, {
+      idea,
+      harshness: harshness as 1|2|3,
+      source: "stripe",
+      paid: true,
+      status: "processing",
+      sessionId,
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+    });
+  } else if (existingDoc.status !== "ready") {
+    // Update existing doc (without overwriting result if it already exists)
+    await updateRoast(roastId, {
+      paid: true,
+      status: "processing",
+      sessionId,
+      updatedAt: Date.now(),
+    });
+  }
+
+  // Log upsert
+  console.log(`[roast][webhook] upsert { roastId: "${roastId}", existsBefore: ${existsBefore}, livemode: ${livemode}, sessionId: "${sessionId}", priceIds: [${priceIds.join(', ')}] }`);
+
+  // Generate roast
   try {
-    const result = await generateRoast(idea || doc?.idea || "Your idea", harshness || (doc?.harshness as 1|2|3) || 2);
-    await updateRoast(roastId, { status: "ready", result });
-  } catch {
-    await updateRoast(roastId, { status: "error" });
+    const result = await generateRoast(idea, harshness as 1|2|3);
+    
+    // Update doc with result
+    await updateRoast(roastId, { 
+      status: "ready", 
+      result, 
+      updatedAt: Date.now() 
+    });
+    
+    // Log completion
+    console.log(`[roast][webhook] ready { roastId: "${roastId}", zingers: ${result?.zingers?.length ?? 0} }`);
+  } catch (error) {
+    console.error(`[roast][webhook][error] { roastId: "${roastId}", sessionId: "${sessionId}", message: "${error}" }`);
+    await updateRoast(roastId, { status: "error", updatedAt: Date.now() });
   }
 }
 
@@ -108,28 +151,38 @@ export async function POST(req: NextRequest) {
     event = await req.json();
   }
 
-  // Handle the event
+  // Handle roast checkout completion
   if (event.type === "checkout.session.completed") {
-    const session = (event.data.object as any);
+    const session = event.data.object as Stripe.Checkout.Session;
+    
+    // Check if this is a roast checkout
     if (session?.metadata?.roastId) {
-      console.log("[roast][webhook] type=", event.type, "roastId=", session.metadata.roastId);
-      await handleRoastCheckoutCompleted(session);
-      console.log("[roast][ready] roastId=", session.metadata.roastId);
-      return NextResponse.json({ ok: true });
+      try {
+        await handleRoastCheckoutCompleted(session);
+        return NextResponse.json({ received: true });
+      } catch (error) {
+        console.error(`[roast][webhook][error] { roastId: "${session.metadata.roastId}", sessionId: "${session.id}", message: "${error}" }`);
+        // Return 200 so Stripe doesn't keep redelivering
+        return NextResponse.json({ received: true });
+      }
     }
   }
 
-  // Handle the event
+  // Handle token purchase (existing logic)
   switch (event.type) {
     case 'checkout.session.completed':
       const session = event.data.object as Stripe.Checkout.Session;
+      
+      // Skip if this was already handled as a roast checkout
+      if (session?.metadata?.roastId) {
+        return NextResponse.json({ received: true });
+      }
       
       console.log('=== WEBHOOK: CHECKOUT SESSION COMPLETED ===');
       console.log('Session ID:', session.id);
       console.log('Session metadata:', session.metadata);
       console.log('Client reference ID:', session.client_reference_id);
       
-      // Handle token purchase (existing logic)
       try {
         // Extract user ID and plan name
         const userId = session.client_reference_id;

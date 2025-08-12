@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getStripe } from "@/lib/stripe";
-import { inferSiteUrlFromRequest } from "@/lib/url";
 
 export const runtime = "nodejs";
 
@@ -10,23 +9,31 @@ export async function POST(req: NextRequest) {
   const hParsed = Number(body?.harshness);
   const harshness: 1|2|3 = ([1,2,3] as const).includes(hParsed as any) ? (hParsed as 1|2|3) : 2;
 
-  if (idea.length < 6) {
-    return NextResponse.json({ error: "Missing or invalid fields" }, { status: 400 });
+  // Validate input: idea (trim, 1–280 chars), harshness (1–3, default 2)
+  if (idea.length < 1 || idea.length > 280) {
+    return NextResponse.json({ error: "Idea must be between 1 and 280 characters" }, { status: 400 });
   }
 
+  // Generate roastId (UUID v4)
   const roastId = globalThis.crypto?.randomUUID?.() || Math.random().toString(36).slice(2);
   const stripe = getStripe();
   const price = process.env.STRIPE_PRICE_ID_ROAST_SINGLE!;
-  const base = inferSiteUrlFromRequest(req);
   
-  console.log("[roast][checkout] base:", base);
+  // Make origin robust
+  const origin =
+    process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, '') ||
+    new URL(req.url).origin;
+
+  // Log mode sanity check
+  const stripeKey = process.env.STRIPE_SECRET_KEY || '';
+  console.log(`[roast][checkout] mode live? { live: ${stripeKey.startsWith("sk_live_")} }`);
 
   const session = await stripe.checkout.sessions.create({
     mode: "payment",
     allow_promotion_codes: true,
     line_items: [{ price, quantity: 1 }],
-    success_url: `${base}/r/${roastId}?session_id={CHECKOUT_SESSION_ID}`,
-    cancel_url: `${base}/?canceled=1`,
+    success_url: `${origin}/r/${roastId}?session_id={CHECKOUT_SESSION_ID}`,
+    cancel_url: `${origin}/?canceled=1`,
     metadata: {
       roastId,
       idea: idea.slice(0, 500), // metadata limits
@@ -35,7 +42,8 @@ export async function POST(req: NextRequest) {
     },
   });
 
-  console.log("[roast][checkout] created session for roastId", roastId);
+  // Log single line on success
+  console.log(`[roast][checkout] session created { roastId: "${roastId}", sessionId: "${session.id}", price: "${price}", origin: "${origin}" }`);
 
   return NextResponse.json({ checkoutUrl: session.url, roastId });
 }

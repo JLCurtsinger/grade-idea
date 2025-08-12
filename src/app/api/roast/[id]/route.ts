@@ -15,6 +15,11 @@ export async function GET(
       return NextResponse.json({ error: "Roast not found" }, { status: 404 });
     }
 
+    // If doc exists but no result yet, return processing status
+    if (roast.status !== "ready" || !roast.result) {
+      return NextResponse.json({ status: "processing" });
+    }
+
     return NextResponse.json(roast);
   } catch (error) {
     console.error("Error fetching roast:", error);
