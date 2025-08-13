@@ -16,12 +16,167 @@ export default function RoastPoller({
   const [message, setMessage] = useState<string>('');
   const [showPaymentBanner, setShowPaymentBanner] = useState(false);
   
-  const pollCount = useRef(0);
-  const maxPolls = 90; // 90 seconds max
-  const pollInterval = 1000; // 1 second base interval
-  const paymentTimeout = 30000; // 30 seconds for payment confirmation
-  
   const ready = data?.status === "ready";
+  const timeoutRef = useRef<NodeJS.Timeout>();
+  const startTimeRef = useRef<number>(Date.now());
+  const lastPaymentStatusRef = useRef<string>('');
+  const lastRoastStatusRef = useRef<string>('');
+  const stageRef = useRef<'payment' | 'roast'>('payment');
+  const backoffIndexRef = useRef<number>(0);
+  
+  // Backoff sequence (ms): [1000, 2000, 3000, 5000, 8000, 13000]
+  const backoffSequence = [1000, 2000, 3000, 5000, 8000, 13000];
+  
+  // Add ±10% jitter to backoff
+  const getJitteredDelay = (baseDelay: number) => {
+    const jitter = baseDelay * 0.1;
+    return baseDelay + (Math.random() * jitter * 2 - jitter);
+  };
+  
+  // Add ±300ms jitter to payment polling
+  const getPaymentJitter = () => 2000 + (Math.random() * 600 - 300);
+  
+  const clearCurrentTimeout = () => {
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+      timeoutRef.current = undefined;
+    }
+  };
+  
+  const scheduleNext = (delay: number, callback: () => void) => {
+    clearCurrentTimeout();
+    timeoutRef.current = setTimeout(callback, delay);
+  };
+  
+  const checkPaymentStatus = async (): Promise<boolean> => {
+    try {
+      const paymentRes = await fetch(`/api/stripe-session/${sessionId}`, { cache: "no-store" });
+      
+      if (paymentRes.ok) {
+        const paymentData = await paymentRes.json();
+        const currentPaymentStatus = paymentData.paid ? 'paid' : 'not_yet';
+        
+        // Only log on state change
+        if (currentPaymentStatus !== lastPaymentStatusRef.current) {
+          console.log(`[roast][poller] payment -> ${currentPaymentStatus}`);
+          lastPaymentStatusRef.current = currentPaymentStatus;
+        }
+        
+        if (paymentData.paid) {
+          console.log(`[roast][poller] Payment confirmed for session ${sessionId}, starting roast polling`);
+          setStatus('processing');
+          setMessage('Payment confirmed! Brewing your roast...');
+          stageRef.current = 'roast';
+          backoffIndexRef.current = 0;
+          return true;
+        }
+      }
+    } catch (error) {
+      console.error(`[roast][poller] Payment check failed:`, error);
+    }
+    
+    return false;
+  };
+  
+  const pollRoast = async (): Promise<boolean> => {
+    try {
+      const res = await fetch(`/api/roast/${id}`, { cache: "no-store" });
+      
+      if (res.status === 304) {
+        // Unchanged, just wait for next backoff tick
+        return false;
+      }
+      
+      if (res.status === 503) {
+        // Throttled - respect Retry-After header
+        const retryAfter = res.headers.get('retry-after');
+        const retrySeconds = retryAfter ? parseInt(retryAfter) : 15;
+        console.log(`[roast][poller] throttle -> ${retrySeconds}s`);
+        setMessage('Still preparing your roast — throttling requests to avoid overload.');
+        
+        // Schedule next poll after retry-after delay
+        scheduleNext(retrySeconds * 1000, () => pollRoast());
+        return false;
+      }
+      
+      if (res.status === 404) {
+        const elapsed = Date.now() - startTimeRef.current;
+        if (elapsed > 20000) {
+          setStatus('not-found');
+          setMessage('Still preparing your roast — this can take a moment after payment. We\'ll refresh automatically.');
+          return true;
+        }
+        return false;
+      }
+      
+      if (res.ok) {
+        const result = await res.json();
+        const currentRoastStatus = result.status || 'unknown';
+        
+        // Only log on state change
+        if (currentRoastStatus !== lastRoastStatusRef.current) {
+          console.log(`[roast][poller] roast -> ${currentRoastStatus}`);
+          lastRoastStatusRef.current = currentRoastStatus;
+        }
+        
+        if (result.status === "ready" && result.result) {
+          setData(result);
+          setStatus('ready');
+          return true;
+        } else if (result.status === "processing") {
+          setStatus('processing');
+          setMessage('Brewing your roast...');
+        }
+      }
+      
+      return false;
+    } catch (error) {
+      console.error('Roast polling error:', error);
+      return false;
+    }
+  };
+  
+  const continuePolling = () => {
+    const elapsed = Date.now() - startTimeRef.current;
+    
+    if (stageRef.current === 'payment') {
+      // Stage A: Payment confirmation (max 20s)
+      if (elapsed > 20000) {
+        console.log(`[roast][poller] payment -> timeout, proceeding to roast polling`);
+        setStatus('processing');
+        setMessage('Payment confirmation timed out. Proceeding with roast generation...');
+        stageRef.current = 'roast';
+        backoffIndexRef.current = 0;
+        scheduleNext(1000, continuePolling);
+        return;
+      }
+      
+      // Continue payment polling with jitter
+      scheduleNext(getPaymentJitter(), async () => {
+        const paid = await checkPaymentStatus();
+        if (!paid) {
+          continuePolling();
+        }
+      });
+    } else {
+      // Stage B: Roast polling (max 120s)
+      if (elapsed > 120000) {
+        setStatus('error');
+        setMessage('Taking longer than usual. We\'ll keep trying in the background—feel free to navigate elsewhere.');
+        return;
+      }
+      
+      // Continue roast polling with backoff
+      scheduleNext(getJitteredDelay(backoffSequence[backoffIndexRef.current] || 13000), async () => {
+        const done = await pollRoast();
+        if (!done) {
+          // Increment backoff index for next iteration
+          backoffIndexRef.current = Math.min(backoffIndexRef.current + 1, backoffSequence.length - 1);
+          continuePolling();
+        }
+      });
+    }
+  };
   
   useEffect(() => {
     if (ready) return;
@@ -39,122 +194,24 @@ export default function RoastPoller({
   useEffect(() => {
     if (ready) return;
     
-    let timeoutId: NodeJS.Timeout;
-    let startTime = Date.now();
-    let lastPaymentStatus = '';
-    let lastRoastStatus = '';
+    // Initialize state
+    startTimeRef.current = Date.now();
+    stageRef.current = sessionId ? 'payment' : 'roast';
+    backoffIndexRef.current = 0;
     
-    const poll = async () => {
-      try {
-        // If we have a session_id, first check payment status
-        if (sessionId && status === 'waiting-payment') {
-          const paymentRes = await fetch(`/api/stripe-session/${sessionId}`, { cache: "no-store" });
-          
-          if (paymentRes.ok) {
-            const paymentData = await paymentRes.json();
-            const currentPaymentStatus = paymentData.paid ? 'paid' : 'not_yet';
-            
-            // Only log on state change
-            if (currentPaymentStatus !== lastPaymentStatus) {
-              console.log(`[roast][poller] payment -> ${currentPaymentStatus}`);
-              lastPaymentStatus = currentPaymentStatus;
-            }
-            
-            if (paymentData.paid) {
-              console.log(`[roast][poller] Payment confirmed for session ${sessionId}, starting roast polling`);
-              setStatus('processing');
-              setMessage('Payment confirmed! Brewing your roast...');
-              // Continue to roast polling below
-            } else {
-              // Still waiting for payment
-              const elapsed = Date.now() - startTime;
-              if (elapsed > paymentTimeout) {
-                setStatus('error');
-                setMessage('Payment confirmation timed out. Please contact support.');
-                return;
-              }
-              
-              // Continue waiting for payment
-              timeoutId = setTimeout(poll, 1000);
-              return;
-            }
-          } else {
-            console.error(`[roast][poller] Failed to check payment status: ${paymentRes.status}`);
-            // Fall back to roast polling if payment check fails
-            setStatus('processing');
-          }
-        }
-        
-        // Poll for roast results
-        const res = await fetch(`/api/roast/${id}`, { cache: "no-store" });
-        
-        if (res.status === 404) {
-          // Check if we've been polling for more than 20 seconds
-          const elapsed = Date.now() - startTime;
-          if (elapsed > 20000) {
-            setStatus('not-found');
-            setMessage('Still preparing your roast — this can take a moment after payment. We\'ll refresh automatically.');
-            return;
-          }
-        } else if (res.ok) {
-          const result = await res.json();
-          const currentRoastStatus = result.status || 'unknown';
-          
-          // Only log on state change
-          if (currentRoastStatus !== lastRoastStatus) {
-            console.log(`[roast][poller] roast -> ${currentRoastStatus}`);
-            lastRoastStatus = currentRoastStatus;
-          }
-          
-          if (result.status === "ready" && result.result) {
-            setData(result);
-            setStatus('ready');
-            return;
-          } else if (result.status === "processing") {
-            setStatus('processing');
-            setMessage('Brewing your roast...');
-          }
-        }
-        
-        // Continue polling if not ready
-        pollCount.current++;
-        const elapsed = Date.now() - startTime;
-        
-        if (pollCount.current >= maxPolls || elapsed >= 90000) {
-          setStatus('error');
-          setMessage('Roast generation timed out. Please refresh the page.');
-          return;
-        }
-        
-        // Exponential backoff after first 10 attempts
-        let delay = pollInterval;
-        if (pollCount.current > 10) {
-          delay = Math.min(pollInterval * Math.pow(1.5, pollCount.current - 10), 5000);
-        }
-        
-        timeoutId = setTimeout(poll, delay);
-      } catch (error) {
-        console.error('Polling error:', error);
-        setStatus('error');
-        setMessage('Error checking roast status. Please refresh the page.');
-      }
-    };
-    
-    // Start polling - if we have session_id, start with payment check
     if (sessionId) {
       setStatus('waiting-payment');
-      setMessage('Waiting for Stripe to finalize your payment...');
+      setMessage('Waiting for Stripe to finalize your payment…');
     }
     
-    poll();
+    // Start polling
+    continuePolling();
     
     // Cleanup on unmount
     return () => {
-      if (timeoutId) {
-        clearTimeout(timeoutId);
-      }
+      clearCurrentTimeout();
     };
-  }, [id, ready, sessionId, status]);
+  }, [id, ready, sessionId]);
   
   // Render payment processing banner
   if (showPaymentBanner) {
