@@ -11,8 +11,6 @@ export async function GET(
     const stripe = getStripe();
     const sessionId = params.id;
     
-    console.log(`[roast][stripe-session] ${sessionId} -> checking payment status`);
-    
     const session = await stripe.checkout.sessions.retrieve(sessionId);
     
     const paymentStatus = session.payment_status;
@@ -22,9 +20,8 @@ export async function GET(
     
     return NextResponse.json({
       paid: paymentStatus === 'paid',
-      status: status,
-      payment_status: paymentStatus,
-      livemode: session.livemode
+      status: status || 'unknown',
+      payment_status: paymentStatus || 'unknown'
     });
     
   } catch (error) {

@@ -60,13 +60,13 @@ async function handleRoastCheckoutCompleted(session: Stripe.Checkout.Session) {
 
   console.log(`[roast][webhook][hit] → { eventId: "${session.id}", live: ${session.livemode === true} }`);
 
-  // Extract metadata
+  // Extract metadata with defensive logging
   const idea = (session?.metadata?.idea || '').toString();
   const harshness = Number(session?.metadata?.harshness || 2) || 2;
   const userId = session?.metadata?.userId || null;
   const sessionId = session.id;
   
-  console.log(`[roast][webhook][meta] → { roastId: "${roastId}", userId: "${userId || 'null'}", harshness: ${harshness}, feature: "roast" }`);
+  console.log(`[roast][webhook][meta] roastId=${roastId} ideaLen=${idea?.length || 0} harshness=${harshness}`);
   
   // Check if roast doc exists and get current status
   const existingDoc = await getRoast(roastId);
@@ -79,7 +79,7 @@ async function handleRoastCheckoutCompleted(session: Stripe.Checkout.Session) {
   }
 
   // Create or update roast document in Firestore - set status to 'processing'
-  console.log(`[roast][webhook][upsert] → { path: "roasts/${roastId}" }`);
+  console.log(`[roast][webhook][upsert] roasts/${roastId}`);
   
   try {
     if (!existingDoc) {
@@ -123,7 +123,7 @@ async function handleRoastCheckoutCompleted(session: Stripe.Checkout.Session) {
     });
     
     // Log completion
-    console.log(`[roast][webhook][ready] → { roastId: "${roastId}" }`);
+    console.log(`[roast][webhook][ready] roasts/${roastId}`);
   } catch (error) {
     console.error(`[roast][webhook][error] Roast generation failed for roastId: "${roastId}":`, error);
     
@@ -135,7 +135,7 @@ async function handleRoastCheckoutCompleted(session: Stripe.Checkout.Session) {
     });
     
     // Log error but don't throw - this prevents Stripe from retrying
-    console.error(`[roast][webhook][error] Roast generation failed, marked as error: ${error}`);
+    console.error(`[roast][webhook][error] ${error instanceof Error ? error.message : "Unknown error"}`);
   }
 }
 
@@ -145,6 +145,7 @@ export async function POST(req: NextRequest) {
   const stripe = getStripe();
   const signature = req.headers.get("stripe-signature");
   let event: Stripe.Event;
+  let secretIndex = -1; // Track which secret was used
 
   console.log('=== STRIPE WEBHOOK RECEIVED ===');
   console.log('Signature header present:', !!signature);
@@ -152,17 +153,41 @@ export async function POST(req: NextRequest) {
 
   if (process.env.STRIPE_WEBHOOK_SECRET && signature) {
     const raw = await req.text(); // important
-    try {
-      event = stripe.webhooks.constructEvent(raw, signature, process.env.STRIPE_WEBHOOK_SECRET);
-      console.log('Webhook signature verified successfully');
-    } catch (err: any) {
-      console.error("Stripe signature verification failed:", err?.message);
+    
+    // Multi-secret verification
+    let secrets: string[] = [];
+    if (process.env.STRIPE_WEBHOOK_SECRETS) {
+      secrets = process.env.STRIPE_WEBHOOK_SECRETS.split(',').map(s => s.trim()).filter(Boolean);
+    } else {
+      secrets = [process.env.STRIPE_WEBHOOK_SECRET, process.env.STRIPE_WEBHOOK_SECRET_ALT]
+        .filter(Boolean)
+        .map(s => s!.trim());
+    }
+    
+    let signatureVerified = false;
+    
+    for (let i = 0; i < secrets.length; i++) {
+      try {
+        event = stripe.webhooks.constructEvent(raw, signature, secrets[i]);
+        signatureVerified = true;
+        secretIndex = i;
+        console.log(`Webhook signature verified successfully with secret index ${i}`);
+        break;
+      } catch (err: any) {
+        console.log(`Signature verification failed with secret index ${i}: ${err?.message}`);
+        continue;
+      }
+    }
+    
+    if (!signatureVerified) {
+      console.error("All webhook signature verifications failed");
       return new NextResponse("Bad signature", { status: 400 });
     }
   } else {
     // dev fallback
     console.log('Using dev fallback - no signature verification');
     event = await req.json();
+    secretIndex = -1; // dev mode
   }
 
   console.log('Webhook event type:', event.type);
@@ -179,7 +204,7 @@ export async function POST(req: NextRequest) {
     
     // Check if this is a roast checkout
     if (session?.metadata?.roastId) {
-      console.log(`[roast][webhook][hit] ${event.type} livemode:${event.livemode}`);
+      console.log(`[roast][webhook][hit] ${event.type} livemode:${event.livemode} secretIndex:${secretIndex}`);
       console.log('Detected roast checkout, processing...');
       try {
         await handleRoastCheckoutCompleted(session);

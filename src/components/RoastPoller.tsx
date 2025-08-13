@@ -1,6 +1,5 @@
 "use client";
 import { useEffect, useState, useRef } from "react";
-import { useSearchParams } from "next/navigation";
 
 export default function RoastPoller({ 
   id, 
@@ -19,6 +18,7 @@ export default function RoastPoller({
   const pollCount = useRef(0);
   const maxPolls = 90; // 90 seconds max
   const pollInterval = 1000; // 1 second base interval
+  const paymentTimeout = 30000; // 30 seconds for payment confirmation
   
   const ready = data?.status === "ready";
   
@@ -40,6 +40,8 @@ export default function RoastPoller({
     
     let timeoutId: NodeJS.Timeout;
     let startTime = Date.now();
+    let lastPaymentStatus = '';
+    let lastRoastStatus = '';
     
     const poll = async () => {
       try {
@@ -49,16 +51,22 @@ export default function RoastPoller({
           
           if (paymentRes.ok) {
             const paymentData = await paymentRes.json();
+            const currentPaymentStatus = paymentData.paid ? 'paid' : 'not_yet';
+            
+            // Only log on state change
+            if (currentPaymentStatus !== lastPaymentStatus) {
+              console.log(`[roast][poller] payment -> ${currentPaymentStatus}`);
+              lastPaymentStatus = currentPaymentStatus;
+            }
             
             if (paymentData.paid) {
-              console.log(`[roast][poller] Payment confirmed for session ${sessionId}, starting roast polling`);
               setStatus('processing');
               setMessage('Payment confirmed! Brewing your roast...');
               // Continue to roast polling below
             } else {
               // Still waiting for payment
               const elapsed = Date.now() - startTime;
-              if (elapsed > 30000) { // 30 second timeout for payment
+              if (elapsed > paymentTimeout) {
                 setStatus('error');
                 setMessage('Payment confirmation timed out. Please contact support.');
                 return;
@@ -88,6 +96,13 @@ export default function RoastPoller({
           }
         } else if (res.ok) {
           const result = await res.json();
+          const currentRoastStatus = result.status || 'unknown';
+          
+          // Only log on state change
+          if (currentRoastStatus !== lastRoastStatus) {
+            console.log(`[roast][poller] roast -> ${currentRoastStatus}`);
+            lastRoastStatus = currentRoastStatus;
+          }
           
           if (result.status === "ready" && result.result) {
             setData(result);
