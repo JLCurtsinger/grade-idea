@@ -39,10 +39,6 @@ export async function POST(req: NextRequest) {
     process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, '') ||
     new URL(req.url).origin;
 
-  // Log mode sanity check
-  const stripeKey = process.env.STRIPE_SECRET_KEY || '';
-  console.log(`[roast][checkout] mode live? { live: ${stripeKey.startsWith("sk_live_")} }`);
-
   const session = await stripe.checkout.sessions.create({
     mode: "payment",
     allow_promotion_codes: true,
@@ -58,8 +54,10 @@ export async function POST(req: NextRequest) {
     },
   });
 
-  // Log single line on success
-  console.log(`[roast][checkout] session created { roastId: "${roastId}", sessionId: "${session.id}", price: "${price}", origin: "${origin}", userId: "${userId || 'none'}" }`);
+  // Log mode sanity check
+  const stripeKey = process.env.STRIPE_SECRET_KEY || '';
+  const isLive = stripeKey.startsWith("sk_live_");
+  console.log(`[roast][checkout] session created → { sessionId: "${session.id}", roastId: "${roastId}", mode: "${isLive ? 'live' : 'test'}" }`);
 
   return NextResponse.json({ checkoutUrl: session.url, roastId });
 }

@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createRoastDoc } from "@/lib/roast";
+import { createRoastDoc, updateRoast } from "@/lib/roast";
 import { hasAtLeastOneToken, deductOneToken } from "@/lib/token-validation";
 import { generateRoast } from "@/lib/openai/roast";
 import { getAdminAuth } from '@/lib/firebase-admin';
+
+export const runtime = "nodejs";
 
 export async function POST(req: NextRequest) {
   try {
@@ -12,7 +14,7 @@ export async function POST(req: NextRequest) {
     const harshness = ([1,2,3].includes(hNum) ? hNum : 2) as 1|2|3;
 
     if (idea.length < 6) {
-      console.log("[roast/start] invalid", { ideaLength: idea.length, harshness });
+      console.log("[roast][start] invalid", { ideaLength: idea.length, harshness });
       return NextResponse.json({ error: "Missing or invalid fields" }, { status: 400 });
     }
 
@@ -36,18 +38,25 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Payment required" }, { status: 402 });
     }
 
+    let roastId: string | null = null;
     try {
       await deductOneToken(uid);
       const { id } = await createRoastDoc({ idea, harshness, userId: uid, paid: true, source: "token", status: "processing" });
+      roastId = id;
+      
+      console.log(`[roast][start] generating roast ${roastId} for user ${uid}`);
       const result = await generateRoast(idea, harshness);
-      await updateRoast(id, { status: "ready", result });
+      
+      await updateRoast(roastId, { status: "ready", result });
+      console.log(`[roast][start] roast ${roastId} completed successfully`);
+      
       return NextResponse.json({ roastId: id });
     } catch (e: any) {
-      console.error("Error in roast start:", e);
+      console.error("[roast][start][error]", { message: e.message, roastId });
       return NextResponse.json({ error: "Internal server error" }, { status: 500 });
     }
   } catch (error) {
-    console.error("Error in roast start:", error);
+    console.error("[roast][start][error]", { message: error instanceof Error ? error.message : "Unknown error" });
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }

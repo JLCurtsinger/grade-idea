@@ -52,58 +52,25 @@ const getTokenCountForPriceId = (priceId: string): number => {
 };
 
 async function handleRoastCheckoutCompleted(session: Stripe.Checkout.Session) {
-  console.log('=== ROAST WEBHOOK: CHECKOUT SESSION COMPLETED ===');
-  console.log('Full session object:', JSON.stringify(session, null, 2));
-  console.log('Session metadata:', JSON.stringify(session.metadata, null, 2));
-  
   const roastId = session?.metadata?.roastId;
   if (!roastId) {
-    console.error('[roast][webhook] Missing roastId in session metadata');
+    console.error('[roast][webhook][error] Missing roastId in session metadata');
     return;
   }
 
-  console.log(`[roast][webhook] Processing roast checkout for roastId: "${roastId}"`);
+  console.log(`[roast][webhook][hit] → { eventId: "${session.id}", live: ${session.livemode === true} }`);
 
   // Extract metadata
   const idea = (session?.metadata?.idea || '').toString();
   const harshness = Number(session?.metadata?.harshness || 2) || 2;
   const userId = session?.metadata?.userId || null;
   const sessionId = session.id;
-  const livemode = !!session.livemode;
   
-  console.log(`[roast][webhook] Extracted data:`, {
-    roastId,
-    idea: idea.substring(0, 100) + (idea.length > 100 ? '...' : ''),
-    harshness,
-    userId,
-    sessionId,
-    livemode
-  });
+  console.log(`[roast][webhook][meta] → { roastId: "${roastId}", userId: "${userId || 'null'}", harshness: ${harshness}, feature: "roast" }`);
   
-  // Get price IDs from line items
-  let priceIds: string[] = [];
-  if (session.line_items?.data) {
-    priceIds = session.line_items.data.map(li => li.price?.id).filter(Boolean) as string[];
-  } else {
-    // If line_items isn't expanded, retrieve the session with expanded data
-    console.log('[roast][webhook] Line items not expanded, retrieving expanded session...');
-    const expandedSession = await getStripe().checkout.sessions.retrieve(session.id, { 
-      expand: ["line_items.data.price.product"] 
-    });
-    priceIds = expandedSession.line_items?.data?.map(li => li.price?.id).filter(Boolean) as string[] || [];
-    console.log(`[roast][webhook] Retrieved expanded session, priceIds: [${priceIds.join(', ')}]`);
-  }
-
   // Check if roast doc exists and get current status
-  console.log(`[roast][webhook] Checking if roast document exists in Firestore...`);
   const existingDoc = await getRoast(roastId);
   const existsBefore = !!existingDoc;
-  
-  console.log(`[roast][webhook] Firestore check result:`, {
-    existsBefore,
-    currentStatus: existingDoc?.status || 'none',
-    currentSessionId: existingDoc?.sessionId || 'none'
-  });
   
   // Idempotency: if already processed this session, return early
   if (existingDoc?.sessionId === sessionId && existingDoc?.status === "ready") {
@@ -112,53 +79,43 @@ async function handleRoastCheckoutCompleted(session: Stripe.Checkout.Session) {
   }
 
   // Create or update roast document in Firestore
-  console.log(`[roast][webhook] Starting Firestore write for roastId: "${roastId}"`);
+  console.log(`[roast][webhook][upsert] → { path: "roasts/${roastId}" }`);
   
   try {
     if (!existingDoc) {
       // Create new doc
-      console.log(`[roast][webhook] Creating new roast document in Firestore...`);
       await createRoastDocWithId(roastId, {
         idea,
         harshness: harshness as 1|2|3,
         source: "stripe",
         paid: true,
-        status: "pending",
+        status: "processing",
         sessionId,
         userId,
         createdAt: Date.now(),
         updatedAt: Date.now(),
       });
-      console.log(`[roast][webhook] Successfully created roast document in Firestore at path: roasts/${roastId}`);
     } else if (existingDoc.status !== "ready") {
       // Update existing doc (without overwriting result if it already exists)
-      console.log(`[roast][webhook] Updating existing roast document in Firestore...`);
       await updateRoast(roastId, {
         paid: true,
-        status: "pending",
+        status: "processing",
         sessionId,
         userId,
         updatedAt: Date.now(),
       });
-      console.log(`[roast][webhook] Successfully updated roast document in Firestore at path: roasts/${roastId}`);
     }
-    
-    console.log(`[roast][webhook] Firestore write completed successfully for roastId: "${roastId}"`);
   } catch (error) {
-    console.error(`[roast][webhook] Firestore write failed for roastId: "${roastId}":`, error);
+    console.error(`[roast][webhook][error] Firestore write failed for roastId: "${roastId}":`, error);
     throw new Error(`Failed to create/update roast document: ${error}`);
   }
 
-  // Log upsert completion
-  console.log(`[roast][webhook] Document upsert completed { roastId: "${roastId}", existsBefore: ${existsBefore}, livemode: ${livemode}, sessionId: "${sessionId}", priceIds: [${priceIds.join(', ')}] }`);
-
   // Generate roast
-  console.log(`[roast][webhook] Starting roast generation for idea: "${idea.substring(0, 50)}..."`);
+  console.log(`[roast][webhook][generate] → { roastId: "${roastId}" }`);
   try {
     const result = await generateRoast(idea, harshness as 1|2|3);
     
     // Update doc with result
-    console.log(`[roast][webhook] Roast generation completed, updating document with result...`);
     await updateRoast(roastId, { 
       status: "ready", 
       result, 
@@ -166,9 +123,9 @@ async function handleRoastCheckoutCompleted(session: Stripe.Checkout.Session) {
     });
     
     // Log completion
-    console.log(`[roast][webhook] Roast completed successfully { roastId: "${roastId}", zingers: ${result?.zingers?.length ?? 0} }`);
+    console.log(`[roast][webhook][ready] → { roastId: "${roastId}" }`);
   } catch (error) {
-    console.error(`[roast][webhook] Roast generation failed for roastId: "${roastId}":`, error);
+    console.error(`[roast][webhook][error] Roast generation failed for roastId: "${roastId}":`, error);
     await updateRoast(roastId, { status: "error", updatedAt: Date.now() });
     throw error;
   }
