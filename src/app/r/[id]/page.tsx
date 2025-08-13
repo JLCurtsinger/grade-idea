@@ -42,7 +42,7 @@ export default async function Page({
           <div className="mb-4 p-4 bg-blue-500/10 border border-blue-500/20 rounded-lg">
             <div className="flex items-center gap-2 text-blue-300">
               <div className="w-2 h-2 bg-blue-400 rounded-full animate-pulse" />
-              <span className="text-sm">Processing your payment...</span>
+              <span className="text-sm">Waiting for Stripe to finalize your payment...</span>
             </div>
           </div>
         )}
@@ -76,7 +76,7 @@ export default async function Page({
         </article>
 
         {/* Always poll so shared links load even without session_id */}
-        <RoastPoller id={params.id} initial={data} />
+        <RoastPoller id={params.id} initial={data} sessionId={searchParams.session_id} />
       </div>
     </main>
   );

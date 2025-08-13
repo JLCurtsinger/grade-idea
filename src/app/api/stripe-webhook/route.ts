@@ -78,12 +78,12 @@ async function handleRoastCheckoutCompleted(session: Stripe.Checkout.Session) {
     return;
   }
 
-  // Create or update roast document in Firestore
+  // Create or update roast document in Firestore - set status to 'processing'
   console.log(`[roast][webhook][upsert] → { path: "roasts/${roastId}" }`);
   
   try {
     if (!existingDoc) {
-      // Create new doc
+      // Create new doc with status 'processing'
       await createRoastDocWithId(roastId, {
         idea,
         harshness: harshness as 1|2|3,
@@ -96,7 +96,7 @@ async function handleRoastCheckoutCompleted(session: Stripe.Checkout.Session) {
         updatedAt: Date.now(),
       });
     } else if (existingDoc.status !== "ready") {
-      // Update existing doc (without overwriting result if it already exists)
+      // Update existing doc to 'processing' status
       await updateRoast(roastId, {
         paid: true,
         status: "processing",
@@ -115,7 +115,7 @@ async function handleRoastCheckoutCompleted(session: Stripe.Checkout.Session) {
   try {
     const result = await generateRoast(idea, harshness as 1|2|3);
     
-    // Update doc with result
+    // Update doc with result and status 'ready'
     await updateRoast(roastId, { 
       status: "ready", 
       result, 
@@ -126,8 +126,16 @@ async function handleRoastCheckoutCompleted(session: Stripe.Checkout.Session) {
     console.log(`[roast][webhook][ready] → { roastId: "${roastId}" }`);
   } catch (error) {
     console.error(`[roast][webhook][error] Roast generation failed for roastId: "${roastId}":`, error);
-    await updateRoast(roastId, { status: "error", updatedAt: Date.now() });
-    throw error;
+    
+    // Set status to 'error' but don't throw - return 200 OK to prevent webhook retries
+    await updateRoast(roastId, { 
+      status: "error", 
+      errorMessage: error instanceof Error ? error.message : "Unknown error",
+      updatedAt: Date.now() 
+    });
+    
+    // Log error but don't throw - this prevents Stripe from retrying
+    console.error(`[roast][webhook][error] Roast generation failed, marked as error: ${error}`);
   }
 }
 
@@ -171,6 +179,7 @@ export async function POST(req: NextRequest) {
     
     // Check if this is a roast checkout
     if (session?.metadata?.roastId) {
+      console.log(`[roast][webhook][hit] ${event.type} livemode:${event.livemode}`);
       console.log('Detected roast checkout, processing...');
       try {
         await handleRoastCheckoutCompleted(session);

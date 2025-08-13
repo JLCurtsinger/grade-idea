@@ -2,13 +2,19 @@
 import { useEffect, useState, useRef } from "react";
 import { useSearchParams } from "next/navigation";
 
-export default function RoastPoller({ id, initial }: { id: string; initial: any }) {
+export default function RoastPoller({ 
+  id, 
+  initial, 
+  sessionId 
+}: { 
+  id: string; 
+  initial: any; 
+  sessionId?: string | null;
+}) {
   const [data, setData] = useState(initial);
-  const [status, setStatus] = useState<'processing' | 'ready' | 'error' | 'not-found'>('processing');
+  const [status, setStatus] = useState<'processing' | 'ready' | 'error' | 'not-found' | 'waiting-payment'>('processing');
   const [message, setMessage] = useState<string>('');
   const [showPaymentBanner, setShowPaymentBanner] = useState(false);
-  const searchParams = useSearchParams();
-  const sessionId = searchParams.get('session_id');
   
   const pollCount = useRef(0);
   const maxPolls = 90; // 90 seconds max
@@ -37,6 +43,39 @@ export default function RoastPoller({ id, initial }: { id: string; initial: any 
     
     const poll = async () => {
       try {
+        // If we have a session_id, first check payment status
+        if (sessionId && status === 'waiting-payment') {
+          const paymentRes = await fetch(`/api/stripe-session/${sessionId}`, { cache: "no-store" });
+          
+          if (paymentRes.ok) {
+            const paymentData = await paymentRes.json();
+            
+            if (paymentData.paid) {
+              console.log(`[roast][poller] Payment confirmed for session ${sessionId}, starting roast polling`);
+              setStatus('processing');
+              setMessage('Payment confirmed! Brewing your roast...');
+              // Continue to roast polling below
+            } else {
+              // Still waiting for payment
+              const elapsed = Date.now() - startTime;
+              if (elapsed > 30000) { // 30 second timeout for payment
+                setStatus('error');
+                setMessage('Payment confirmation timed out. Please contact support.');
+                return;
+              }
+              
+              // Continue waiting for payment
+              timeoutId = setTimeout(poll, 1000);
+              return;
+            }
+          } else {
+            console.error(`[roast][poller] Failed to check payment status: ${paymentRes.status}`);
+            // Fall back to roast polling if payment check fails
+            setStatus('processing');
+          }
+        }
+        
+        // Poll for roast results
         const res = await fetch(`/api/roast/${id}`, { cache: "no-store" });
         
         if (res.status === 404) {
@@ -84,7 +123,12 @@ export default function RoastPoller({ id, initial }: { id: string; initial: any 
       }
     };
     
-    // Start polling
+    // Start polling - if we have session_id, start with payment check
+    if (sessionId) {
+      setStatus('waiting-payment');
+      setMessage('Waiting for Stripe to finalize your payment...');
+    }
+    
     poll();
     
     // Cleanup on unmount
@@ -93,7 +137,7 @@ export default function RoastPoller({ id, initial }: { id: string; initial: any 
         clearTimeout(timeoutId);
       }
     };
-  }, [id, ready]);
+  }, [id, ready, sessionId, status]);
   
   // Render payment processing banner
   if (showPaymentBanner) {
@@ -108,6 +152,17 @@ export default function RoastPoller({ id, initial }: { id: string; initial: any 
   }
   
   // Render status messages
+  if (status === 'waiting-payment' && message) {
+    return (
+      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+        <div className="flex items-center">
+          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600 mr-3"></div>
+          <span className="text-blue-800">{message}</span>
+        </div>
+      </div>
+    );
+  }
+  
   if (status === 'processing' && message) {
     return (
       <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">

@@ -18,6 +18,7 @@ export interface RoastDoc {
   status: RoastStatus;
   result?: RoastResult;
   sessionId?: string;
+  errorMessage?: string;
   createdAt: number; // Date.now()
   updatedAt: number; // Date.now()
 }

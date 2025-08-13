@@ -34,17 +34,20 @@ export async function POST(req: NextRequest) {
   const stripe = getStripe();
   const price = process.env.STRIPE_PRICE_ID_ROAST_SINGLE!;
   
-  // Make origin robust
-  const origin =
-    process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, '') ||
-    new URL(req.url).origin;
+  // Force HTTPS and make origin robust
+  const origin = (process.env.NEXT_PUBLIC_SITE_URL || new URL(req.url).origin)
+    .replace('http://', 'https://')
+    .replace(/\/$/, '');
+
+  const successUrl = `${origin}/r/${roastId}?session_id={CHECKOUT_SESSION_ID}`;
+  const cancelUrl = `${origin}/?canceled=1`;
 
   const session = await stripe.checkout.sessions.create({
     mode: "payment",
     allow_promotion_codes: true,
     line_items: [{ price, quantity: 1 }],
-    success_url: `${origin}/r/${roastId}?session_id={CHECKOUT_SESSION_ID}`,
-    cancel_url: `${origin}/?canceled=1`,
+    success_url: successUrl,
+    cancel_url: cancelUrl,
     metadata: {
       roastId,
       idea: idea.slice(0, 500), // metadata limits
@@ -54,10 +57,12 @@ export async function POST(req: NextRequest) {
     },
   });
 
-  // Log mode sanity check
+  // Log mode sanity check and URLs
   const stripeKey = process.env.STRIPE_SECRET_KEY || '';
   const isLive = stripeKey.startsWith("sk_live_");
   console.log(`[roast][checkout] session created → { sessionId: "${session.id}", roastId: "${roastId}", mode: "${isLive ? 'live' : 'test'}" }`);
+  console.log(`[roast][checkout] success_url → ${successUrl}`);
+  console.log(`[roast][checkout] cancel_url → ${cancelUrl}`);
 
   return NextResponse.json({ checkoutUrl: session.url, roastId });
 }
