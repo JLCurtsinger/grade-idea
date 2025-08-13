@@ -52,14 +52,33 @@ const getTokenCountForPriceId = (priceId: string): number => {
 };
 
 async function handleRoastCheckoutCompleted(session: Stripe.Checkout.Session) {
+  console.log('=== ROAST WEBHOOK: CHECKOUT SESSION COMPLETED ===');
+  console.log('Full session object:', JSON.stringify(session, null, 2));
+  console.log('Session metadata:', JSON.stringify(session.metadata, null, 2));
+  
   const roastId = session?.metadata?.roastId;
-  if (!roastId) return;
+  if (!roastId) {
+    console.error('[roast][webhook] Missing roastId in session metadata');
+    return;
+  }
+
+  console.log(`[roast][webhook] Processing roast checkout for roastId: "${roastId}"`);
 
   // Extract metadata
   const idea = (session?.metadata?.idea || '').toString();
   const harshness = Number(session?.metadata?.harshness || 2) || 2;
+  const userId = session?.metadata?.userId || null;
   const sessionId = session.id;
   const livemode = !!session.livemode;
+  
+  console.log(`[roast][webhook] Extracted data:`, {
+    roastId,
+    idea: idea.substring(0, 100) + (idea.length > 100 ? '...' : ''),
+    harshness,
+    userId,
+    sessionId,
+    livemode
+  });
   
   // Get price IDs from line items
   let priceIds: string[] = [];
@@ -67,56 +86,79 @@ async function handleRoastCheckoutCompleted(session: Stripe.Checkout.Session) {
     priceIds = session.line_items.data.map(li => li.price?.id).filter(Boolean) as string[];
   } else {
     // If line_items isn't expanded, retrieve the session with expanded data
+    console.log('[roast][webhook] Line items not expanded, retrieving expanded session...');
     const expandedSession = await getStripe().checkout.sessions.retrieve(session.id, { 
       expand: ["line_items.data.price.product"] 
     });
     priceIds = expandedSession.line_items?.data?.map(li => li.price?.id).filter(Boolean) as string[] || [];
+    console.log(`[roast][webhook] Retrieved expanded session, priceIds: [${priceIds.join(', ')}]`);
   }
 
-  // Log mode sanity check
-  console.log(`[roast][webhook] event livemode? { livemode: ${livemode} }`);
-
   // Check if roast doc exists and get current status
+  console.log(`[roast][webhook] Checking if roast document exists in Firestore...`);
   const existingDoc = await getRoast(roastId);
   const existsBefore = !!existingDoc;
   
+  console.log(`[roast][webhook] Firestore check result:`, {
+    existsBefore,
+    currentStatus: existingDoc?.status || 'none',
+    currentSessionId: existingDoc?.sessionId || 'none'
+  });
+  
   // Idempotency: if already processed this session, return early
   if (existingDoc?.sessionId === sessionId && existingDoc?.status === "ready") {
-    console.log(`[roast][webhook] already processed { roastId: "${roastId}", sessionId: "${sessionId}" }`);
+    console.log(`[roast][webhook] Already processed this session, returning early { roastId: "${roastId}", sessionId: "${sessionId}" }`);
     return;
   }
 
-  // Upsert roasts/{roastId}
-  if (!existingDoc) {
-    // Create new doc
-    await createRoastDocWithId(roastId, {
-      idea,
-      harshness: harshness as 1|2|3,
-      source: "stripe",
-      paid: true,
-      status: "processing",
-      sessionId,
-      createdAt: Date.now(),
-      updatedAt: Date.now(),
-    });
-  } else if (existingDoc.status !== "ready") {
-    // Update existing doc (without overwriting result if it already exists)
-    await updateRoast(roastId, {
-      paid: true,
-      status: "processing",
-      sessionId,
-      updatedAt: Date.now(),
-    });
+  // Create or update roast document in Firestore
+  console.log(`[roast][webhook] Starting Firestore write for roastId: "${roastId}"`);
+  
+  try {
+    if (!existingDoc) {
+      // Create new doc
+      console.log(`[roast][webhook] Creating new roast document in Firestore...`);
+      await createRoastDocWithId(roastId, {
+        idea,
+        harshness: harshness as 1|2|3,
+        source: "stripe",
+        paid: true,
+        status: "pending",
+        sessionId,
+        userId,
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+      });
+      console.log(`[roast][webhook] Successfully created roast document in Firestore at path: roasts/${roastId}`);
+    } else if (existingDoc.status !== "ready") {
+      // Update existing doc (without overwriting result if it already exists)
+      console.log(`[roast][webhook] Updating existing roast document in Firestore...`);
+      await updateRoast(roastId, {
+        paid: true,
+        status: "pending",
+        sessionId,
+        userId,
+        updatedAt: Date.now(),
+      });
+      console.log(`[roast][webhook] Successfully updated roast document in Firestore at path: roasts/${roastId}`);
+    }
+    
+    console.log(`[roast][webhook] Firestore write completed successfully for roastId: "${roastId}"`);
+  } catch (error) {
+    console.error(`[roast][webhook] Firestore write failed for roastId: "${roastId}":`, error);
+    throw new Error(`Failed to create/update roast document: ${error}`);
   }
 
-  // Log upsert
-  console.log(`[roast][webhook] upsert { roastId: "${roastId}", existsBefore: ${existsBefore}, livemode: ${livemode}, sessionId: "${sessionId}", priceIds: [${priceIds.join(', ')}] }`);
+  // Log upsert completion
+  console.log(`[roast][webhook] Document upsert completed { roastId: "${roastId}", existsBefore: ${existsBefore}, livemode: ${livemode}, sessionId: "${sessionId}", priceIds: [${priceIds.join(', ')}] }`);
 
   // Generate roast
+  console.log(`[roast][webhook] Starting roast generation for idea: "${idea.substring(0, 50)}..."`);
   try {
     const result = await generateRoast(idea, harshness as 1|2|3);
     
     // Update doc with result
+    console.log(`[roast][webhook] Roast generation completed, updating document with result...`);
     await updateRoast(roastId, { 
       status: "ready", 
       result, 
@@ -124,10 +166,11 @@ async function handleRoastCheckoutCompleted(session: Stripe.Checkout.Session) {
     });
     
     // Log completion
-    console.log(`[roast][webhook] ready { roastId: "${roastId}", zingers: ${result?.zingers?.length ?? 0} }`);
+    console.log(`[roast][webhook] Roast completed successfully { roastId: "${roastId}", zingers: ${result?.zingers?.length ?? 0} }`);
   } catch (error) {
-    console.error(`[roast][webhook][error] { roastId: "${roastId}", sessionId: "${sessionId}", message: "${error}" }`);
+    console.error(`[roast][webhook] Roast generation failed for roastId: "${roastId}":`, error);
     await updateRoast(roastId, { status: "error", updatedAt: Date.now() });
+    throw error;
   }
 }
 
@@ -138,58 +181,63 @@ export async function POST(req: NextRequest) {
   const signature = req.headers.get("stripe-signature");
   let event: Stripe.Event;
 
+  console.log('=== STRIPE WEBHOOK RECEIVED ===');
+  console.log('Signature header present:', !!signature);
+  console.log('Webhook secret configured:', !!process.env.STRIPE_WEBHOOK_SECRET);
+
   if (process.env.STRIPE_WEBHOOK_SECRET && signature) {
     const raw = await req.text(); // important
     try {
       event = stripe.webhooks.constructEvent(raw, signature, process.env.STRIPE_WEBHOOK_SECRET);
+      console.log('Webhook signature verified successfully');
     } catch (err: any) {
       console.error("Stripe signature verification failed:", err?.message);
       return new NextResponse("Bad signature", { status: 400 });
     }
   } else {
     // dev fallback
+    console.log('Using dev fallback - no signature verification');
     event = await req.json();
   }
 
-  // Handle roast checkout completion
+  console.log('Webhook event type:', event.type);
+  console.log('Webhook event ID:', event.id);
+
+  // Handle checkout.session.completed events
   if (event.type === "checkout.session.completed") {
     const session = event.data.object as Stripe.Checkout.Session;
     
+    console.log('=== CHECKOUT SESSION COMPLETED ===');
+    console.log('Session ID:', session.id);
+    console.log('Session metadata:', JSON.stringify(session.metadata, null, 2));
+    console.log('Client reference ID:', session.client_reference_id);
+    
     // Check if this is a roast checkout
     if (session?.metadata?.roastId) {
+      console.log('Detected roast checkout, processing...');
       try {
         await handleRoastCheckoutCompleted(session);
+        console.log('Roast checkout processing completed successfully');
         return NextResponse.json({ received: true });
       } catch (error) {
-        console.error(`[roast][webhook][error] { roastId: "${session.metadata.roastId}", sessionId: "${session.id}", message: "${error}" }`);
-        // Return 200 so Stripe doesn't keep redelivering
-        return NextResponse.json({ received: true });
+        console.error(`Roast checkout processing failed:`, error);
+        // Return 500 for webhook failures so Stripe knows to retry
+        return NextResponse.json(
+          { error: 'Failed to process roast checkout' },
+          { status: 500 }
+        );
       }
-    }
-  }
-
-  // Handle token purchase (existing logic)
-  switch (event.type) {
-    case 'checkout.session.completed':
-      const session = event.data.object as Stripe.Checkout.Session;
+    } else {
+      console.log('Not a roast checkout, processing as token purchase...');
       
-      // Skip if this was already handled as a roast checkout
-      if (session?.metadata?.roastId) {
-        return NextResponse.json({ received: true });
-      }
-      
-      console.log('=== WEBHOOK: CHECKOUT SESSION COMPLETED ===');
-      console.log('Session ID:', session.id);
-      console.log('Session metadata:', session.metadata);
-      console.log('Client reference ID:', session.client_reference_id);
-      
+      // Handle token purchase (existing logic)
       try {
         // Extract user ID and plan name
         const userId = session.client_reference_id;
         const planName = session.metadata?.planName;
         const normalizedPlan = session.metadata?.normalizedPlan;
         
-        console.log('Extracted data:', { userId, planName, normalizedPlan });
+        console.log('Token purchase data:', { userId, planName, normalizedPlan });
         
         if (!userId || !planName) {
           console.error('Missing userId or planName in session:', session.id);
@@ -222,7 +270,7 @@ export async function POST(req: NextRequest) {
           console.error('No price ID found for normalized plan:', finalNormalizedPlan);
           return NextResponse.json(
             { error: 'Invalid plan configuration' },
-            { status: 400 }
+            { status: 500 }
           );
         }
 
@@ -234,7 +282,7 @@ export async function POST(req: NextRequest) {
           console.error('No token count found for price ID:', priceId);
           return NextResponse.json(
             { error: 'Invalid price ID' },
-            { status: 400 }
+            { status: 500 }
           );
         }
 
@@ -277,17 +325,19 @@ export async function POST(req: NextRequest) {
           // Don't fail the webhook for email errors
         }
         
+        console.log('Token purchase processing completed successfully');
         return NextResponse.json({ received: true });
       } catch (error) {
-        console.error('Error processing checkout session:', error);
+        console.error('Error processing token purchase:', error);
         return NextResponse.json(
-          { error: 'Failed to process checkout session' },
+          { error: 'Failed to process token purchase' },
           { status: 500 }
         );
       }
-
-    default:
-      console.log(`Unhandled event type: ${event.type}`);
-      return NextResponse.json({ received: true });
+    }
   }
+
+  // Handle other event types
+  console.log(`Unhandled event type: ${event.type}`);
+  return NextResponse.json({ received: true });
 } 

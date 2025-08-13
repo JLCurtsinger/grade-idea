@@ -80,9 +80,21 @@ export default function PreRoastModal({
 
   const handleOneOff = async () => {
     try {
+      const headers: Record<string, string> = { "Content-Type": "application/json" };
+      
+      // Add auth token if user is logged in
+      if (user) {
+        try {
+          const idToken = await user.getIdToken();
+          headers.Authorization = `Bearer ${idToken}`;
+        } catch (error) {
+          console.warn("Failed to get auth token, proceeding without userId");
+        }
+      }
+      
       const res = await fetch("/api/roast/checkout", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers,
         body: JSON.stringify({ idea, harshness: h }),
       });
       const json = await res.json();

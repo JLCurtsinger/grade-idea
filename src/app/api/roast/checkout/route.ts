@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getStripe } from "@/lib/stripe";
+import { getAdminAuth } from "@/lib/firebase-admin";
 
 export const runtime = "nodejs";
 
@@ -12,6 +13,20 @@ export async function POST(req: NextRequest) {
   // Validate input: idea (trim, 1–280 chars), harshness (1–3, default 2)
   if (idea.length < 1 || idea.length > 280) {
     return NextResponse.json({ error: "Idea must be between 1 and 280 characters" }, { status: 400 });
+  }
+
+  // Try to get userId from Authorization header
+  let userId: string | null = null;
+  const authHeader = req.headers.get("authorization");
+  if (authHeader?.startsWith("Bearer ")) {
+    try {
+      const token = authHeader.substring(7);
+      const auth = getAdminAuth();
+      const decodedToken = await auth.verifyIdToken(token);
+      userId = decodedToken.uid;
+    } catch (error) {
+      console.log("[roast][checkout] Invalid auth token, proceeding without userId");
+    }
   }
 
   // Generate roastId (UUID v4)
@@ -38,12 +53,13 @@ export async function POST(req: NextRequest) {
       roastId,
       idea: idea.slice(0, 500), // metadata limits
       harshness: String(harshness),
-      feature: "roast"
+      feature: "roast",
+      ...(userId && { userId }), // Only include userId if available
     },
   });
 
   // Log single line on success
-  console.log(`[roast][checkout] session created { roastId: "${roastId}", sessionId: "${session.id}", price: "${price}", origin: "${origin}" }`);
+  console.log(`[roast][checkout] session created { roastId: "${roastId}", sessionId: "${session.id}", price: "${price}", origin: "${origin}", userId: "${userId || 'none'}" }`);
 
   return NextResponse.json({ checkoutUrl: session.url, roastId });
 }
