@@ -40,7 +40,7 @@ export async function POST(req: NextRequest) {
     .replace(/^http:\/\//, 'https://')
     .replace('://gradeidea.cc', '://www.gradeidea.cc')
     .replace(/\/$/, '');
-
+  
   const success_url = `${origin}/r/${roastId}?session_id={CHECKOUT_SESSION_ID}`;
   const cancel_url = `${origin}/?canceled=1`;
 

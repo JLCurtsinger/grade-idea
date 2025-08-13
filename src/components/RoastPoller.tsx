@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useState, useRef } from "react";
+import { useSearchParams } from "next/navigation";
 
 export default function RoastPoller({ 
   id, 
@@ -60,6 +61,7 @@ export default function RoastPoller({
             }
             
             if (paymentData.paid) {
+              console.log(`[roast][poller] Payment confirmed for session ${sessionId}, starting roast polling`);
               setStatus('processing');
               setMessage('Payment confirmed! Brewing your roast...');
               // Continue to roast polling below

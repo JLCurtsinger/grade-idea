@@ -58,7 +58,7 @@ async function handleRoastCheckoutCompleted(session: Stripe.Checkout.Session) {
     return;
   }
 
-  console.log(`[roast][webhook][hit] → { eventId: "${session.id}", live: ${session.livemode === true} }`);
+  console.log(`[roast][webhook][hit] ${session.id} livemode:${session.livemode === true}`);
 
   // Extract metadata with defensive logging
   const idea = (session?.metadata?.idea || '').toString();
@@ -78,8 +78,14 @@ async function handleRoastCheckoutCompleted(session: Stripe.Checkout.Session) {
     return;
   }
 
+  // Idempotency: if roast doc exists with status in ('processing','ready','error'), skip generation
+  if (existingDoc && ['processing', 'ready', 'error'].includes(existingDoc.status)) {
+    console.log(`[roast][webhook][skip] ${roastId} status:${existingDoc.status}`);
+    return;
+  }
+
   // Create or update roast document in Firestore - set status to 'processing'
-  console.log(`[roast][webhook][upsert] roasts/${roastId}`);
+  console.log(`[roast][webhook][upsert] roasts/${roastId} -> processing`);
   
   try {
     if (!existingDoc) {
